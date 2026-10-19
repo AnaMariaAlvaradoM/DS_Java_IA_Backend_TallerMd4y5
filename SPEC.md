@@ -10,13 +10,13 @@ Sillón es un sistema SaaS (Software as a Service). Antes de añadir seguridad o
 
 ## Fuera de alcance (PROHIBIDO IMPLEMENTAR AÚN)
 La IA tiene estrictamente prohibido generar código para los siguientes módulos, ya que pertenecen a fases futuras:
-- Seguridad: JWT, roles y respuestas 401/403 (Fase 2)[cite: 5].
-- Catálogo y equipo: servicios y estilistas (Fase 3)[cite: 5].
-- La agenda: citas, reglas, estados y disponibilidad (Fase 4)[cite: 5].
-- La cara pública: catálogo, disponibilidad y reservas (Fase 5)[cite: 5].
-- Pagos con Stripe: plan PRO, créditos y webhooks (Fase 6)[cite: 5].
-- El motor de IA, Recordatorios y Chatbot (Fases 7, 8 y 9)[cite: 5].
-- Tests automáticos y Swagger (Fases 10 y 11)[cite: 5].
+- Seguridad: JWT, roles y respuestas 401/403 (Fase 2).
+- Catálogo y equipo: servicios y estilistas (Fase 3).
+- La agenda: citas, reglas, estados y disponibilidad (Fase 4).
+- La cara pública: catálogo, disponibilidad y reservas (Fase 5).
+- Pagos con Stripe: plan PRO, créditos y webhooks (Fase 6).
+- El motor de IA, Recordatorios y Chatbot (Fases 7, 8 y 9).
+- Tests automáticos y Swagger (Fases 10 y 11).
 
 ## Reglas de Negocio (Fase 1)
 1. **Registro de salón:** Crea el salón y su dueño (DUEÑO) al mismo tiempo. El salón nace por defecto en plan GRATIS, con 10 créditos de IA y el horario base: 8:00 a.m. a 7:00 p.m., sin domingos, y con un intervalo de 30 minutos.
