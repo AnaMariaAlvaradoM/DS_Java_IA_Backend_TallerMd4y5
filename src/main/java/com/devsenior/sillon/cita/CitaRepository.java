@@ -21,4 +21,7 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
 
     List<Cita> findAllBySalonIdAndEstilistaIdAndInicioGreaterThanEqualAndInicioLessThanOrderByInicioAsc(
             Long salonId, Long estilistaId, LocalDateTime desde, LocalDateTime hasta);
+
+    List<Cita> findAllBySalonIdAndEstilistaIdAndEstadoInAndInicioGreaterThanEqualAndInicioLessThan(
+            Long salonId, Long estilistaId, Collection<EstadoCita> estados, LocalDateTime desde, LocalDateTime hasta);
 }

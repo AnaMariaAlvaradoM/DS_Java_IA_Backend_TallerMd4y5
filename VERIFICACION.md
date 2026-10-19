@@ -56,3 +56,26 @@ Fecha de revisión: 2026-10-19. Referencias: páginas 7–8 (reglas), 11 (contra
 ### Resultado de ejecución
 
 Maven Wrapper con Java 17 y MySQL: **119 pruebas, 0 fallos, 0 errores, 0 omitidas; BUILD SUCCESS**. De ellas, 67 corresponden a la agenda incorporada en esta fase: 30 de estados, 10 de reglas, 12 del servicio y 15 de integración HTTP. Evidencia local: target/fase4-final.log y target/surefire-fase4-final/ (ignorados por Git).
+
+## Fase 5: catálogo y reservas públicas
+
+Fecha de revisión: 2026-10-19. Referencias: página 11 (contrato) y páginas 20–21 (pasos 5.1/5.2 y COMPRUEBAS).
+
+| Requisito del PDF | Resultado revisado | Evidencia |
+|---|---|---|
+| 5.1: catálogo por slug con datos públicos y horario descriptivo | CatalogoResponse contiene nombre, slug, ciudad, direccion, telefono, horario, servicios y estilistas; el horario se redacta con formato es-CO y espacios normales | Inspección de DTO/FormatoHorarioSalon; PublicoIntegracionTest.catalogoPublicoNoExigeTokenNiRevelaCorreos comprueba el horario del ejemplo |
+| Servicios y estilistas activos; sin correos ni contraseñas | Consultas filtradas por salón/activo/rol, DTO público del estilista con id/nombre/servicioIds | catalogoPublicoNoExigeTokenNiRevelaCorreos y excluyeServiciosYEstilistasInactivos |
+| Catálogo del escenario: dos servicios y dos estilistas; ninguna arroba | HTTP 200 sin token, listas de tamaño 2, texto sin @ | catalogoPublicoNoExigeTokenNiRevelaCorreos |
+| 5.2: disponibilidad trae las citas ocupadas del estilista del día | Consulta derivada filtra salón, estilista, día y PENDIENTE/CONFIRMADA; ReglasAgenda calcula las horas | Inspección de CitaRepository/CatalogoService y reservaActualizaDisponibilidadYBloqueaCitaInterna |
+| Disponibilidad exige servicioId, estilistaId y fecha; JSON con fecha/servicio/estilista/duracionMinutos/horariosLibres | Parámetros @RequestParam obligatorios; nombres exactos en DTO; horas HH:mm:ss | Inspección PublicoController/DisponibilidadResponse; faltanParametrosEs400, fechaInvalidaEs400 y comprobaciones del flujo de reserva |
+| Valentina reserva con Mateo a las 10:00 | HTTP 201, PENDIENTE, EN_LINEA, fin 10:45, precio 35000, sin autenticación | reservaActualizaDisponibilidadYBloqueaCitaInterna |
+| La disponibilidad pierde 09:30, 10:00 y 10:30 y conserva 11:00 | Verificado por HTTP después de la reserva | Mismo test |
+| Cita interna con Mateo a las 10:30 produce 409 | Verificado por HTTP con token del dueño tras la reserva pública | Mismo test |
+| Reserva usa el mismo método de agendar de fase 4 | CatalogoService.reservar delega a CitaService.reservar, que llama al método privado agendar | Inspección de código y cruce entre cita pública/interna |
+| Salón inexistente o ids de otro salón no se revelan | 404 para slug inexistente e ids ajenos en disponibilidad | salonInexistenteEs404SinToken e idsDeOtroSalonSon404 (servicio y estilista) |
+
+Comprobaciones adicionales: cancelar una reserva libera su horario; domingo cerrado devuelve lista vacía; estilista sin el servicio solicitado devuelve 409. La exclusión de horas pasadas y los límites de horario continúan cubiertos por ReglasAgendaTest de fase 4.
+
+Dos puntos abiertos del contrato se resolvieron con el usuario antes de implementar sus DTOs: servicio/estilista son nombres como texto; los servicioIds públicos contienen solo servicios activos. Ambos se comprueban en PublicoIntegracionTest.
+
+Resultado: **130 pruebas, 0 fallos, 0 errores, 0 omitidas; BUILD SUCCESS**, incluidas 11 nuevas de esta fase. Evidencia local: target/fase5-tests.log y target/surefire-fase5/. Verificación HTTP mediante MockMvc con filtros de seguridad y MySQL; datos de prueba revertidos. Postman y calificador remoto siguen pendientes. El endpoint público de chat se construirá en fase 9; no forma parte de la fase 5. Sin cambios en .github/ ni secretos versionados; sin push.
