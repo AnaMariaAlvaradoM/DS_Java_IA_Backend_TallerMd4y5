@@ -12,6 +12,8 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Cita> findByIdAndSalonId(Long id, Long salonId);
 
+    Optional<Cita> findOneByIdAndSalonId(Long id, Long salonId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Cita> findAllBySalonIdAndEstilistaIdAndEstadoInAndInicioLessThanAndFinGreaterThan(
             Long salonId, Long estilistaId, Collection<EstadoCita> estados, LocalDateTime fin, LocalDateTime inicio);

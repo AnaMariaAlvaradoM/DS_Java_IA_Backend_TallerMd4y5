@@ -1,0 +1,24 @@
+Redacte un borrador de recordatorio para WhatsApp que una persona
+revisará antes de enviarlo.
+
+Salón: {{salon}}
+Cliente: {{cliente}}
+
+Datos verificados:
+{{datos}}
+
+Instrucciones:
+- Salude al cliente por su nombre y trátelo de usted.
+- Incluya los seis datos exactamente como aparecen: servicio,
+  estilista, fecha, hora, valor y dirección.
+- No invente ni agregue fechas, horas, precios, descuentos,
+  promociones u otros datos.
+- Solicite que confirme respondiendo SÍ o avise si necesita
+  cambiar la cita.
+- Use un tono cálido y profesional, con un máximo de cuatro
+  frases y 700 caracteres.
+- Firme como «Equipo de {{salon}}».
+- El mensaje es un borrador; no afirme que ya fue enviado.
+
+Responda únicamente un objeto JSON válido con la clave "mensaje",
+sin Markdown ni explicaciones adicionales.

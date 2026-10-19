@@ -14,7 +14,12 @@ import com.devsenior.sillon.usuario.UsuarioRepository;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -110,5 +115,28 @@ public class CitaService {
         if (!cita.getEstado().permite(destino)) { throw new ReglaNegocioException("Transición de estado no permitida"); }
         cita.setEstado(destino);
         return mapper.convertir(citas.saveAndFlush(cita));
+    }
+
+    @Transactional(readOnly = true)
+    public DatosRecordatorio datosRecordatorio(Long salonId, Long citaId) {
+        Cita cita = citas.findOneByIdAndSalonId(citaId, salonId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada"));
+        if (cita.getEstado() != EstadoCita.PENDIENTE && cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new ReglaNegocioException("Solo se generan recordatorios de citas pendientes o confirmadas");
+        }
+        Locale colombia = Locale.forLanguageTag("es-CO");
+        String fecha = cita.getInicio().format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", colombia));
+        String hora = cita.getInicio().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(colombia))
+                .replace('\u00a0', ' ').replace('\u202f', ' ');
+        String valor = "$" + NumberFormat.getIntegerInstance(colombia).format(cita.getPrecio());
+        long minutos = Duration.between(cita.getInicio(), cita.getFin()).toMinutes();
+        String datos = "Servicio: " + cita.getServicio().getNombre() + " (" + minutos + " minutos)\n"
+                + "Estilista: " + cita.getEstilista().getNombre() + "\n"
+                + "Fecha: " + fecha + "\n"
+                + "Hora: " + hora + "\n"
+                + "Valor: " + valor + "\n"
+                + "Dirección: " + cita.getSalon().getDireccion() + ", " + cita.getSalon().getCiudad();
+        return new DatosRecordatorio(cita.getId(), cita.getSalon().getNombre(), cita.getCliente().getNombre(),
+                cita.getCliente().getTelefono(), datos);
     }
 }
