@@ -223,6 +223,8 @@ Render con Supabase; Swagger /swagger-ui.html y /v3/api-docs públicos; URL real
 
 ## Pendientes y decisiones a validar
 
+- Fase 6 verificada: StripeClient con configuración tipada y base STRIPE_URL_API; Checkout PRO/paquete con precios del backend y metadata salonId/tipoCompra (SUSCRIPCION_PRO o PAQUETE_CREDITOS), misma metadata en suscripción; PRO repetido 409. Webhook firmado, idempotente y transaccional, con fallback de deserialización del SDK. Usuario confirmó resultado JSON mensaje y estado inválido 400; procesado=true para evento nuevo registrado y false para repetido. Suite: 148 pruebas aprobadas. Pagos manuales de prueba comprobaron PRO/310, tercer estilista, PRO repetido 409 y paquete hasta 510; reenvío real no duplicó saldo; cancelación dejó GRATIS/510. Matriz y límites de evidencia en VERIFICACION.md.
+
 - Fase 5 verificada: catálogo sin correos/contraseñas, solo servicios y estilistas activos; disponibilidad con tres parámetros obligatorios, consulta por salón y cálculo Java; reservas públicas PENDIENTE/EN_LINEA con el mismo método privado de agenda. Suite: 130 pruebas aprobadas (11 nuevas). Contraste con páginas 11 y 20–21 en VERIFICACION.md. Chat público corresponde a fase 9.
 
 - Fase 4 verificada: enum de estados, Cita con cuatro relaciones, auditoría con Clock, cálculo de fin y copia de precio, reglas sin repositorios y cálculo de disponibilidad, método privado agendar compartido, creación/listado/cambio de estado internos. Suite final: 119 pruebas aprobadas; contraste con pasos 4.1–4.5 y páginas 7–8/11/19–20 en VERIFICACION.md. Reservas y disponibilidad públicas pertenecen a fase 5.

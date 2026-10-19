@@ -79,3 +79,28 @@ Comprobaciones adicionales: cancelar una reserva libera su horario; domingo cerr
 Dos puntos abiertos del contrato se resolvieron con el usuario antes de implementar sus DTOs: servicio/estilista son nombres como texto; los servicioIds públicos contienen solo servicios activos. Ambos se comprueban en PublicoIntegracionTest.
 
 Resultado: **130 pruebas, 0 fallos, 0 errores, 0 omitidas; BUILD SUCCESS**, incluidas 11 nuevas de esta fase. Evidencia local: target/fase5-tests.log y target/surefire-fase5/. Verificación HTTP mediante MockMvc con filtros de seguridad y MySQL; datos de prueba revertidos. Postman y calificador remoto siguen pendientes. El endpoint público de chat se construirá en fase 9; no forma parte de la fase 5. Sin cambios en .github/ ni secretos versionados; sin push.
+
+## Fase 6: Stripe verificada
+
+Contraste con pasos 6.1–6.4 de páginas 21–22 y contrato de pagos de página 12. Productos y precios configurados por el estudiante; Checkout en modo prueba comprobado con pagos manuales.
+
+| Comprobación | Evidencia y estado |
+|---|---|
+| Suite anterior y nuevas pruebas de pagos | 148 pruebas aprobadas; BUILD SUCCESS en target/fase6-final.log. SDK probado contra servidor HTTP local; integración de webhook con firmas ficticias y MySQL, sin llamadas externas en tests |
+| Checkout PRO y paquete | Backend construye modo, precio configurado, cantidad, referencia del salón, correo y metadata salonId/tipoCompra; comprobado por PagoServiceTest |
+| Firma y transacción | Pruebas HTTP de firma ausente/inválida; compra y evento en la misma transacción, con rollback real al fallar el registro del evento |
+| Idempotencia | Evento firmado repetido devuelve procesado=false sin duplicar saldo, probado en integración. Reenvío real con Stripe CLI events resend del evento del paquete: dos entregas del mismo id con HTTP 200 y saldo sin cambios en 510. La CLI muestra el código HTTP, no el cuerpo de respuesta; procesado=false se comprueba mediante MockMvc |
+| Compatibilidad de evento | Fallback deserializeUnsafe cuando el SDK no entrega el objeto; probado con versión de evento distinta |
+| Pago PRO real en modo de prueba | Salón ficticio 380 pasó de GRATIS/10 a PRO/310, comprobado mediante GET /api/salon después de Checkout |
+| Tercer estilista en PRO | Creado mediante POST /api/estilistas después del pago |
+| Intento de comprar PRO estando en PRO | POST /api/pagos/suscripcion devolvió HTTP 409 |
+| Paquete de 200 créditos real en modo de prueba | Pago manual completado; GET /api/salon comprobó PRO/510 |
+| Cancelación de suscripción | Probada en integración y con cancelación real de la suscripción ficticia en Stripe: estado canceled y GET /api/salon GRATIS/510 |
+| Webhook sin firma y pago como estilista | Peticiones contra la API local devolvieron HTTP 400 y 403 respectivamente; también cubiertas en integración |
+| Resultado público | JSON mensaje para exito/cancelado; estado distinto produce 400, conforme a aclaración del usuario. No confirma compras ni cambia créditos |
+
+Resultado: **148 pruebas, 0 fallos, 0 errores, 0 omitidas; BUILD SUCCESS** y JAR generado. Evidencia local: target/fase6-final.log; sesiones y tokens de prueba solo en target ignorado. Listener Docker verificado con destino /api/pagos/webhook y eventos checkout.session.completed, customer.subscription.deleted. La suite usa JUnit transitivo gestionado por Boot por instrucción del usuario. Colección Postman y calificador remoto pendientes de sus fases; no se atribuyen resultados a ellos.
+
+Aclaraciones del usuario: metadata salonId/tipoCompra, valores SUSCRIPCION_PRO/PAQUETE_CREDITOS; resultado con campo mensaje e inválido 400; procesado indica registro nuevo, incluso si el evento no aplica compra. Un id ya registrado devuelve false. No se añadieron recargas por renovación ni desactivación de estilistas al volver a GRATIS.
+
+Incidencias locales: el listener inicial enviaba a /api/stripe/webhook y recibió 401; se corrigió a /api/pagos/webhook y se reinició la aplicación con el secreto correspondiente, sin exponerlo. La versión instalada de Stripe CLI exige --events; se seleccionaron checkout.session.completed y customer.subscription.deleted. El primer enlace comunicado omitía el fragmento final de Checkout; se corrigió entregando la URL completa. El primer pago sin entrega válida no se contabilizó como verificación exitosa.

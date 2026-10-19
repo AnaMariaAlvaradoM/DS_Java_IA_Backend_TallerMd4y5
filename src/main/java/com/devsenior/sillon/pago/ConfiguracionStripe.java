@@ -1,0 +1,16 @@
+package com.devsenior.sillon.pago;
+
+import com.stripe.StripeClient;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableConfigurationProperties(StripeProperties.class)
+public class ConfiguracionStripe {
+    @Bean
+    public StripeClient stripeClient(StripeProperties properties) {
+        return StripeClient.builder().setApiKey(properties.getClaveSecreta()).setApiBase(properties.getUrlApi())
+                .setConnectTimeout(10000).setReadTimeout(30000).build();
+    }
+}
