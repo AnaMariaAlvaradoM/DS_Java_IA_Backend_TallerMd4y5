@@ -1,6 +1,6 @@
 # Sillón: especificación de la entrega académica
 
-Estado: fases 0, 1 y 2 verificadas. Existen proyecto base, errores, reloj, entidades iniciales, registro, login, JWT, permisos y consulta/configuración del salón. Las fases siguientes todavía no están implementadas.
+Estado: fases 0–3 verificadas. Existen proyecto base, errores, reloj, autenticación, configuración del salón, servicios, estilistas y base de clientes. La agenda y las fases siguientes todavía no están implementadas.
 Fuentes: enunciado PDF de 40 páginas y README de entrega del repositorio.
 Prioridad: reglas de la sección 3 y contrato de la sección 4 del PDF. Las observaciones de diseño no sustituyen esas reglas.
 
@@ -68,7 +68,7 @@ Enums persistidos como texto: Plan GRATIS/PRO; Rol DUENO/ESTILISTA/ADMIN; Estado
 | CHAT-03 | Bloqueo Java sin distinguir mayúsculas de descuento, cupón, cupon, gratis, promoción, promocion o reembols | Mensaje fijo seguro; solicitud REGLA_DE_SEGURIDAD; no filtrar SILLA50 |
 | SOL-01 | Dueño lista solicitudes recientes primero y marca atendida | Segunda atención 409; ajena 404 |
 
-Orden al crear estilista: límite del plan, email único y pertenencia de servicios, conforme a fase 3. El estudiante debe revisar y justificar este orden.
+Orden al crear estilista confirmado por el usuario en fase 3: límite del plan, email único y pertenencia de servicios. El límite se valida primero para devolver 402 antes de comprobar correo y servicios cuando GRATIS ya tiene dos estilistas; después se valida la unicidad global del correo y finalmente los servicios del salón. La validación de estructura/formato del DTO ocurre antes de entrar al servicio.
 
 Orden al agendar: servicio existente/activo, estilista existente/activo y servicio ofrecido, calcular fin, pasado, horario, cruce, buscar/crear cliente y guardar.
 
@@ -206,9 +206,11 @@ Render con Supabase; Swagger /swagger-ui.html y /v3/api-docs públicos; URL real
 
 ## Pendientes y decisiones a validar
 
+- Fase 3 verificada: POST/GET/PUT de servicios, POST/GET de estilistas y GET de clientes según contrato. Servicios filtrados por salón, precios enteros sin truncar decimales, relación estilista-servicios, límite GRATIS con bloqueo de la fila del salón durante el alta y PRO sin límite. Clientes: buscar o crear por teléfono normalizado y unicidad por salón/teléfono; sin endpoint de alta manual. Suite: 52 pruebas aprobadas (15 nuevas), evidencia local target/fase3-tests.log. Sin colección Postman ni calificador remoto ejecutados todavía.
+
 - Fase 2 verificada: registro transaccional y login con BCrypt; JWT de 60 minutos firmado y validado con Clock; usuario autenticado cargado desde base de datos; permisos por rutas y errores 401/403 uniformes; GET /api/salon y PUT /api/salon/configuracion con salonId del principal. Suite: 37 pruebas, 0 fallos, 0 errores; evidencia local target/fase2-final.log. Las pruebas HTTP usan MockMvc con filtros reales y transacciones de prueba revertidas; no se ha ejecutado todavía la colección de Postman ni el calificador remoto.
 
-- Fase 1 implementada: ErrorApi, excepciones y manejador global; Clock America/Bogota y auditoría JPA con ese reloj; Salon, ConfiguracionSalon, Plan, Usuario, Rol y repositorios; generador de slug con sufijos desde -2. La relación estilista-servicios llegará en fase 3. Verificación: 16 pruebas aprobadas y contexto MySQL iniciado. Los errores 401/403 de filtros de seguridad se integrarán en fase 2 con FabricaErrorApi.
+- Fase 1 implementada: ErrorApi, excepciones y manejador global; Clock America/Bogota y auditoría JPA con ese reloj; Salon, ConfiguracionSalon, Plan, Usuario, Rol y repositorios; generador de slug con sufijos desde -2. Verificación de aquella fase: 16 pruebas aprobadas y contexto MySQL iniciado. La relación estilista-servicios y errores de filtros se incorporaron posteriormente en fases 3 y 2, respectivamente.
 
 - El usuario confirmó que origin es su fork. Falta identificar el repositorio padre antes del PR.
 - Antes de implementar los DTOs, aclarar lo que la sección 4 deja sin precisar: representación de servicio/estilista en disponibilidad, obligatoriedad de textos sin indicación expresa y cuerpos de éxito no enumerados. Consultar primero cualquier material oficial adicional; si no lo resuelve, preguntar al usuario, sin inventar el contrato.
