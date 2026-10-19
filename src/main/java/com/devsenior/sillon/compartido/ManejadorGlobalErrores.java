@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 
 @RestControllerAdvice
 public class ManejadorGlobalErrores extends ResponseEntityExceptionHandler {
@@ -71,6 +73,18 @@ public class ManejadorGlobalErrores extends ResponseEntityExceptionHandler {
         LOG.error("Error inesperado al procesar la solicitud", excepcion);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(fabrica.crear(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error interno del servidor"));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorApi> manejarAccesoDenegado(AccessDeniedException excepcion) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(fabrica.crear(HttpStatus.FORBIDDEN, "No tiene permiso para realizar esta acción"));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorApi> manejarDatosDuplicados(DataIntegrityViolationException excepcion) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(fabrica.crear(HttpStatus.CONFLICT, "Los datos entran en conflicto con un registro existente"));
     }
 
     private ResponseEntity<Object> respuesta(HttpStatus estado, String mensaje, HttpHeaders headers) {

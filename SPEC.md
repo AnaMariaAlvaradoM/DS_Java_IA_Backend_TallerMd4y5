@@ -1,6 +1,6 @@
 # Sillón: especificación de la entrega académica
 
-Estado: fases 0 y 1 verificadas. Existen proyecto base, documentación, errores, reloj y entidades iniciales de salón/usuario. Autenticación y endpoints de negocio todavía no están implementados.
+Estado: fases 0, 1 y 2 verificadas. Existen proyecto base, errores, reloj, entidades iniciales, registro, login, JWT, permisos y consulta/configuración del salón. Las fases siguientes todavía no están implementadas.
 Fuentes: enunciado PDF de 40 páginas y README de entrega del repositorio.
 Prioridad: reglas de la sección 3 y contrato de la sección 4 del PDF. Las observaciones de diseño no sustituyen esas reglas.
 
@@ -77,6 +77,12 @@ Orden al agendar: servicio existente/activo, estilista existente/activo y servic
 PENDIENTE permite CONFIRMADA o CANCELADA. CONFIRMADA permite COMPLETADA, CANCELADA o NO_ASISTIO. Los otros estados son finales. Transición inválida: 409.
 
 DUENO administra su salón, catálogo, equipo, agenda, pagos, recordatorios y solicitudes. ESTILISTA consulta servicios y sus citas; solo puede pasar sus citas a COMPLETADA o NO_ASISTIO. Cita ajena para estilista: 404; destino no permitido: 403 antes de validar transición. ADMIN solo tiene acceso administrativo a todos los salones, sin heredar funciones del dueño. Visitante consulta catálogo/disponibilidad, reserva y chatea.
+
+## Aclaraciones confirmadas por el usuario para fase 2
+
+- JWT: duración de 60 minutos, configurable mediante sillon.jwt.expira-en-minutos. El PDF no establece un número.
+- Si el nombre de salón produce un slug vacío (por ejemplo, solo signos), devolver HTTP 400; no inventar un nombre alternativo.
+- Registro: salonNombre, ciudad, direccion, telefono, nombre, email y password son obligatorios. Textos vacíos o solo espacios producen HTTP 400. Se mantienen los máximos y formatos de la sección 4.
 
 ## Contrato HTTP: inventario
 
@@ -199,6 +205,8 @@ Render con Supabase; Swagger /swagger-ui.html y /v3/api-docs públicos; URL real
 13. Postman completo, README y entrega verificable.
 
 ## Pendientes y decisiones a validar
+
+- Fase 2 verificada: registro transaccional y login con BCrypt; JWT de 60 minutos firmado y validado con Clock; usuario autenticado cargado desde base de datos; permisos por rutas y errores 401/403 uniformes; GET /api/salon y PUT /api/salon/configuracion con salonId del principal. Suite: 37 pruebas, 0 fallos, 0 errores; evidencia local target/fase2-final.log. Las pruebas HTTP usan MockMvc con filtros reales y transacciones de prueba revertidas; no se ha ejecutado todavía la colección de Postman ni el calificador remoto.
 
 - Fase 1 implementada: ErrorApi, excepciones y manejador global; Clock America/Bogota y auditoría JPA con ese reloj; Salon, ConfiguracionSalon, Plan, Usuario, Rol y repositorios; generador de slug con sufijos desde -2. La relación estilista-servicios llegará en fase 3. Verificación: 16 pruebas aprobadas y contexto MySQL iniciado. Los errores 401/403 de filtros de seguridad se integrarán en fase 2 con FabricaErrorApi.
 
