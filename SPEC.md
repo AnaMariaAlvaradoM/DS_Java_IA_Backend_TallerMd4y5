@@ -1,6 +1,6 @@
 # Sillón: especificación de la entrega académica
 
-Estado: fase 0 verificada (proyecto base y documentación). Las funcionalidades de negocio de las fases 1–13 todavía no están implementadas.
+Estado: fases 0 y 1 verificadas. Existen proyecto base, documentación, errores, reloj y entidades iniciales de salón/usuario. Autenticación y endpoints de negocio todavía no están implementados.
 Fuentes: enunciado PDF de 40 páginas y README de entrega del repositorio.
 Prioridad: reglas de la sección 3 y contrato de la sección 4 del PDF. Las observaciones de diseño no sustituyen esas reglas.
 
@@ -199,6 +199,8 @@ Render con Supabase; Swagger /swagger-ui.html y /v3/api-docs públicos; URL real
 13. Postman completo, README y entrega verificable.
 
 ## Pendientes y decisiones a validar
+
+- Fase 1 implementada: ErrorApi, excepciones y manejador global; Clock America/Bogota y auditoría JPA con ese reloj; Salon, ConfiguracionSalon, Plan, Usuario, Rol y repositorios; generador de slug con sufijos desde -2. La relación estilista-servicios llegará en fase 3. Verificación: 16 pruebas aprobadas y contexto MySQL iniciado. Los errores 401/403 de filtros de seguridad se integrarán en fase 2 con FabricaErrorApi.
 
 - El usuario confirmó que origin es su fork. Falta identificar el repositorio padre antes del PR.
 - Antes de implementar los DTOs, aclarar lo que la sección 4 deja sin precisar: representación de servicio/estilista en disponibilidad, obligatoriedad de textos sin indicación expresa y cuerpos de éxito no enumerados. Consultar primero cualquier material oficial adicional; si no lo resuelve, preguntar al usuario, sin inventar el contrato.
