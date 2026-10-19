@@ -4,6 +4,7 @@
 
 - Cumplir exactamente la entrega académica descrita en el PDF y su guía README. SPEC.md registra el análisis; no sustituye el enunciado si existe una discrepancia.
 - Trabajar paso a paso. Antes de implementar cada fase, presentar su plan concreto y permitir que el estudiante lo revise. Verificar la fase antes de avanzar a la siguiente.
+- Al cerrar cada fase, contrastar explícitamente el resultado con las reglas, contrato y pasos del documento de requerimientos. Dejar una lista de cumplimiento con evidencia y pendientes; no equiparar tests en verde con entrega completa si falta una comprobación del enunciado.
 - Si una regla, campo o respuesta no está claro, consultar primero el material oficial disponible y preguntar al usuario si persiste la duda. No inventar requisitos ni convertir una propuesta en regla aprobada.
 - No construir interfaz gráfica, envío real de mensajes, reportes ni otras funciones fuera del alcance.
 - No modificar .github/ ni el calificador. Mantener pom.xml y Maven Wrapper en la raíz.

@@ -1,6 +1,7 @@
 package com.devsenior.sillon.cliente;
 
 import com.devsenior.sillon.compartido.excepcion.RecursoNoEncontradoException;
+import com.devsenior.sillon.compartido.excepcion.DatosInvalidosException;
 import com.devsenior.sillon.salon.SalonRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,9 @@ public class ClienteService {
     @Transactional
     public Cliente buscarOCrear(Long salonId, String nombre, String telefono) {
         String normalizado = telefono.replaceAll("[^0-9+]", "");
+        if (!normalizado.matches(".*[0-9].*")) {
+            throw new DatosInvalidosException("clienteTelefono: debe contener al menos un dígito");
+        }
         return clientes.findBySalonIdAndTelefono(salonId, normalizado).orElseGet(() -> {
             Cliente cliente = new Cliente();
             cliente.setNombre(nombre);

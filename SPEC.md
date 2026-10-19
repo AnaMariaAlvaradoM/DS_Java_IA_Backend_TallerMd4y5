@@ -1,6 +1,6 @@
 # Sillón: especificación de la entrega académica
 
-Estado: fases 0–3 verificadas. Existen proyecto base, errores, reloj, autenticación, configuración del salón, servicios, estilistas y base de clientes. La agenda y las fases siguientes todavía no están implementadas.
+Estado: fases 0–4 verificadas. Existen proyecto base, errores, reloj, autenticación, configuración del salón, servicios, estilistas, clientes y agenda interna. Los endpoints públicos y las fases siguientes todavía no están implementados. Desde fase 4, VERIFICACION.md documenta el contraste de cada cierre con el PDF y sus evidencias.
 Fuentes: enunciado PDF de 40 páginas y README de entrega del repositorio.
 Prioridad: reglas de la sección 3 y contrato de la sección 4 del PDF. Las observaciones de diseño no sustituyen esas reglas.
 
@@ -76,6 +76,19 @@ Orden al agendar: servicio existente/activo, estilista existente/activo y servic
 
 PENDIENTE permite CONFIRMADA o CANCELADA. CONFIRMADA permite COMPLETADA, CANCELADA o NO_ASISTIO. Los otros estados son finales. Transición inválida: 409.
 
+Tabla de transiciones para fase 4, antes de implementar el enum (PDF, paso 4.1):
+
+| Estado actual | Destino permitido | Caso del negocio |
+|---|---|---|
+| PENDIENTE | CONFIRMADA | El dueño confirma una reserva en línea |
+| PENDIENTE | CANCELADA | Se cancela una reserva aún sin confirmar |
+| CONFIRMADA | COMPLETADA | El cliente recibió el servicio |
+| CONFIRMADA | CANCELADA | Se cancela una cita confirmada |
+| CONFIRMADA | NO_ASISTIO | El cliente no llegó |
+| COMPLETADA, CANCELADA, NO_ASISTIO | Ninguno | Estados finales |
+
+Solo PENDIENTE y CONFIRMADA ocupan agenda. Toda transición no enumerada, incluido volver al mismo estado, es inválida. El estilista debe además ser dueño de la cita y solo puede usar COMPLETADA o NO_ASISTIO.
+
 DUENO administra su salón, catálogo, equipo, agenda, pagos, recordatorios y solicitudes. ESTILISTA consulta servicios y sus citas; solo puede pasar sus citas a COMPLETADA o NO_ASISTIO. Cita ajena para estilista: 404; destino no permitido: 403 antes de validar transición. ADMIN solo tiene acceso administrativo a todos los salones, sin heredar funciones del dueño. Visitante consulta catálogo/disponibilidad, reserva y chatea.
 
 ## Aclaraciones confirmadas por el usuario para fase 2
@@ -83,6 +96,8 @@ DUENO administra su salón, catálogo, equipo, agenda, pagos, recordatorios y so
 - JWT: duración de 60 minutos, configurable mediante sillon.jwt.expira-en-minutos. El PDF no establece un número.
 - Si el nombre de salón produce un slug vacío (por ejemplo, solo signos), devolver HTTP 400; no inventar un nombre alternativo.
 - Registro: salonNombre, ciudad, direccion, telefono, nombre, email y password son obligatorios. Textos vacíos o solo espacios producen HTTP 400. Se mantienen los máximos y formatos de la sección 4.
+
+Aclaración confirmada para fase 4: si el teléfono de la cita no contiene dígitos después de normalizar, HTTP 400; se mantienen los 7–30 caracteres del contrato de entrada.
 
 ## Contrato HTTP: inventario
 
@@ -206,6 +221,8 @@ Render con Supabase; Swagger /swagger-ui.html y /v3/api-docs públicos; URL real
 
 ## Pendientes y decisiones a validar
 
+- Fase 4 verificada: enum de estados, Cita con cuatro relaciones, auditoría con Clock, cálculo de fin y copia de precio, reglas sin repositorios y cálculo de disponibilidad, método privado agendar compartido, creación/listado/cambio de estado internos. Suite final: 119 pruebas aprobadas; contraste con pasos 4.1–4.5 y páginas 7–8/11/19–20 en VERIFICACION.md. Reservas y disponibilidad públicas pertenecen a fase 5.
+
 - Fase 3 verificada: POST/GET/PUT de servicios, POST/GET de estilistas y GET de clientes según contrato. Servicios filtrados por salón, precios enteros sin truncar decimales, relación estilista-servicios, límite GRATIS con bloqueo de la fila del salón durante el alta y PRO sin límite. Clientes: buscar o crear por teléfono normalizado y unicidad por salón/teléfono; sin endpoint de alta manual. Suite: 52 pruebas aprobadas (15 nuevas), evidencia local target/fase3-tests.log. Sin colección Postman ni calificador remoto ejecutados todavía.
 
 - Fase 2 verificada: registro transaccional y login con BCrypt; JWT de 60 minutos firmado y validado con Clock; usuario autenticado cargado desde base de datos; permisos por rutas y errores 401/403 uniformes; GET /api/salon y PUT /api/salon/configuracion con salonId del principal. Suite: 37 pruebas, 0 fallos, 0 errores; evidencia local target/fase2-final.log. Las pruebas HTTP usan MockMvc con filtros reales y transacciones de prueba revertidas; no se ha ejecutado todavía la colección de Postman ni el calificador remoto.
@@ -215,7 +232,7 @@ Render con Supabase; Swagger /swagger-ui.html y /v3/api-docs públicos; URL real
 - El usuario confirmó que origin es su fork. Falta identificar el repositorio padre antes del PR.
 - Antes de implementar los DTOs, aclarar lo que la sección 4 deja sin precisar: representación de servicio/estilista en disponibilidad, obligatoriedad de textos sin indicación expresa y cuerpos de éxito no enumerados. Consultar primero cualquier material oficial adicional; si no lo resuelve, preguntar al usuario, sin inventar el contrato.
 - Fase 0 verificada: proyecto generado con Initializr y dependencias aprobadas, Maven Wrapper 3.10.0, Java 17, configuración inicial y documentación. Compilación y test de contexto con MySQL verificados (1 test, sin errores). Por instrucción expresa del usuario se retiró la fijación de JUnit 5.14.4: spring-boot-starter-webmvc-test utiliza JUnit 6.0.3 gestionado por Boot. La mención de JUnit 5 en el stack anterior refleja el documento original; esta excepción autorizada se detalla en DEPENDENCIAS.md. Secretos excluidos de Git y .github/ sin modificaciones. La entrega remota y el PR requieren identificar el repositorio padre.
-- Proteger reservas simultáneas para el mismo estilista; una consulta previa de cruces no garantiza exclusión concurrente.
+- En fase 4 se implementó bloqueo del estilista y consulta de cruces con bloqueo en la misma transacción para proteger altas simultáneas. Revisión de código realizada; no se ejecutó prueba de carga concurrente.
 - Analizar carrera de dos peticiones IA con un solo crédito: el descuento atómico evita negativos, pero no impide por sí solo ambas llamadas externas. No alterar el orden contractual sin revisión.
 - No se define desactivar estilistas existentes al perder PRO ni recargar créditos por renovación: no agregar esas conductas sin aclaración.
 - La cuadrícula se exige para disponibilidad; no se exige explícitamente rechazar reservas directas fuera de sus pasos.
