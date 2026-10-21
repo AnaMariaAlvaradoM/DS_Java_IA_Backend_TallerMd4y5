@@ -8,6 +8,14 @@ Fuente: PDF de requerimientos entregado por el usuario, 40 páginas. Las referen
 
 Fecha: 2026-10-21. El estudiante aprobó conservar solo los casos mínimos de las páginas 26–27. Suite actual: **70 pruebas aprobadas, sin fallos, errores ni omisiones**, BUILD SUCCESS en target/fase10-tests.log. Matriz de todos los casos y límites en TESTS-ENTREGA.md. Servicios probados sin Spring, repositorios/IA simulados, Clock fijo y ninguna llamada real a Gemini/Stripe; se conserva el test de contexto completo con MySQL. Se retiraron pruebas adicionales, incluidas regresiones anteriores, sin modificar lógica productiva. Las cifras históricas de las fases siguientes no representan el tamaño actual de la suite. JUnit gestionado por Boot conserva la excepción autorizada documentada.
 
+## Paso 12.1: imagen Docker — fase 12 en curso
+
+Fecha: 2026-10-21. Referencia: PDF página 28. Dockerfile de dos etapas: maven:3.9.16-eclipse-temurin-17 compila con mvn -B -DskipTests package; eclipse-temurin:17-jre ejecuta únicamente el JAR. Imágenes oficiales Maven y Eclipse Temurin. .dockerignore excluye target, .git y secrets.properties, además de archivos de secretos y material local.
+
+Construcción real con docker build: aprobada, sin ejecutar tests como exige el paso. Log local target/paso12-docker-build.log. Contenedor comprobado con Java 17.0.20.1, sin mvn, javac, /app/target ni /app/secrets.properties. Prueba aislada con PostgreSQL 17 temporal y credenciales ficticias: PORT=9090 respetado (mapeado solo en localhost:18080), OpenAPI Sillón API accesible, registro 201, login 200 y consulta autenticada del salón 200. Evidencias: target/paso12-docker-arranque.log y target/paso12-docker-verificacion.log. Contenedores de prueba y red retirados al terminar; no se usó Supabase ni se enviaron llamadas a Stripe/Gemini.
+
+El estudiante creó el proyecto Supabase y confirmó los datos de Session pooler: puerto 5432 y base postgres. No se recibió ni leyó su contraseña. Aún pendientes: conexión real, servicio Render, variables, webhook de destino Render, pago de prueba y URL real en README. No se declara cerrada la fase 12 ni se usa todavía el mensaje de commit de despliegue completo.
+
 ## Fase 11: Swagger
 
 Fecha: 2026-10-21. Referencia: PDF página 27, fase 11. Plan revisado y aprobado por el estudiante antes de implementar.
