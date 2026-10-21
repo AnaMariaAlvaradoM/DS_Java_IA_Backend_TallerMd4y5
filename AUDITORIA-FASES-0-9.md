@@ -4,6 +4,8 @@ Fecha: 2026-10-21, America/Bogota. Código revisado: commit 493e7c3. Esta revisi
 
 ## Resultado
 
+**Actualización tras las correcciones del 2026-10-21:** A01–A03 resueltos y 276 pruebas aprobadas. Se comprobó también el arranque completo sin secrets.properties. El diagnóstico inicial y su matriz se conservan abajo como evidencia histórica; el estado vigente se detalla en «Cierre de hallazgos».
+
 La implementación principal de las fases 0–9 tiene evidencia local y la suite se ejecutó de nuevo: **257 pruebas, 0 fallos, 0 errores, 0 omitidas; BUILD SUCCESS**. Sin embargo, no corresponde declarar cumplimiento total sin reservas: falta una operación del contrato y se reprodujeron dos desajustes de validación que la suite actual no detecta.
 
 No se modificó lógica productiva ni se avanzó a la fase 10 durante la auditoría. Las comprobaciones HTTP utilizaron datos ficticios; los archivos de IDE ajenos se conservaron sin cambios.
@@ -89,4 +91,21 @@ Swagger con título/seguridad/etiquetas, Docker, Render/Supabase, colección Pos
 - target/auditoria-precios-stripe.log: consulta de importes/periodicidad/modo de los precios configurados. Programa temporal target/AuditarPreciosStripe.java, independiente de la suite y sin imprimir llaves.
 - git diff c248ec1 -- .github: sin diferencias. git check-ignore secrets.properties: ignorado; git ls-files e historial de esa ruta sin archivo versionado.
 
-La conclusión de la auditoría es **cumplimiento principal con tres hallazgos pendientes y una excepción de JUnit documentada**, no «100 % de cumplimiento». Antes de avanzar conviene resolver A01–A03, completar la comprobación de arranque pendiente y dejar el estado de publicación/PR acordado con el estudiante.
+La conclusión inicial fue cumplimiento principal con tres hallazgos pendientes y una excepción de JUnit documentada. Las correcciones posteriores se registran a continuación; la publicación/PR y los entregables de fases posteriores siguen pendientes.
+
+## Cierre de hallazgos
+
+Fecha: 2026-10-21. Se corrigieron los hallazgos antes de avanzar a fase 10.
+
+| Hallazgo o comprobación | Corrección y evidencia |
+|---|---|
+| A01: administración | GET /api/admin/salones delega en SalonService y devuelve DTOs dentro de transacción de lectura. Prueba positiva ADMIN con todos los salones; DUENO/ESTILISTA reciben 403 y anónimo 401. No expone contraseñas ni identificadores Stripe |
+| A02: BCrypt | El usuario confirmó mantener BCrypt y rechazar más de 72 bytes UTF-8 con HTTP 400 y mensaje claro. Restricción compartida en registro y alta de estilistas; se conserva mínimo de 8 caracteres. Fronteras ASCII, acentuadas y mixtas: exactamente 72 bytes aceptados y login válido; exceso rechazado sin altas parciales. Login inválido conserva 401 genérico |
+| A03: clienteNombre | Cliente.nombre usa TEXT sin inventar un máximo de entrada. Pruebas privadas y públicas guardan nombres acentuados de 256 caracteres con HTTP 201. Para bases MySQL existentes se ejecutó scripts/001-clientes-nombre-text.mysql.sql: columna TEXT confirmada y el único registro previo conservado. En una base nueva Hibernate crea TEXT directamente |
+| Arranque sin secretos | Contexto completo iniciado desde directorio sin secrets.properties, variables externas de proveedores retiradas y valores de relleno comprobados. Base y usuario MySQL temporales con credenciales ficticias; ambos eliminados al terminar. Sin llamadas a Stripe/Gemini ni cambios en datos de negocio |
+
+Suite final: **276 pruebas, 0 fallos, 0 errores, 0 omitidas; BUILD SUCCESS** en target/correcciones-auditoria-final.log. Las 19 regresiones nuevas están en CorreccionesAuditoriaIntegracionTest. La primera ejecución detectó que ddl-auto=update no ampliaba la columna existente: se aplicó la migración explícita y se repitió la suite sin modificar expectativas.
+
+Evidencia adicional: target/migracion-cliente-nombre.log, target/verificacion-arranque-sin-secretos.log y su log hijo. El primer intento de comprobación aislada falló por construir una ruta Windows con asterisco; se corrigió el programa temporal y la repetición confirmó arranque y limpieza. No fue un fallo de la aplicación.
+
+La excepción autorizada de JUnit 6 continúa documentada. Este cierre no acredita calificador remoto, producción ni entrega completa.
