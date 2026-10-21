@@ -1,5 +1,8 @@
 package com.devsenior.sillon.cita;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "6 Agenda")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/citas")
 public class CitaController {

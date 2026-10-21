@@ -8,6 +8,20 @@ Fuente: PDF de requerimientos entregado por el usuario, 40 páginas. Las referen
 
 Fecha: 2026-10-21. El estudiante aprobó conservar solo los casos mínimos de las páginas 26–27. Suite actual: **70 pruebas aprobadas, sin fallos, errores ni omisiones**, BUILD SUCCESS en target/fase10-tests.log. Matriz de todos los casos y límites en TESTS-ENTREGA.md. Servicios probados sin Spring, repositorios/IA simulados, Clock fijo y ninguna llamada real a Gemini/Stripe; se conserva el test de contexto completo con MySQL. Se retiraron pruebas adicionales, incluidas regresiones anteriores, sin modificar lógica productiva. Las cifras históricas de las fases siguientes no representan el tamaño actual de la suite. JUnit gestionado por Boot conserva la excepción autorizada documentada.
 
+## Fase 11: Swagger
+
+Fecha: 2026-10-21. Referencia: PDF página 27, fase 11. Plan revisado y aprobado por el estudiante antes de implementar.
+
+| Requisito | Cumplimiento y evidencia |
+|---|---|
+| Swagger UI en /swagger-ui.html con título Sillón API | La ruta abre /swagger-ui/index.html. OpenAPI y encabezado visible muestran Sillón API, versión 1.0. ConfiguracionOpenApi y propiedad springdoc.swagger-ui.path |
+| Bearer JWT y Authorize | Esquema bearerAuth de tipo http, scheme bearer, bearerFormat JWT. Controladores privados con SecurityRequirement; en PagoController solo suscripción/créditos lo declaran. Authorize mostró Authorized al aplicar el token ficticio de dueño |
+| Etiquetas numeradas | Verificadas en pantalla y OpenAPI: 0 Público, 1 Autenticación, 2 Mi salón, 3 Servicios, 4 Estilistas, 5 Clientes, 6 Agenda, 7 Pagos, 8 Solicitudes, 9 Administración; orden alfabético configurado. Chat comparte Público y recordatorio comparte Agenda |
+| Swagger muestra 22 rutas | OpenAPI contiene exactamente 22 paths distintos y 25 operaciones HTTP. La cifra del PDF corresponde a rutas, no al total de métodos; no fue necesario retirar endpoints |
+| GET /api/salon con token de dueño desde Swagger responde 200 | Se ejecutó login del dueño ficticio desde Swagger, se aplicó su token en Authorize y se ejecutó GET /api/salon con Try it out/Execute. Server response: 200 y DTO del salón 949. Sin modificar sus datos |
+
+Verificación local de seguridad OpenAPI para las 25 operaciones: cero discrepancias entre rutas públicas y privadas. Inventario ignorado target/fase11-operaciones.json. Captura local de resultado sin credenciales: target/fase11-swagger-200.png. Suite de entrega: **70 pruebas, 0 fallos, 0 errores, 0 omitidas; BUILD SUCCESS** en target/fase11-tests.log. Empaquetado aprobado en target/fase11-package.log y API reiniciada con ese JAR. Sin dependencias nuevas ni cambios a permisos de ejecución. No se hicieron llamadas a IA/Stripe ni se ejecutó calificador remoto o producción.
+
 **Auditoría transversal del 2026-10-21:** la revisión inicial identificó tres hallazgos pese a aprobar 257 pruebas. Los tres se corrigieron antes de fase 10: ruta administrativa, contraseñas Unicode y almacenamiento de nombres largos. Suite final: 276 pruebas, sin fallos, errores ni omisiones. Arranque completo sin secrets.properties verificado en base temporal y limpieza confirmada. API reempaquetada: OpenAPI expone 25 operaciones, incluida GET /api/admin/salones. Evidencias, migración MySQL y límites en «Cierre de hallazgos» de AUDITORIA-FASES-0-9.md. La excepción de JUnit y entrega remota siguen documentadas; no se declara la entrega completa.
 
 ## Fase 4: agenda

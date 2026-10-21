@@ -1,8 +1,11 @@
 package com.devsenior.sillon.chat;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "0 Público")
 @RestController
 @RequestMapping("/api/publico/salones/{slug}/chat")
 public class ChatController {

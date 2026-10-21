@@ -1,5 +1,8 @@
 package com.devsenior.sillon.usuario;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -12,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "4 Estilistas")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/estilistas")
 public class EstilistaController {

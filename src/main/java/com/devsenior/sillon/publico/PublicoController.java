@@ -1,5 +1,7 @@
 package com.devsenior.sillon.publico;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.devsenior.sillon.cita.CitaRequest;
 import com.devsenior.sillon.cita.CitaResponse;
 import jakarta.validation.Valid;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "0 Público")
 @RestController
 @RequestMapping("/api/publico/salones/{slug}")
 public class PublicoController {
