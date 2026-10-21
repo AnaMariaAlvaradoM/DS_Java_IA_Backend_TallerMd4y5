@@ -1,4 +1,4 @@
-package com.devsenior.sillon.config;
+package com.devsenior.sillon.security.config;
 
 import com.devsenior.sillon.salon.repository.SalonRepository;
 import com.devsenior.sillon.salon.service.GeneradorSlugService;

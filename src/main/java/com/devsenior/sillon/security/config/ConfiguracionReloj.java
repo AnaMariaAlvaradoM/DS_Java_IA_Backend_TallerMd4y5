@@ -1,4 +1,4 @@
-package com.devsenior.sillon.config;
+package com.devsenior.sillon.security.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

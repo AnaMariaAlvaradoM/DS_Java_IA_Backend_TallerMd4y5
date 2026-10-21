@@ -1,7 +1,10 @@
 package com.devsenior.sillon.salon.model;
 
+import com.devsenior.sillon.usuario.model.Usuario;
 import jakarta.persistence.*;
 import org.hibernate.validator.constraints.Length;
+
+import java.util.List;
 
 //id, nombre, slug (único), ciudad, direccion,
 //telefono, plan, creditosIa, stripeSuscripcionId,
@@ -40,15 +43,16 @@ public class Salon {
     private Plan plan;
 
     private Integer creditosIa;
-    @Column(nullable = false)
-    private String stripeSuscripcionId;
+    @Column()
+    private String stripeSubscriptionId;
 
     @Embedded
     private ConfiguracionSalon configuracion = new ConfiguracionSalon();
 
     @Column(name = "fecha_creacion")
     private String fechaCreacion;
-
+    @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Usuario> usuarios;
     public Salon() {
     }
 
@@ -92,8 +96,8 @@ public class Salon {
         this.telefono = telefono;
     }
 
-    public void setStripeSuscripcionId(String stripeSuscripcionId) {
-        this.stripeSuscripcionId = stripeSuscripcionId;
+    public void setStripeSubscriptionId(String stripeSubscriptionId) {
+        this.stripeSubscriptionId = stripeSubscriptionId;
     }
 
     public Plan getPlan() {
@@ -108,8 +112,8 @@ public class Salon {
         this.nombresalon = nombresalon;
     }
 
-    public String getStripeSuscripcionId() {
-        return stripeSuscripcionId;
+    public String getStripeSubscriptionId() {
+        return stripeSubscriptionId;
     }
 
     public void setPlan(Plan plan) {

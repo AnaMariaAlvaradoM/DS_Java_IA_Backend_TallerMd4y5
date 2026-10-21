@@ -3,6 +3,8 @@ import com.devsenior.sillon.dto.ErrorRespuesta;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -22,7 +25,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ReglaNegocioException.class)
     public ResponseEntity<ErrorRespuesta> manejarReglaNegocio(ReglaNegocioException ex) {
-        return crearRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(PagoRequeridoException.class)
@@ -33,11 +42,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccionNoPermitidaException.class)
     public ResponseEntity<ErrorRespuesta> manejarAccionNoPermitida(AccionNoPermitidaException ex) {
         return crearRespuesta(HttpStatus.FORBIDDEN, ex.getMessage());
-    }
-
-    @ExceptionHandler(CredencialesInvalidasException.class)
-    public ResponseEntity<ErrorRespuesta> manejarCredencialesInvalidas(CredencialesInvalidasException ex) {
-        return crearRespuesta(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     @ExceptionHandler(FirmaInvalidaException.class)
@@ -54,12 +58,19 @@ public class GlobalExceptionHandler {
 
     // Errores de validación de Jakarta (@Valid en DTOs)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorRespuesta> manejarValidacion(MethodArgumentNotValidException ex) {
-        String mensaje = ex.getBindingResult().getFieldErrors().stream()
-                .map(err -> err.getField() + ": " + err.getDefaultMessage())
-                .reduce((a, b) -> a + ", " + b)
-                .orElse("Error de validación en la petición");
-        return crearRespuesta(HttpStatus.BAD_REQUEST, mensaje);
+    public ResponseEntity<ErrorRespuesta> manejarValidacionCampos(MethodArgumentNotValidException ex) {
+        String mensajeDetallado = ex.getBindingResult().getFieldErrors().stream()
+                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                mensajeDetallado
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     // JSON mal formado en el body
@@ -99,5 +110,19 @@ public class GlobalExceptionHandler {
                 mensaje
         );
         return new ResponseEntity<>(error, status);
+    }
+    @ExceptionHandler({
+            CredencialesInvalidasException.class,
+            BadCredentialsException.class,
+            AuthenticationException.class
+    })
+    public ResponseEntity<ErrorRespuesta> manejarCredencialesInvalidas(Exception ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+                "Credenciales inválidas"
+        );
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 }
