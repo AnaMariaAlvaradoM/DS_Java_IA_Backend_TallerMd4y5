@@ -41,16 +41,6 @@ class ReglasAgendaTest {
                 () -> reglas.validarHorario(config, domingo.atTime(10, 0), domingo.atTime(10, 45)));
         assertTrue(reglas.horariosLibres(config, domingo, 45, List.of()).isEmpty());
     }
-    @Test void domingoAbiertoPermiteAgendar() {
-        config.setAbreDomingos(true);
-        LocalDate domingo = LocalDate.of(2026, 10, 25);
-        assertDoesNotThrow(() -> reglas.validarHorario(config, domingo.atTime(10, 0), domingo.atTime(10, 45)));
-        assertFalse(reglas.horariosLibres(config, domingo, 45, List.of()).isEmpty());
-    }
-    @Test void citaNoPuedePasarAlDiaSiguiente() {
-        assertThrows(ReglaNegocioException.class,
-                () -> reglas.validarHorario(config, martes.atTime(18, 0), martes.plusDays(1).atTime(9, 0)));
-    }
     @Test void disponibilidadExcluyeCrucesYRespetaCuadricula() {
         Cita cita = ocupada(martes.atTime(10, 0), EstadoCita.PENDIENTE);
         List<LocalTime> libres = reglas.horariosLibres(config, martes, 45, List.of(cita));
@@ -63,14 +53,6 @@ class ReglasAgendaTest {
     @Test void hoyUsaLaHoraDeColombiaYExcluyePasado() {
         var libres = reglas.horariosLibres(config, LocalDate.of(2026, 10, 19), 45, List.of());
         assertEquals(LocalTime.of(10, 30), libres.get(0));
-    }
-    @Test void citaFinalNoBloqueaAgenda() {
-        Cita cita = ocupada(martes.atTime(10, 0), EstadoCita.CANCELADA);
-        assertTrue(reglas.horariosLibres(config, martes, 45, List.of(cita)).contains(LocalTime.of(10, 0)));
-    }
-    @Test void intervalosContiguosNoSeCruzan() {
-        assertFalse(reglas.seCruzan(martes.atTime(10, 0), martes.atTime(10, 45),
-                martes.atTime(10, 45), martes.atTime(11, 30)));
     }
     private Cita ocupada(LocalDateTime inicio, EstadoCita estado) {
         Cita cita = new Cita();

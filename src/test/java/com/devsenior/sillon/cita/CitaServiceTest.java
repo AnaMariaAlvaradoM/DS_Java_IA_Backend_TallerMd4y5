@@ -83,22 +83,6 @@ class CitaServiceTest {
         assertThrows(ReglaNegocioException.class, () -> service.crear(1L, request(inicio)));
         verify(citas, never()).saveAndFlush(any());
     }
-    @Test void servicioInactivoNoConsultaEstilistaNiGuarda() {
-        servicio.setActivo(false);
-        assertThrows(ReglaNegocioException.class, () -> service.crear(1L, request(inicio)));
-        verifyNoInteractions(usuarios, clientes);
-        verify(citas, never()).saveAndFlush(any());
-    }
-    @Test void estilistaInactivoNoGuardaNiCreaCliente() {
-        estilista.setActivo(false);
-        assertThrows(ReglaNegocioException.class, () -> service.crear(1L, request(inicio)));
-        verifyNoInteractions(clientes);
-        verify(citas, never()).saveAndFlush(any());
-    }
-    @Test void servicioDeOtroSalonEs404() {
-        assertThrows(RecursoNoEncontradoException.class, () -> service.crear(9L, request(inicio)));
-        verifyNoInteractions(usuarios, clientes);
-    }
     @Test void citaAjenaAlEstilistaEs404() {
         Cita cita = existente(EstadoCita.CONFIRMADA);
         Usuario otro = new Usuario(); otro.setId(8L); cita.setEstilista(otro);
@@ -117,16 +101,6 @@ class CitaServiceTest {
         assertThrows(ReglaNegocioException.class,
                 () -> service.cambiarEstado(dueno(), 10L, EstadoCita.CONFIRMADA));
         verify(citas, never()).saveAndFlush(any());
-    }
-    @Test void duenoConfirmaReservaConSaveAndFlush() {
-        existente(EstadoCita.PENDIENTE);
-        assertEquals(EstadoCita.CONFIRMADA, service.cambiarEstado(dueno(), 10L, EstadoCita.CONFIRMADA).estado());
-        verify(citas).saveAndFlush(any());
-    }
-    @Test void agendaSinFechaUsaHoyDeColombiaYFiltraEstilista() {
-        service.listar(new UsuarioPrincipal(estilista), null);
-        verify(citas).findAllBySalonIdAndEstilistaIdAndInicioGreaterThanEqualAndInicioLessThanOrderByInicioAsc(
-                1L, 3L, LocalDate.of(2026, 10, 19).atStartOfDay(), LocalDate.of(2026, 10, 20).atStartOfDay());
     }
     private CitaRequest request(LocalDateTime hora) { return new CitaRequest("Andrés", "3102223344", 2L, 3L, hora, null); }
     private UsuarioPrincipal dueno() {

@@ -31,6 +31,7 @@ class ChatServiceTest {
     @BeforeEach void preparar() {
         when(catalogo.conocimiento("salon")).thenReturn(new ConocimientoSalon(1L, "La Navaja", "Calle 10", "Lunes a sábado",
                 "Corte clásico (45 minutos): $35.000"));
+        when(creditos.consumir(1L)).thenReturn(9);
         when(ia.completar(anyString(), anyString())).thenReturn(respuesta("{\"respuesta\":\"El corte cuesta $35.000\",\"escalar\":false}"));
         when(solicitudes.crear(anyLong(), anyString(), anyString(), anyString(), any()))
                 .thenReturn(new SolicitudResponse(7L, "Valentina", "3102223344", "mensajes", MotivoSolicitud.PEDIDO_POR_IA, EstadoSolicitud.PENDIENTE, null));
@@ -38,6 +39,7 @@ class ChatServiceTest {
 
     @Test void preguntaNormalRespetaOrdenYSeparaHistorial() {
         ChatResponse resultado = chat.responder("salon", request);
+        verify(creditos, times(1)).consumir(1L);
         assertFalse(resultado.escalado()); assertNull(resultado.solicitudId()); assertEquals("openai", resultado.factura().proveedor());
         verifyNoInteractions(solicitudes);
         var instrucciones = org.mockito.ArgumentCaptor.forClass(String.class);
@@ -66,30 +68,10 @@ class ChatServiceTest {
         verifyNoMoreInteractions(solicitudes);
     }
 
-    @ParameterizedTest @ValueSource(strings = {"{}", "no es JSON", "{\"respuesta\":\"\",\"escalar\":false}",
-            "{\"respuesta\":\"hola\"}", "{\"respuesta\":\"hola\",\"escalar\":\"false\"}", "{\"respuesta\":123,\"escalar\":false}"})
-    void jsonInvalidoConsumePeroNoCreaSolicitud(String json) {
-        when(ia.completar(anyString(), anyString())).thenReturn(respuesta(json));
-        assertThrows(RespuestaIAInvalidaException.class, () -> chat.responder("salon", request));
-        verify(creditos).consumir(1L); verifyNoInteractions(solicitudes);
-    }
-
     @Test void sinCreditosNoCargaPromptNiLlamaIa() {
         doThrow(new PagoRequeridoException("Sin saldo")).when(creditos).verificar(1L);
         assertThrows(PagoRequeridoException.class, () -> chat.responder("salon", request));
         verifyNoInteractions(prompts, ia, lector, solicitudes); verify(creditos, never()).consumir(any());
-    }
-
-    @Test void salonInexistenteNoConsultaSaldoNiLlamaIa() {
-        when(catalogo.conocimiento("otro")).thenThrow(new RecursoNoEncontradoException("Salón no encontrado"));
-        assertThrows(RecursoNoEncontradoException.class, () -> chat.responder("otro", request));
-        verifyNoInteractions(creditos, prompts, ia, lector, solicitudes);
-    }
-
-    @Test void proveedoresNoDisponiblesNoConsumen() {
-        when(ia.completar(anyString(), anyString())).thenThrow(new IaNoDisponibleException());
-        assertThrows(IaNoDisponibleException.class, () -> chat.responder("salon", request));
-        verify(creditos, never()).consumir(any()); verifyNoInteractions(lector, solicitudes);
     }
 
     private RespuestaIA respuesta(String texto) {

@@ -4,6 +4,10 @@ Este registro distingue inspección del código, pruebas locales y comprobacione
 
 Fuente: PDF de requerimientos entregado por el usuario, 40 páginas. Las referencias de página siguientes corresponden a ese PDF. Las aclaraciones del usuario se registran aparte en SPEC.md.
 
+## Fase 10: pruebas automáticas
+
+Fecha: 2026-10-21. El estudiante aprobó conservar solo los casos mínimos de las páginas 26–27. Suite actual: **70 pruebas aprobadas, sin fallos, errores ni omisiones**, BUILD SUCCESS en target/fase10-tests.log. Matriz de todos los casos y límites en TESTS-ENTREGA.md. Servicios probados sin Spring, repositorios/IA simulados, Clock fijo y ninguna llamada real a Gemini/Stripe; se conserva el test de contexto completo con MySQL. Se retiraron pruebas adicionales, incluidas regresiones anteriores, sin modificar lógica productiva. Las cifras históricas de las fases siguientes no representan el tamaño actual de la suite. JUnit gestionado por Boot conserva la excepción autorizada documentada.
+
 **Auditoría transversal del 2026-10-21:** la revisión inicial identificó tres hallazgos pese a aprobar 257 pruebas. Los tres se corrigieron antes de fase 10: ruta administrativa, contraseñas Unicode y almacenamiento de nombres largos. Suite final: 276 pruebas, sin fallos, errores ni omisiones. Arranque completo sin secrets.properties verificado en base temporal y limpieza confirmada. API reempaquetada: OpenAPI expone 25 operaciones, incluida GET /api/admin/salones. Evidencias, migración MySQL y límites en «Cierre de hallazgos» de AUDITORIA-FASES-0-9.md. La excepción de JUnit y entrega remota siguen documentadas; no se declara la entrega completa.
 
 ## Fase 4: agenda

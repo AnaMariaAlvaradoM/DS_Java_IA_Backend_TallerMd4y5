@@ -2,6 +2,8 @@
 
 Fecha: 2026-10-21, America/Bogota. Código revisado: commit 493e7c3. Esta revisión no declara la entrega completa ni reemplaza el PDF.
 
+Nota posterior de fase 10: el estudiante solicitó conservar solo los casos mínimos del PDF. La suite vigente tiene 70 pruebas; TESTS-ENTREGA.md detalla su alcance. Las 257/276 pruebas y las regresiones citadas aquí son evidencia histórica de la auditoría, no cobertura actual.
+
 ## Resultado
 
 **Actualización tras las correcciones del 2026-10-21:** A01–A03 resueltos y 276 pruebas aprobadas. Se comprobó también el arranque completo sin secrets.properties. El diagnóstico inicial y su matriz se conservan abajo como evidencia histórica; el estado vigente se detalla en «Cierre de hallazgos».

@@ -2,8 +2,6 @@ package com.devsenior.sillon.cita;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import com.devsenior.sillon.compartido.excepcion.PagoRequeridoException;
-import com.devsenior.sillon.compartido.excepcion.ReglaNegocioException;
 import com.devsenior.sillon.ia.*;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,37 +35,12 @@ class RecordatorioServiceTest {
         orden.verify(creditos).consumir(1L); orden.verify(lector).leer(any(), eq(RecordatorioService.BorradorIa.class));
     }
 
-    @ParameterizedTest @ValueSource(strings = {"{}", "{\"mensaje\":null}", "{\"mensaje\":\" \"}", "{\"mensaje\":123}", "no es JSON"})
+    @ParameterizedTest @ValueSource(strings = {"{}"})
     void respuestaInvalidaEs502PeroConsumeCredito(String texto) {
         when(ia.completar(anyString(), anyString())).thenReturn(respuesta(texto));
-        assertThrows(RespuestaIAInvalidaException.class, () -> servicio.generar(1L, 2L));
+        var error = assertThrows(RespuestaIAInvalidaException.class, () -> servicio.generar(1L, 2L));
+        assertEquals(org.springframework.http.HttpStatus.BAD_GATEWAY, error.getEstado());
         verify(creditos).consumir(1L);
-    }
-
-    @Test void longitud700SeAceptaY701Es502ConCreditoConsumido() {
-        when(ia.completar(anyString(), anyString())).thenReturn(respuesta("{\"mensaje\":\"" + "a".repeat(700) + "\"}"));
-        assertEquals(700, servicio.generar(1L, 2L).mensaje().length());
-        when(ia.completar(anyString(), anyString())).thenReturn(respuesta("{\"mensaje\":\"" + "a".repeat(701) + "\"}"));
-        assertThrows(RespuestaIAInvalidaException.class, () -> servicio.generar(1L, 2L));
-        verify(creditos, times(2)).consumir(1L);
-    }
-
-    @Test void citaInvalidaNoVerificaSaldoNiLlamaIa() {
-        when(citas.datosRecordatorio(1L, 2L)).thenThrow(new ReglaNegocioException("Cita completada"));
-        assertThrows(ReglaNegocioException.class, () -> servicio.generar(1L, 2L));
-        verifyNoInteractions(creditos, prompts, ia, lector);
-    }
-
-    @Test void sinCreditosNoCargaPromptNiLlamaIa() {
-        doThrow(new PagoRequeridoException("Sin créditos")).when(creditos).verificar(1L);
-        assertThrows(PagoRequeridoException.class, () -> servicio.generar(1L, 2L));
-        verifyNoInteractions(prompts, ia, lector); verify(creditos, never()).consumir(any());
-    }
-
-    @Test void proveedoresNoDisponiblesNoConsumenCredito() {
-        when(ia.completar(anyString(), anyString())).thenThrow(new IaNoDisponibleException());
-        assertThrows(IaNoDisponibleException.class, () -> servicio.generar(1L, 2L));
-        verify(creditos, never()).consumir(any()); verifyNoInteractions(lector);
     }
 
     private RespuestaIA respuesta(String texto) {

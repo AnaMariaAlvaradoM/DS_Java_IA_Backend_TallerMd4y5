@@ -21,8 +21,4 @@ class EstadoCitaTest {
         assertEquals(permitida, origen.permite(destino));
     }
 
-    @ParameterizedTest @EnumSource(EstadoCita.class)
-    void soloPendienteYConfirmadaOcupanAgenda(EstadoCita estado) {
-        assertEquals(estado == EstadoCita.PENDIENTE || estado == EstadoCita.CONFIRMADA, estado.ocupaAgenda());
-    }
 }
