@@ -20,6 +20,9 @@ import com.devsenior.sillon.usuario.UsuarioRepository;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
+import java.text.NumberFormat;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,5 +88,17 @@ public class CatalogoService {
 
     private Salon buscarSalon(String slug) {
         return salones.findBySlug(slug).orElseThrow(() -> new RecursoNoEncontradoException("Salón no encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    public ConocimientoSalon conocimiento(String slug) {
+        Salon salon = buscarSalon(slug);
+        NumberFormat pesos = NumberFormat.getIntegerInstance(Locale.forLanguageTag("es-CO"));
+        String catalogo = servicios.findAllBySalonIdAndActivoTrue(salon.getId()).stream()
+                .map(servicio -> servicio.getNombre() + " (" + servicio.getDuracionMinutos()
+                        + " minutos): $" + pesos.format(servicio.getPrecio()))
+                .collect(Collectors.joining("\n"));
+        return new ConocimientoSalon(salon.getId(), salon.getNombre(), salon.getDireccion() + ", " + salon.getCiudad(),
+                horario.describir(salon.getConfiguracion()), catalogo);
     }
 }
