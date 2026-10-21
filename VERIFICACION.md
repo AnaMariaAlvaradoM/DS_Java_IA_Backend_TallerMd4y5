@@ -4,6 +4,8 @@ Este registro distingue inspección del código, pruebas locales y comprobacione
 
 Fuente: PDF de requerimientos entregado por el usuario, 40 páginas. Las referencias de página siguientes corresponden a ese PDF. Las aclaraciones del usuario se registran aparte en SPEC.md.
 
+**Auditoría transversal del 2026-10-21:** la suite volvió a aprobar 257 pruebas, pero se identificaron tres hallazgos pendientes: ruta administrativa ausente, contraseñas Unicode con error 500 y nombre de cliente largo con conflicto engañoso. Véase AUDITORIA-FASES-0-9.md. Los cierres históricos de abajo describen la evidencia obtenida en cada fase y no invalidan estos hallazgos posteriores. No se declara cumplimiento total sin reservas.
+
 ## Fase 4: agenda
 
 Fecha de revisión: 2026-10-19. Referencias: páginas 7–8 (reglas), 11 (contrato), 19–20 (pasos de construcción) y 26 (casos mínimos de pruebas).
