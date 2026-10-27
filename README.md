@@ -2,6 +2,16 @@
 
 **Java AI Engineer · Dev Senior Code**
 
+## API desplegada
+
+- Producción: https://ds-java-ia-backend-tallermd4y5.onrender.com
+- [Swagger UI](https://ds-java-ia-backend-tallermd4y5.onrender.com/swagger-ui.html)
+- [OpenAPI](https://ds-java-ia-backend-tallermd4y5.onrender.com/v3/api-docs)
+
+Despliegue verificado el 2026-10-27 con PostgreSQL de Supabase mediante Session pooler. Registro y login comprobados; un pago Stripe de modo prueba activó PRO y dejó 310 créditos, confirmado por la API y por consulta del estudiante en Supabase. No se usan tarjetas reales para las pruebas académicas.
+
+El detalle de cumplimiento está en [VERIFICACION.md](VERIFICACION.md). La colección Postman y el README final corresponden a la fase 13 y siguen pendientes. El PR no se abrirá todavía, por indicación del estudiante. Debajo se conserva temporalmente la guía original de entrega.
+
 ---
 
 ## ¿Qué es esto?

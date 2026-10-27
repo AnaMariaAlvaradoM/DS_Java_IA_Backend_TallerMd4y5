@@ -8,13 +8,32 @@ Fuente: PDF de requerimientos entregado por el usuario, 40 páginas. Las referen
 
 Fecha: 2026-10-21. El estudiante aprobó conservar solo los casos mínimos de las páginas 26–27. Suite actual: **70 pruebas aprobadas, sin fallos, errores ni omisiones**, BUILD SUCCESS en target/fase10-tests.log. Matriz de todos los casos y límites en TESTS-ENTREGA.md. Servicios probados sin Spring, repositorios/IA simulados, Clock fijo y ninguna llamada real a Gemini/Stripe; se conserva el test de contexto completo con MySQL. Se retiraron pruebas adicionales, incluidas regresiones anteriores, sin modificar lógica productiva. Las cifras históricas de las fases siguientes no representan el tamaño actual de la suite. JUnit gestionado por Boot conserva la excepción autorizada documentada.
 
-## Paso 12.1: imagen Docker — fase 12 en curso
+## Fase 12: Docker, Render y Supabase
+
+Cierre: 2026-10-27, America/Bogota. Referencia: páginas 28–29 del PDF. API real: https://ds-java-ia-backend-tallermd4y5.onrender.com. No se abrió PR, por instrucción expresa del estudiante.
+
+| Paso o comprobación del PDF | Evidencia y resultado |
+|---|---|
+| 12.1 Dockerfile de dos etapas, Maven/Java 17 sin tests y JRE 17; exclusiones | Construcción y arranque locales verificados el 2026-10-21, detallados debajo. Archivos en raíz y commit 58d0ab2 subido al fork |
+| 12.2 Supabase y Session pooler 5432 | Estudiante creó el proyecto y confirmó host del pooler, usuario, puerto 5432 y base postgres. No se cambiaron entidades. Persistencia real confirmada con registro y lectura del mismo salón desde Render y SQL Editor de Supabase |
+| 12.3 Web Service Docker, variables y URL pública | Estudiante creó el servicio desde el fork e introdujo variables directamente en Render. Swagger y OpenAPI respondieron 200, título Sillón API y 22 rutas. URL real registrada en README. No se inspeccionaron valores secretos |
+| 12.4 Destino webhook en Render, modo prueba | Estudiante configuró el destino de eventos siguiendo checkout.session.completed y customer.subscription.deleted y actualizó STRIPE_SECRETO_WEBHOOK del destino, además de URL_PUBLICA. Checkout de prueba creado por backend con HTTP 200 y sesión cs_test_. Tras el pago manual, la API comprobó PRO/310 |
+| Registro y login en producción | POST /api/auth/registro devolvió 201 y POST /api/auth/login 200 con datos ficticios. Salón 2 creado en GRATIS/10 antes del pago |
+| Pago de prueba deja PRO en Supabase | Tras completar el estudiante Checkout, GET /api/salon devolvió id 2, PRO y 310 créditos. El estudiante ejecutó SELECT id, nombre, plan, creditos_ia FROM public.salones WHERE id = 2; la captura aportada muestra los mismos valores en Supabase |
+
+Incidencia real: el primer Checkout devolvió 502 con el mensaje «Stripe debe estar configurado en modo prueba». La condición del código detectaba que el valor no empezaba por sk_test_. El estudiante corrigió la variable en Render y volvió a desplegar; la repetición devolvió 200. No se modificó la validación ni se leyó la llave. Un salón ficticio previo quedó de aquella ejecución; el cierre se basa en el salón 2 de la repetición correcta.
+
+Evidencia local ignorada: target/fase12-render-verificacion.log y script target/verificar-fase12-render.ps1. El estado de sesión queda en target/fase12-render-prueba-local.json, ignorado y no incluido en el commit; no se publican tokens. La comprobación SQL fue ejecutada por el estudiante y vista en su captura, no mediante acceso directo del asistente a la base. La URL de éxito de pago no se tomó por sí sola como evidencia de cambio de plan.
+
+Límites: no se repitió cancelación de suscripción ni compra de créditos en Render, no se llamó a Gemini y no se ejecutó el calificador oficial. La colección Postman y el README final siguen pendientes de fase 13; no se declara completa la entrega académica. No se repitió la suite Java en este cierre documental: la última ejecución de código aprobó 70 pruebas en fase 11, y el Dockerfile compila sin ejecutarlas conforme al paso 12.1.
+
+### Evidencia histórica del paso 12.1
 
 Fecha: 2026-10-21. Referencia: PDF página 28. Dockerfile de dos etapas: maven:3.9.16-eclipse-temurin-17 compila con mvn -B -DskipTests package; eclipse-temurin:17-jre ejecuta únicamente el JAR. Imágenes oficiales Maven y Eclipse Temurin. .dockerignore excluye target, .git y secrets.properties, además de archivos de secretos y material local.
 
 Construcción real con docker build: aprobada, sin ejecutar tests como exige el paso. Log local target/paso12-docker-build.log. Contenedor comprobado con Java 17.0.20.1, sin mvn, javac, /app/target ni /app/secrets.properties. Prueba aislada con PostgreSQL 17 temporal y credenciales ficticias: PORT=9090 respetado (mapeado solo en localhost:18080), OpenAPI Sillón API accesible, registro 201, login 200 y consulta autenticada del salón 200. Evidencias: target/paso12-docker-arranque.log y target/paso12-docker-verificacion.log. Contenedores de prueba y red retirados al terminar; no se usó Supabase ni se enviaron llamadas a Stripe/Gemini.
 
-El estudiante creó el proyecto Supabase y confirmó los datos de Session pooler: puerto 5432 y base postgres. No se recibió ni leyó su contraseña. Aún pendientes: conexión real, servicio Render, variables, webhook de destino Render, pago de prueba y URL real en README. No se declara cerrada la fase 12 ni se usa todavía el mensaje de commit de despliegue completo.
+Al cerrar únicamente el paso 12.1 aún estaban pendientes conexión real, Render, webhook, pago y URL real. Esos puntos se comprobaron después en el cierre de fase 12 registrado arriba. No se recibió ni leyó la contraseña de Supabase.
 
 ## Fase 11: Swagger
 
