@@ -58,6 +58,24 @@ Se parametrizaron los tests mínimos existentes de PRO y paquete con tipo, tipoC
 
 ChatServiceTest se renombró a ChatbotServiceTest, con los mismos casos y aserciones, para identificar claramente su propósito y permitir su detección por el criterio oficial. Se retiraron únicamente sus antiguos artefactos compilados/reportes locales para evitar duplicados. No se añadieron dependencias ni se modificó .github/. Se actualizará el mismo PR #5; resultado oficial posterior a estas correcciones aún pendiente.
 
+### Evaluación oficial aprobada: 5.0/5.0, 145/145
+
+El 2026-10-27 la ejecución [40547139089](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/actions/runs/40547139089) terminó con success sobre la revisión 1a0c7f6299c11df7f5eb03e83686d38cb7e62a6e. El [comentario oficial del PR #5](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/pull/5#issuecomment-6446761040) publicó **5.0/5.0 y 145/145 pruebas aprobadas**. Confirmación obtenida mediante la API de GitHub; no es una estimación basada en las pruebas locales.
+
+| Criterio oficial | Resultado |
+|---|---|
+| 01 Registro, login y configuración | 14/14 |
+| 02 Catálogo y equipo | 9/9 |
+| 03 Agenda | 34/34 |
+| 04 Aislamiento y roles | 7/7 |
+| 05 IA: recordatorio y chatbot | 16/16 |
+| 06 Pagos con Stripe | 29/29 |
+| 07 Tests JUnit | 8/8 |
+| 08 Repositorio y entrega | 12/12 |
+| 09 Producción en Render | 16/16 |
+
+Quedan verificadas las correcciones aprobadas y los nueve criterios oficiales en esa revisión. El PR permanece abierto para revisión de la instructora; no se fusionó ni se creó otro PR. Se conserva la documentación de JUnit gestionado por Boot, de autoría asistida y de los fallos históricos. Los límites de pruebas manuales anteriores no se presentan como nuevas ejecuciones; el resultado 145/145 corresponde al calificador oficial enlazado.
+
 ## Fase 10: pruebas automáticas
 
 Fecha: 2026-10-21. El estudiante aprobó conservar solo los casos mínimos de las páginas 26–27. Suite actual: **70 pruebas aprobadas, sin fallos, errores ni omisiones**, BUILD SUCCESS en target/fase10-tests.log. Matriz de todos los casos y límites en TESTS-ENTREGA.md. Servicios probados sin Spring, repositorios/IA simulados, Clock fijo y ninguna llamada real a Gemini/Stripe; se conserva el test de contexto completo con MySQL. Se retiraron pruebas adicionales, incluidas regresiones anteriores, sin modificar lógica productiva. Las cifras históricas de las fases siguientes no representan el tamaño actual de la suite. JUnit gestionado por Boot conserva la excepción autorizada documentada.
