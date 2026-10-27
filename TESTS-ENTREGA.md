@@ -16,8 +16,8 @@ Fuente: PDF original, páginas 26–27, fase 10. El estudiante aprobó conservar
 | Tercer estilista GRATIS (402) y tercero PRO permitido | usuario/EstilistaServiceTest: tercerEstilistaGratisEs402 y tercerEstilistaProSeCrea; repositorios y codificador simulados |
 | PRO activa plan y suma créditos; paquete solo suma | pago/WebhookServiceTest: pagoProActivaPlanSumaCreditosYEventoRepetidoNoSeAplica, paqueteSoloSumaCreditos |
 | Evento repetido no se aplica; cancelación vuelve a GRATIS; firma falsa | pago/WebhookServiceTest: repetición comprobada sin segundo guardado, cancelacionVuelveAGratis, firmaFalsaEs400YNoProcesa |
-| Chat sin créditos no llama IA; normal consume uno sin escalar | chat/ChatServiceTest: sinCreditosNoCargaPromptNiLlamaIa, preguntaNormalRespetaOrdenYSeparaHistorial |
-| IA pide escalar y crea solicitud; cupón se sustituye por mensaje seguro | chat/ChatServiceTest: iaEscalaYGuardaSoloMensajesDelCliente, reglaDeSeguridadTienePrioridadYCreaUnaSolaSolicitud; este último parametrizado con escalar falso/verdadero |
+| Chat sin créditos no llama IA; normal consume uno sin escalar | chat/ChatbotServiceTest: sinCreditosNoCargaPromptNiLlamaIa, preguntaNormalRespetaOrdenYSeparaHistorial |
+| IA pide escalar y crea solicitud; cupón se sustituye por mensaje seguro | chat/ChatbotServiceTest: iaEscalaYGuardaSoloMensajesDelCliente, reglaDeSeguridadTienePrioridadYCreaUnaSolaSolicitud; este último parametrizado con escalar falso/verdadero |
 | Recordatorio devuelve mensaje/saldo; JSON sin mensaje produce 502 | cita/RecordatorioServiceTest: respuestaValidaRespetaOrdenYContrato, respuestaInvalidaEs502PeroConsumeCredito, entrada {} y estado BAD_GATEWAY explícito |
 | Motor reutilizado: fallback, clasificación de errores, prompts y lector JSON | ia/AsistenteIATest, ia/ProveedorIAExceptionTest e ia/LectorJsonYPromptsTest, adaptados del paquete reutilizado |
 | Contexto completo con MySQL encendido | SillonApplicationTests.contextLoads |
@@ -27,6 +27,8 @@ Fuente: PDF original, páginas 26–27, fase 10. El estudiante aprobó conservar
 Fecha: 2026-10-21, America/Bogota. Java 17 y Maven Wrapper. Comando de pruebas: `./mvnw.cmd test` (esta ejecución usó además repositorio Maven local y modo offline disponibles en el equipo).
 
 Resultado real: **70 pruebas, 0 fallos, 0 errores, 0 omitidas; BUILD SUCCESS**. Log local ignorado: target/fase10-tests.log. Se eliminaron previamente las clases de tests compiladas y reportes antiguos para evitar ejecutar clases retiradas.
+
+Actualización del 2026-10-27: suite actual de **75 pruebas aprobadas**, sin omisiones, tras la compatibilidad de metadata Stripe expresamente aprobada por el estudiante. Los casos mínimos de PRO/paquete se parametrizan con tipo, tipoCompra y ambas iguales; una prueba comprueba que valores contradictorios produzcan 502 sin cambios ni evento. Las cinco ejecuciones adicionales verifican esa aclaración. El test de chatbot se renombró a ChatbotServiceTest sin alterar sus aserciones. Evidencia: target/compatibilidad-webhook-final.log y VERIFICACION.md. No se modificó el calificador.
 
 Los tests de servicios construyen sus objetos directamente y simulan dependencias con Mockito; no levantan Spring. Los escenarios de agenda y webhook usan Clock.fixed con America/Bogota. La verificación criptográfica y deserialización de Stripe son locales, con firma ficticia; no se llama a Stripe. La IA se simula y no se llama a Gemini. Solo el test de contexto usa Spring y MySQL.
 

@@ -42,6 +42,22 @@ El 2026-10-27 el estudiante pidió reenviar la entrega. Se comprobó que el PR #
 
 Se solicita otra ejecución mediante un push documental a la misma rama main del fork, que actualiza el PR existente. No se crea otro PR, no se incorpora ni modifica el calificador local y no se repiten tests de la aplicación por este cambio exclusivamente documental. El resultado de la nueva evaluación se revisará en GitHub.
 
+### Resultado de la reevaluación: 4.4/5.0
+
+La ejecución [40545100582](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/actions/runs/40545100582), revisión cd053bf89f59da57c78ac690e5f3ad1831342288, terminó y publicó 129/145 pruebas aprobadas, nota 4.4/5.0. Criterios 01–05, 08 y 09 completos; pagos 14/29 y tests JUnit 7/8. El error de protocolo ya no aborta el cálculo.
+
+Diagnóstico de solo lectura: el primer webhook firmado PRO devuelve 502. La colección oficial incluye metadata.salonId y metadata.tipo; la aplicación espera metadata.tipoCompra, clave que el estudiante había aprobado al no fijarla el PDF. Esta discrepancia requiere aclarar compatibilidad antes de cambiar aquella decisión. Los fallos posteriores de plan/créditos se revisarán al resolver el primer webhook, sin asumir todavía que todos tienen la misma causa.
+
+El criterio «Hay tests del chatbot» busca literalmente Chatbot, con esa capitalización, en nombre o contenido de una clase de tests. Los tests existentes se llaman ChatServiceTest y sí cubren los casos de chatbot; no fueron detectados por ese nombre. Se propone nombrar la clase según ese propósito, sin cambiar las aserciones ni añadir pruebas vacías. No se modificó el calificador ni se aplicaron aún estas correcciones.
+
+### Compatibilidad de metadata aprobada y verificada
+
+El estudiante aprobó aceptar tipo y tipoCompra y rechazar ambas claves si sus valores difieren. ProcesadorEventoStripe ahora admite cualquiera de las dos y también ambas coincidentes; si se contradicen, conserva la respuesta 502 de metadata inválida antes de modificar plan, créditos o registrar el evento. Checkout sigue generando tipoCompra, conservando las sesiones anteriores y la decisión original. Se mantienen firma sobre cuerpo original, transacción e idempotencia.
+
+Se parametrizaron los tests mínimos existentes de PRO y paquete con tipo, tipoCompra y ambas coincidentes. Se añadió la comprobación de conflicto aprobada. Antes de corregir código se reprodujeron dos errores y un fallo entre los nueve casos de webhook; log target/compatibilidad-webhook-antes.log. Después, suite completa: **75 pruebas, cero fallos, errores u omisiones; BUILD SUCCESS**, log target/compatibilidad-webhook-final.log. Las cinco ejecuciones adicionales corresponden a las variantes y conflicto de la compatibilidad aprobada, no a pruebas vacías para aumentar el contador.
+
+ChatServiceTest se renombró a ChatbotServiceTest, con los mismos casos y aserciones, para identificar claramente su propósito y permitir su detección por el criterio oficial. Se retiraron únicamente sus antiguos artefactos compilados/reportes locales para evitar duplicados. No se añadieron dependencias ni se modificó .github/. Se actualizará el mismo PR #5; resultado oficial posterior a estas correcciones aún pendiente.
+
 ## Fase 10: pruebas automáticas
 
 Fecha: 2026-10-21. El estudiante aprobó conservar solo los casos mínimos de las páginas 26–27. Suite actual: **70 pruebas aprobadas, sin fallos, errores ni omisiones**, BUILD SUCCESS en target/fase10-tests.log. Matriz de todos los casos y límites en TESTS-ENTREGA.md. Servicios probados sin Spring, repositorios/IA simulados, Clock fijo y ninguna llamada real a Gemini/Stripe; se conserva el test de contexto completo con MySQL. Se retiraron pruebas adicionales, incluidas regresiones anteriores, sin modificar lógica productiva. Las cifras históricas de las fases siguientes no representan el tamaño actual de la suite. JUnit gestionado por Boot conserva la excepción autorizada documentada.

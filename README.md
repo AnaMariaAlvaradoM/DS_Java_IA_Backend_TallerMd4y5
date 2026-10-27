@@ -54,7 +54,7 @@ Tests de la entrega (MySQL encendido; sin llamadas reales a Stripe/Gemini):
 .\mvnw.cmd test
 ```
 
-La suite tiene 70 pruebas de los casos mínimos del PDF. Matriz en [TESTS-ENTREGA.md](TESTS-ENTREGA.md); resultados de ejecución en [VERIFICACION.md](VERIFICACION.md).
+La suite actual tiene 75 pruebas: casos mínimos del PDF y variantes de compatibilidad Stripe aprobadas por el estudiante. Matriz en [TESTS-ENTREGA.md](TESTS-ENTREGA.md); resultados de ejecución en [VERIFICACION.md](VERIFICACION.md).
 
 Para construir la imagen Docker de dos etapas, que compila el JAR sin ejecutar tests:
 
@@ -146,7 +146,7 @@ No configurar STRIPE_URL_API ni SILLON_IA_OPENAI_URL en Render, conforme al PDF:
 
 Colección y README verificados el 2026-10-27: carpetas 1–6 aprobadas en local y Render (53 peticiones, 107 aserciones sin fallos en cada entorno) y 70 tests Java aprobados. Carpeta 7 aprobada en Render tras el pago manual de la misma ejecución: cuatro aserciones sin fallos; salón 5 en PRO/306 créditos y tres estilistas. La carpeta 7 no se ejecutó en local. El fallo inicial de IA en Render se resolvió tras el ajuste del estudiante y se repitió el recorrido completo. Detalle en VERIFICACION.md.
 
-PR de entrega: [#5 — Giovanny Hernandez Arbelaez](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/pull/5), abierto el 2026-10-27 desde main del fork hacia main del repositorio oficial. Las evaluaciones oficiales se consultan en ese único PR. El bloqueo inicial por ERR_INVALID_PROTOCOL fue corregido en el calificador oficial y se solicita una nueva evaluación; historial y evidencias en VERIFICACION.md. No se modificó .github/ para evitar el fallo. La guía original se encuentra en el [repositorio de la instructora](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5). Evidencias y pendientes reales: [VERIFICACION.md](VERIFICACION.md); usos de IA: [BITACORA-IA.md](BITACORA-IA.md).
+PR de entrega: [#5 — Giovanny Hernandez Arbelaez](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/pull/5), abierto el 2026-10-27 desde main del fork hacia main del repositorio oficial. Las evaluaciones oficiales se consultan en ese único PR. Tras corregirse el bloqueo inicial del calificador, la ejecución 40545100582 obtuvo 4.4/5.0 (129/145). Se preparó compatibilidad para metadata tipo/tipoCompra y se renombró el test de chatbot sin cambiar sus aserciones; suite actual de 75 pruebas aprobadas. El resultado oficial de cada revisión se consulta en el PR y su historial en VERIFICACION.md. No se modificó .github/. La guía original se encuentra en el [repositorio de la instructora](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5). Evidencias y pendientes reales: [VERIFICACION.md](VERIFICACION.md); usos de IA: [BITACORA-IA.md](BITACORA-IA.md).
 
 ## Si Sillón tuviera 500 salones
 

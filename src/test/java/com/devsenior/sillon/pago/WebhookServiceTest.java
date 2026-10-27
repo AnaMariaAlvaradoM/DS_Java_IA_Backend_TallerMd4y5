@@ -3,6 +3,7 @@ package com.devsenior.sillon.pago;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import com.devsenior.sillon.compartido.excepcion.FirmaInvalidaException;
+import com.devsenior.sillon.compartido.excepcion.PasarelaException;
 import com.devsenior.sillon.salon.*;
 import com.stripe.Stripe;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +12,8 @@ import java.util.*;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -29,8 +32,9 @@ class WebhookServiceTest {
         when(salones.findByIdParaActualizar(1L)).thenReturn(Optional.of(salon));
     }
 
-    @Test void pagoProActivaPlanSumaCreditosYEventoRepetidoNoSeAplica() throws Exception {
-        String cuerpo = compra("SUSCRIPCION_PRO");
+    @ParameterizedTest @ValueSource(strings = {"tipo", "tipoCompra", "ambas"})
+    void pagoProActivaPlanSumaCreditosYEventoRepetidoNoSeAplica(String clave) throws Exception {
+        String cuerpo = compra("SUSCRIPCION_PRO", clave);
         when(eventos.existsById("evt_prueba")).thenReturn(false, true);
         assertTrue(servicio.recibir(cuerpo, firmar(cuerpo)).procesado());
         assertEquals(Plan.PRO, salon.getPlan()); assertEquals(310, salon.getCreditosIa());
@@ -40,8 +44,9 @@ class WebhookServiceTest {
         verify(salones, times(1)).save(salon); verify(eventos, times(1)).saveAndFlush(any());
     }
 
-    @Test void paqueteSoloSumaCreditos() throws Exception {
-        String cuerpo = compra("PAQUETE_CREDITOS");
+    @ParameterizedTest @ValueSource(strings = {"tipo", "tipoCompra", "ambas"})
+    void paqueteSoloSumaCreditos(String clave) throws Exception {
+        String cuerpo = compra("PAQUETE_CREDITOS", clave);
         servicio.recibir(cuerpo, firmar(cuerpo));
         assertEquals(Plan.GRATIS, salon.getPlan()); assertEquals(210, salon.getCreditosIa());
         verify(salones).save(salon);
@@ -62,9 +67,22 @@ class WebhookServiceTest {
         verifyNoInteractions(eventos); verify(salones, never()).save(any());
     }
 
-    private String compra(String tipo) throws Exception {
+    @Test void metadataConTiposDistintosNoCambiaPlanNiRegistraEvento() throws Exception {
+        String cuerpo = evento("checkout.session.completed", Map.of("id", "cs_test_prueba", "object", "checkout.session",
+                "payment_status", "paid", "subscription", "sub_prueba", "metadata",
+                Map.of("salonId", "1", "tipo", "SUSCRIPCION_PRO", "tipoCompra", "PAQUETE_CREDITOS")));
+        var error = assertThrows(PasarelaException.class, () -> servicio.recibir(cuerpo, firmar(cuerpo)));
+        assertEquals(HttpStatus.BAD_GATEWAY, error.getEstado());
+        assertEquals(Plan.GRATIS, salon.getPlan()); assertEquals(10, salon.getCreditosIa());
+        verify(salones, never()).save(any()); verify(eventos, never()).saveAndFlush(any());
+    }
+
+    private String compra(String tipo, String clave) throws Exception {
+        Map<String, String> metadata = clave.equals("ambas")
+                ? Map.of("salonId", "1", "tipo", tipo, "tipoCompra", tipo)
+                : Map.of("salonId", "1", clave, tipo);
         return evento("checkout.session.completed", Map.of("id", "cs_test_prueba", "object", "checkout.session",
-                "payment_status", "paid", "subscription", "sub_prueba", "metadata", Map.of("salonId", "1", "tipoCompra", tipo)));
+                "payment_status", "paid", "subscription", "sub_prueba", "metadata", metadata));
     }
     private String evento(String tipo, Map<String, ?> objeto) throws Exception {
         return JsonMapper.builder().build().writeValueAsString(Map.of("id", "evt_prueba", "object", "event", "type", tipo,

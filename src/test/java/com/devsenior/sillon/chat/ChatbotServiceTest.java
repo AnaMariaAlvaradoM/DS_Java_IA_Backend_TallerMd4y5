@@ -15,7 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.json.JsonMapper;
 
-class ChatServiceTest {
+class ChatbotServiceTest {
     private final CatalogoService catalogo = mock(CatalogoService.class);
     private final CreditosService creditos = mock(CreditosService.class);
     private final BibliotecaPrompts prompts = spy(new BibliotecaPrompts());

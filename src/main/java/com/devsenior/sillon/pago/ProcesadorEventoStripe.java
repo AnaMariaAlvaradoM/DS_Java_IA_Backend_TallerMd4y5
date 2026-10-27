@@ -51,7 +51,12 @@ public class ProcesadorEventoStripe {
         try {
             if (metadata == null) { throw new IllegalArgumentException(); }
             salonId = Long.valueOf(metadata.get("salonId"));
-            tipo = TipoCompra.valueOf(metadata.get("tipoCompra"));
+            String tipoCompra = metadata.get("tipoCompra");
+            String tipoAlternativo = metadata.get("tipo");
+            if (tipoCompra != null && tipoAlternativo != null && !tipoCompra.equals(tipoAlternativo)) {
+                throw new IllegalArgumentException();
+            }
+            tipo = TipoCompra.valueOf(tipoCompra != null ? tipoCompra : tipoAlternativo);
         } catch (IllegalArgumentException | NullPointerException ex) {
             throw new PasarelaException("El pago confirmado no contiene metadata válida");
         }
