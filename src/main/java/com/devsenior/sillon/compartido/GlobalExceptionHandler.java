@@ -125,4 +125,14 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
+    @ExceptionHandler(LimitePlanExcedidoException.class)
+    public ResponseEntity<ErrorRespuesta> manejarLimitePlanExcedido(LimitePlanExcedidoException ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.PAYMENT_REQUIRED.value(),
+                HttpStatus.PAYMENT_REQUIRED.getReasonPhrase(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.PAYMENT_REQUIRED);
+    }
 }

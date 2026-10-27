@@ -16,8 +16,10 @@ public class SalonService {
     private final SalonRepository salonRepository;
 
     public SalonService(SalonRepository salonRepository) {
+
         this.salonRepository = salonRepository;
     }
+
     public SalonResponse obtenerSalonPorId(Long salonId) {
         if (salonId == null) {
             throw new NoEncontradoException("El usuario autenticado no tiene un salón asociado");

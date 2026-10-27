@@ -21,6 +21,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 @Service
 @Transactional
 public class AuthService {
@@ -30,20 +34,16 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final LocalDate fechaCreacion;
 
-    public AuthService(
-            UsuarioRepository usuarioRepository,
-            SalonRepository salonRepository,
-            GeneradorSlugService generadorSlugService,
-            PasswordEncoder passwordEncoder,
-            JwtService jwtService,
-            AuthenticationManager authenticationManager) {
+    public AuthService(UsuarioRepository usuarioRepository, SalonRepository salonRepository, GeneradorSlugService generadorSlugService, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, LocalDate fechaCreacion) {
         this.usuarioRepository = usuarioRepository;
         this.salonRepository = salonRepository;
         this.generadorSlugService = generadorSlugService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.fechaCreacion = fechaCreacion;
     }
 
     @Transactional
@@ -67,6 +67,7 @@ public class AuthService {
         salon.setStripeSubscriptionId("SIN_SUSCRIPCION");
         salon.setConfiguracion(ConfiguracionSalon.porDefecto());
         salon.setNombresalon(nombreSalon);
+        salon.setFechaCreacion(fechaCreacion);
 
         Salon salonGuardado = salonRepository.save(salon);
 

@@ -4,6 +4,7 @@ import com.devsenior.sillon.usuario.model.Usuario;
 import jakarta.persistence.*;
 import org.hibernate.validator.constraints.Length;
 
+import java.time.LocalDate;
 import java.util.List;
 
 //id, nombre, slug (único), ciudad, direccion,
@@ -50,7 +51,7 @@ public class Salon {
     private ConfiguracionSalon configuracion = new ConfiguracionSalon();
 
     @Column(name = "fecha_creacion")
-    private String fechaCreacion;
+    private LocalDate fechaCreacion;
     @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Usuario> usuarios;
     public Salon() {
@@ -136,11 +137,11 @@ public class Salon {
         this.configuracion = configuracion;
     }
 
-    public String getFechaCreacion() {
+    public LocalDate getFechaCreacion() {
         return fechaCreacion;
     }
 
-    public void setFechaCreacion(String fechaCreacion) {
+    public void setFechaCreacion(LocalDate fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
     }
 }
