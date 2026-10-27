@@ -6,7 +6,7 @@ Fuente: PDF de requerimientos entregado por el usuario, 40 páginas. Las referen
 
 ## Fase 13: colección y README verificados; calificador pendiente
 
-Fecha: 2026-10-27. Referencias: páginas 29–35 del PDF. El PR sigue pendiente por instrucción expresa del estudiante; no se declara nota oficial ni cierre completo de la entrega.
+Fecha: 2026-10-27. Referencias: páginas 29–35 del PDF. Tras aplazarlo inicialmente, el estudiante autorizó abrir el PR y suministró su nombre completo. Se creó [PR #5 — Giovanny Hernandez Arbelaez](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/pull/5); evaluación oficial en curso, sin afirmar todavía una nota ni cierre completo de la entrega.
 
 | Requisito | Estado y evidencia |
 |---|---|
@@ -26,7 +26,15 @@ La opción --output de la CLI pidió sesión Postman y no ejecutó la colección
 
 Cierre de los artefactos P.1–P.3 y README: todos los 52 escenarios tienen pruebas, carpetas 1–6 verdes en local y Render y carpeta 7 verde en Render después de pagar. Validación estática: 55 peticiones de colección con pruebas, siete carpetas y entornos solo baseUrl; variables iniciales de colección vacías, sin tokens publicados. Se reemplazó la guía del fork por el README del proyecto. No hay diferencias en .github/ respecto al commit inicial ni cambios productivos de Java/POM en esta fase. Archivos del IDE ajenos preservados fuera del commit.
 
-La pieza C de la fase 13 sigue pendiente: el estudiante pidió no abrir aún el único PR de entrega. No hay nota oficial ni evidencia nueva del calificador. La diferencia autorizada de JUnit y la autoría asistida de la reflexión permanecen documentadas. El cierre de colección/README no se presenta como entrega académica completa ni aprobación de la instructora.
+Pieza C: el estudiante autorizó continuar con el PR y dio el nombre Giovanny Hernandez Arbelaez. Antes de crearlo se verificó mediante GitHub que origin es fork de AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5, cuya rama principal es main, y que no existía PR con head giovanni104:main en ningún estado. Se abrió el único PR #5 con ese título exacto, desde main del fork hacia main del padre; estado open y revisión inicial ccca98eb367dc203356871183cd6da265d6d606c. Se adjuntó a la conversación. La diferencia autorizada de JUnit y la autoría asistida de la reflexión permanecen documentadas. No se presenta la apertura del PR como nota aprobada ni aprobación de la instructora.
+
+### Primera evaluación oficial: bloqueada por el calificador
+
+Ejecución [40535698862](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/actions/runs/40535698862), trabajo 122300222645. GitHub publicó nota 0.0/5.0, 0/145, con el aviso «No se pudo calificar este push». El paso «Compilar, probar, arrancar y calificar» terminó con «Protocol "https:" not supported. Expected "http:"». Ese resultado no demuestra que se ejecutaran y fallaran las 145 pruebas: la evaluación abortó.
+
+Diagnóstico de solo lectura: el archivo oficial .github/calificador/calificar.js importa node:http y su función peticionHttp usa http.get en la línea 93. En la línea 416 se llama con la URL HTTPS de Render y /v3/api-docs; esa combinación produce ERR_INVALID_PROTOCOL antes de completar el resumen. La API de GitHub confirmó que el archivo oficial y el local tienen el mismo blob SHA bba0cb819fbe6683e4634257d585678fb90caaee. Una reproducción mínima con node:http y una URL HTTPS generó el mismo código/mensaje sin depender de la aplicación. El código del calificador no fue modificado y no se retiró ni cambió la URL HTTPS requerida del README.
+
+La corrección corresponde al responsable del calificador oficial. No se publicó un mensaje adicional a la instructora ni se abrió otro PR. La entrega mantiene pendiente obtener una evaluación oficial que termine correctamente; no se atribuyen puntuaciones parciales ni se afirma aprobación mientras exista este bloqueo.
 
 ## Fase 10: pruebas automáticas
 
