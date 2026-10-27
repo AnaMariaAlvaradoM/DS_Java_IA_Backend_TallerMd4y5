@@ -1,0 +1,1 @@
+ALTER TABLE clientes MODIFY COLUMN nombre TEXT NOT NULL;

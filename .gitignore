@@ -8,6 +8,12 @@ target/
 
 # Secretos: nunca se suben
 /secrets.properties
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
 
 # Material privado de la profe (guía, solución y scripts): NO se sube al repo
 _docente/

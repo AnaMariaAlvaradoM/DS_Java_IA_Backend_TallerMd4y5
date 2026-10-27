@@ -1,262 +1,159 @@
-# 💈 Sillón · Proyecto integrador Módulos 4 y 5
+# Sillón
 
-**Java AI Engineer · Dev Senior Code**
+Sillón es una API para gestionar la agenda de barberías y salones: servicios, estilistas, clientes y citas separados por salón.
+Incluye reservas públicas, pagos Stripe en modo prueba y borradores/asistencia con IA; no envía mensajes automáticamente.
 
----
+## Producción
 
-## ¿Qué es esto?
+- API: https://ds-java-ia-backend-tallermd4y5.onrender.com
+- [Swagger UI](https://ds-java-ia-backend-tallermd4y5.onrender.com/swagger-ui.html)
+- [OpenAPI](https://ds-java-ia-backend-tallermd4y5.onrender.com/v3/api-docs)
 
-### El proyecto
-Vas a construir **Sillón**: un SaaS de agenda para barberías y salones de belleza.
-API en Java con Spring Boot, JWT, Stripe, IA, Swagger y despliegue en Render.
+Render con PostgreSQL de Supabase mediante Session pooler, puerto 5432. El 2026-10-27 se verificaron Swagger, registro, login y un pago de prueba: el salón pasó de GRATIS/10 créditos a PRO/310, confirmado también por consulta del estudiante en Supabase. El servicio gratuito puede tardar en responder al despertar.
 
-### Dónde está el enunciado
-El enunciado completo (negocio, reglas, contrato de la API y paso a paso) está en el **PDF que te compartió la profe**.
-Este README solo explica **cómo entregar y cómo se califica**.
+## Stack
 
-### La calificación es automática
-Construyes el proyecto en **tu fork** y abres **un solo Pull Request**.
-Cada vez que haces `git push`, un robot califica tu proyecto y te deja la nota en el PR.
-No tienes que esperar a nadie: corriges, subes y la nota se actualiza sola.
+Java 17, Spring Boot 4.1.1, Maven Wrapper, Spring Web MVC, Spring Data JPA, Spring Security, BCrypt, JWT, MySQL local, PostgreSQL/Supabase en producción, Stripe, RestClient para Gemini y respaldo Claude, springdoc/Swagger y Docker. No usa Lombok ni SDK de IA.
 
-### ¿Qué es una prueba automática?
-**Técnica:** código que llama a tu API, revisa la respuesta (código HTTP y datos) y dice si cumple o no lo esperado.
+JUnit y Mockito provienen de spring-boot-starter-webmvc-test. Por decisión del estudiante se utiliza JUnit 6.0.3 gestionado por Boot, en lugar de JUnit 5 mencionado en el PDF; historia y motivo en [DEPENDENCIAS.md](DEPENDENCIAS.md).
 
-**En la vida real:** es el inspector de la revisión técnico-mecánica.
-No le importa cómo arreglaste el carro: revisa frenos, luces y emisiones contra una lista, y aprueba o rechaza.
+## Ejecutar en local
 
----
+Requisitos: Java 17, MySQL en localhost:3306 y acceso a Stripe de prueba/Gemini para los flujos externos. Docker es necesario si se utiliza la CLI de Stripe en contenedor.
 
-## Qué hace el calificador en cada push
+1. Copiar la plantilla, sin versionar el archivo resultante:
 
-### Los pasos
-1. Compila tu proyecto con Maven.
-2. Corre **tus** tests JUnit.
-3. Arranca **tu** API con MySQL, un simulador oficial de Stripe y una **IA simulada** (sin costo y sin llaves).
-4. Corre la **colección oficial** de Postman: más de 100 pruebas contra tu API.
-5. Revisa tu repositorio (SPEC, bitácora, colección, Dockerfile, secretos…).
-6. Prueba tu API desplegada en Render (la URL que pongas en tu README).
+   ```powershell
+   Copy-Item secrets.example.properties secrets.properties
+   ```
 
-### La nota
-`nota = 5 × pruebas aprobadas ÷ pruebas totales`, con un decimal.
-Cada prueba vale lo mismo, así que los criterios con más reglas pesan más.
+2. Editar secrets.properties con el usuario/contraseña de MySQL, un secreto JWT de al menos 32 caracteres, la clave secreta Stripe de prueba, los dos IDs de precios y la llave de Gemini. La aplicación usa por defecto la base sillon_db y permite crearla si el usuario MySQL tiene permiso. La plantilla indica las propiedades que se deben completar. No incluir llaves reales en el repositorio.
 
----
+3. Preparar en Stripe los precios del enunciado: PRO recurrente de 15 USD al mes y paquete único de créditos de 5 USD, en la misma cuenta/entorno de prueba que la clave. Los IDs se configuran en el backend, no se envían desde el cliente.
 
-## Los 9 criterios
+4. Autenticar Stripe CLI, si aún no se hizo, y mantener abierto el listener:
 
-| # | Criterio | Pruebas | Peso aprox. |
-|---|---|---|---|
-| 01 | Registro, login y configuración | 14 | 10 % |
-| 02 | Catálogo y equipo | 9 | 6 % |
-| 03 | Agenda | 34 | 23 % |
-| 04 | Aislamiento y roles | 7 | 5 % |
-| 05 | IA: recordatorio y chatbot | 16 | 11 % |
-| 06 | Pagos con Stripe (incluye webhooks firmados) | 29 | 20 % |
-| 07 | Tests JUnit | 8 | 6 % |
-| 08 | Repositorio y entrega | 12 | 8 % |
-| 09 | Producción en Render | 16 | 11 % |
+   ```powershell
+   docker run --rm -it -v stripe-config:/root/.config/stripe stripe/stripe-cli login
+   docker run --rm -it --name sillon-stripe -v stripe-config:/root/.config/stripe stripe/stripe-cli listen --events "checkout.session.completed,customer.subscription.deleted" --forward-to http://host.docker.internal:8080/api/pagos/webhook
+   ```
 
-### Qué revisa el criterio 07
-Que el proyecto compile, que tus tests corran y pasen, que haya al menos 15 y al menos 30, y que haya tests de agenda, del webhook y del chatbot.
+   Guardar en secrets.properties el secreto de firma de esa ejecución del listener, en sillon.stripe.secreto-webhook. Para Render se utiliza el secreto de su propio destino HTTPS, no el de la CLI.
 
-### Qué revisa el criterio 08
-SPEC.md, AGENTS.md, BITACORA-IA.md (5 entradas o más), colección propia en `postman/` (50 peticiones o más, 40 con pruebas), dos entornos, Dockerfile, `secrets.example.properties`, que **no** subiste `secrets.properties` ni llaves reales, 2 prompts y la URL de Render en el README.
+5. Iniciar la API desde la raíz:
 
----
+   ```powershell
+   .\mvnw.cmd spring-boot:run
+   ```
 
-## Lo que el calificador necesita de tu proyecto
+   Swagger local: http://localhost:8080/swagger-ui.html. La configuración está en application.properties, sin perfiles ni YAML. Clock usa America/Bogota. En una base MySQL existente con clientes.nombre VARCHAR, la ampliación a TEXT se encuentra en scripts/001-clientes-nombre-text.mysql.sql; una base nueva crea TEXT directamente.
 
-### El proyecto va en la raíz
-El `pom.xml` debe quedar en la raíz de tu fork, al lado de este README.
-Si lo dejas dentro de una subcarpeta, el calificador no lo encuentra y la nota es 0.0.
+Tests de la entrega (MySQL encendido; sin llamadas reales a Stripe/Gemini):
 
-### El contrato de la API
-Rutas, nombres de campos y códigos HTTP **exactamente** como dice la sección 4 del enunciado.
-Un campo con otro nombre hace fallar la prueba aunque tu lógica esté bien.
-
-### Variables de entorno
-El calificador (y Render) configuran tu aplicación con estas variables.
-Tu `application.properties` debe leerlas, con un valor de relleno para que arranque sin ellas.
-
-| Variable | Para qué |
-|---|---|
-| `PORT` | Puerto de la aplicación |
-| `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` | Base de datos |
-| `JWT_SECRETO` | Secreto para firmar los JWT |
-| `URL_PUBLICA` | URL de tu API (para volver de Stripe) |
-| `STRIPE_URL_API` | Dirección de la API de Stripe (por defecto `https://api.stripe.com`) |
-| `STRIPE_CLAVE_SECRETA`, `STRIPE_SECRETO_WEBHOOK` | Llaves de Stripe |
-| `STRIPE_PRECIO_PRO`, `STRIPE_PRECIO_CREDITOS` | Ids de los precios |
-| `GEMINI_LLAVE` | Llave de Gemini |
-| `SILLON_IA_OPENAI_URL` | Dirección del proveedor con formato OpenAI (propiedad `sillon.ia.openai.url`) |
-
-### ¿Por qué STRIPE_URL_API y SILLON_IA_OPENAI_URL?
-Porque el calificador no usa el Stripe real ni el Gemini real: usa simuladores.
-Que la dirección de un servicio externo sea configurable es una práctica profesional: así se prueba sin gastar dinero.
-
-### La IA simulada
-No razona: responde según lo que **tu prompt** le pida.
-- Si tu prompt pide un JSON con `respuesta` y `escalar`, responde como chatbot.
-- Si tu prompt pide un JSON con `mensaje`, responde como recordatorio, usando los datos verificados que Java puso en el prompt.
-
-En el chatbot, a veces "promete" un cupón a propósito: tu regla en Java debe bloquearlo.
-
-### Swagger
-El calificador revisa que `/v3/api-docs` responda en tu URL de Render.
-
----
-
-## Paso 1 · Fork
-
-### ¿Qué es?
-**Técnica:** una copia de este repositorio en tu cuenta de GitHub, conectada con el original.
-
-**En la vida real:** una fotocopia del cuaderno de la profe: escribes en la tuya sin dañar el de ella.
-
-### Cómo
-1. Arriba a la derecha de esta página: **Fork**.
-2. Deja el nombre como está y clic en **Create fork**.
-
-### Cómo saber que quedó bien
-Arriba a la izquierda dice **tu-usuario/este-repo** y, debajo, "forked from" el repo de la profe.
-
----
-
-## Paso 2 · Clone
-
-### Cómo
-1. En **tu** fork: botón verde **Code** → copia la URL.
-2. En la terminal de Cursor, en la carpeta donde guardas tus proyectos:
-
-```bash
-git clone URL-DE-TU-FORK
+```powershell
+.\mvnw.cmd test
 ```
 
-3. Abre la carpeta del repo en Cursor (**File → Open Folder**).
+La suite actual tiene 75 pruebas: casos mínimos del PDF y variantes de compatibilidad Stripe aprobadas por el estudiante. Matriz en [TESTS-ENTREGA.md](TESTS-ENTREGA.md); resultados de ejecución en [VERIFICACION.md](VERIFICACION.md).
 
----
+Para construir la imagen Docker de dos etapas, que compila el JAR sin ejecutar tests:
 
-## Paso 3 · Construir el proyecto
-
-### Dónde
-Genera el proyecto en Spring Initializr y **copia su contenido** (pom.xml, src, mvnw…) en la raíz de tu fork.
-
-### Las reglas de oro
-- No toques la carpeta `.github/`.
-- Nunca subas `secrets.properties` (va en tu `.gitignore`).
-- Un commit por cada paso del enunciado que quede en verde.
-
-### Tu propio README
-Cuando escribas el README de tu proyecto, reemplaza este archivo. Esta guía sigue en el repo de la profe.
-
----
-
-## Paso 4 · Probar en local
-
-### Tus pruebas
-- Tus tests: `./mvnw test` (en Windows PowerShell: `.\mvnw test`).
-- Tu colección de Postman: **Run collection** con el entorno local.
-
-### La nota oficial
-La nota oficial solo se calcula en GitHub, porque necesita los simuladores.
-Si tus tests y tu colección pasan, lo normal es que la nota oficial también.
-
----
-
-## Paso 5 · Subir
-
-```bash
-git add .
-git commit -m "Fase 4: agenda con reglas de horario y cruces"
-git push
+```powershell
+docker build -t sillon .
 ```
 
-### Qué hace cada uno
-- `git add .` mete los cambios en la caja.
-- `git commit -m` cierra la caja y le pone etiqueta.
-- `git push` envía la caja a tu fork en GitHub.
+Al ejecutar la imagen deben suministrarse las variables de base de datos y secretos. El puerto se obtiene de PORT; la imagen final contiene JRE 17 y el JAR. .dockerignore excluye secretos, target y .git.
 
----
+## Verificar con Postman
 
-## Paso 6 · Pull Request (solo UNO)
+Importar estos tres archivos:
 
-### ¿Qué es?
-**Técnica:** una solicitud para que los cambios de tu fork se revisen contra el repo de la profe.
+- [Colección](postman/sillon.postman_collection.json).
+- [Entorno local](postman/local.postman_environment.json).
+- [Entorno produccion](postman/produccion.postman_environment.json).
 
-**En la vida real:** radicar un documento en una ventanilla: queda con número y se puede consultar su estado.
+Cada entorno tiene únicamente baseUrl. Los tokens e IDs se capturan en variables de colección durante la ejecución, no se copian manualmente ni se publican. Los usuarios y teléfonos de las pruebas son ficticios. Cada ejecución genera correos y nombres de salón únicos, fechas de lunes a sábado al menos dos días adelante y el próximo domingo en America/Bogota.
 
-### Cómo
-1. En tu fork: **Contribute → Open pull request**.
-2. Título: **tu nombre completo**.
-3. **Create pull request**.
+La colección contiene 55 peticiones para los 52 escenarios obligatorios. Los escenarios que crean dos recursos o consultan dos listados tienen dos peticiones. Las siete carpetas conservan el orden y los nombres del PDF:
 
-### Uno solo
-Después de abrirlo, cada `git push` a tu fork actualiza el mismo PR. No abras otro.
+1. Registro, login y configuración
+2. Catálogo y equipo
+3. Agenda: reservas, cruces y estados
+4. Aislamiento entre salones y roles
+5. IA: recordatorio y chatbot
+6. Pagos con Stripe (modo prueba)
+7. Después de pagar (manual)
 
----
+En el Runner, seleccionar solo carpetas 1–6 y ejecutar una iteración con local. Repetir con produccion contra Render. Se realizan cuatro llamadas reales de IA por ejecución y se crean dos sesiones Checkout de prueba; no se completan pagos automáticamente. En local, mantener MySQL y la API activos. No cambiar las expectativas para ocultar un fallo de IA, credenciales o negocio.
 
-## Paso 7 · Ver la nota
+Para la carpeta 7, conservar los valores de variables de la ejecución correspondiente y abrir urlPagoPro, creada en la carpeta 6. Completar manualmente Checkout con tarjeta de prueba 4242 4242 4242 4242, vencimiento futuro y CVC de prueba. No usar tarjetas reales. Esperar el webhook y ejecutar solo la carpeta 7 en el mismo entorno: comprueba PRO con más de 300 créditos y crea el tercer estilista. No repetir carpeta 1 entre pago y verificación: generaría otro salón. La carpeta 7 renueva automáticamente el token con las credenciales ficticias de esa ejecución. No repetir su alta del tercero después de haberla aprobado, porque el correo ya existiría.
 
-### Dónde
-- En el PR aparece un comentario con la nota y la tabla de criterios.
-- En la lista de PRs, tu PR tiene la etiqueta `Nota X.X`.
-- El enlace **Ver qué falta por corregir** muestra cada prueba que falló y por qué.
+Conservar variables para esa comprobación manual no significa publicarlas: no exportar ni subir tokens, respuestas de login, secretos o sesiones de prueba como valores del archivo de colección. La nota oficial no es el resultado del Runner: procede del calificador en el PR.
 
-### Cuánto tarda
-El calificador compila, arranca y prueba tu proyecto completo: espera unos minutos después de cada push.
+## Endpoints
 
-### Ojo con la fecha límite
-Después de la fecha límite, los push ya no cambian la nota.
-Si tu primera entrega llega tarde, el PR queda con la etiqueta `⏰ Fuera de plazo`.
+JWT se introduce en Authorize de Swagger como token, sin escribir el prefijo Bearer. Las rutas privadas obtienen el salón del usuario autenticado. Un recurso de otro salón responde 404. Todos los errores usan codigo/error/mensaje/fecha.
 
----
+| Método | Ruta | Acceso |
+|---|---|---|
+| POST | /api/auth/registro | Público |
+| POST | /api/auth/login | Público |
+| GET | /api/salon | DUENO |
+| PUT | /api/salon/configuracion | DUENO |
+| GET | /api/servicios | DUENO, ESTILISTA |
+| POST | /api/servicios | DUENO |
+| PUT | /api/servicios/{id} | DUENO |
+| GET | /api/estilistas | DUENO |
+| POST | /api/estilistas | DUENO |
+| GET | /api/clientes | DUENO |
+| GET | /api/citas | DUENO; ESTILISTA solo sus citas |
+| POST | /api/citas | DUENO |
+| PATCH | /api/citas/{id}/estado | DUENO; ESTILISTA con restricciones del contrato |
+| POST | /api/citas/{id}/recordatorio | DUENO |
+| GET | /api/publico/salones/{slug} | Público |
+| GET | /api/publico/salones/{slug}/disponibilidad | Público |
+| POST | /api/publico/salones/{slug}/reservas | Público |
+| POST | /api/publico/salones/{slug}/chat | Público |
+| POST | /api/pagos/suscripcion | DUENO |
+| POST | /api/pagos/creditos | DUENO |
+| POST | /api/pagos/webhook | Firma Stripe, sin JWT |
+| GET | /api/pagos/resultado | Público |
+| GET | /api/solicitudes | DUENO |
+| PATCH | /api/solicitudes/{id}/atendida | DUENO |
+| GET | /api/admin/salones | ADMIN |
 
-## Archivos que NO debes modificar
+Son 22 rutas distintas y 25 operaciones HTTP.
 
-### La carpeta `.github/`
-Ahí vive el calificador. Si la modificas, tu PR queda con la etiqueta `⚠️ Revisar` y la profe lo revisa a mano.
-La nota se calcula igual, con el calificador original.
+## Variables de entorno de Render
 
----
+Solo los nombres; sus valores se configuran directamente en Render:
 
-## Errores frecuentes
+- PORT
+- SPRING_DATASOURCE_URL
+- SPRING_DATASOURCE_USERNAME
+- SPRING_DATASOURCE_PASSWORD
+- JWT_SECRETO
+- URL_PUBLICA
+- STRIPE_CLAVE_SECRETA
+- STRIPE_SECRETO_WEBHOOK
+- STRIPE_PRECIO_PRO
+- STRIPE_PRECIO_CREDITOS
+- GEMINI_LLAVE
 
-### "No encontré pom.xml en la raíz de tu fork"
-Dejaste el proyecto dentro de una subcarpeta. Muévelo a la raíz.
+No configurar STRIPE_URL_API ni SILLON_IA_OPENAI_URL en Render, conforme al PDF: los valores predeterminados apuntan a Stripe/Gemini. Ambas direcciones sí son configurables para los simuladores del calificador. Supabase utiliza Session pooler, no la conexión directa. El destino de Stripe debe pertenecer al mismo entorno de prueba y escuchar checkout.session.completed y customer.subscription.deleted con carga Snapshot.
 
-### "Error de compilación en src/…, línea N"
-Abre ese archivo en esa línea. Mientras no compile, casi todos los criterios quedan en cero.
+## Estado de entrega
 
-### "La aplicación no arrancó: …"
-Lee el motivo. Lo más común: una propiedad que no tiene valor de relleno, o un bean que Spring no sabe crear.
+Evaluación oficial del 2026-10-27: **5.0/5.0 y 145/145 pruebas aprobadas**, nueve criterios completos, en la [ejecución 40547139089](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/actions/runs/40547139089) para el commit 1a0c7f6. Resultado publicado en el [PR #5](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/pull/5#issuecomment-6446761040). El PR sigue abierto para la revisión de la instructora.
 
-### "Se esperaba HTTP 201 y tu API respondió 404"
-La ruta no existe o se llama distinto al contrato.
+Colección y README verificados el 2026-10-27: carpetas 1–6 aprobadas en local y Render (53 peticiones, 107 aserciones sin fallos en cada entorno) y 70 tests Java aprobados. Carpeta 7 aprobada en Render tras el pago manual de la misma ejecución: cuatro aserciones sin fallos; salón 5 en PRO/306 créditos y tres estilistas. La carpeta 7 no se ejecutó en local. El fallo inicial de IA en Render se resolvió tras el ajuste del estudiante y se repitió el recorrido completo. Detalle en VERIFICACION.md.
 
-### "La respuesta no trae ese campo"
-El JSON no tiene el nombre exacto del contrato (por ejemplo `creditosIa`).
+PR de entrega: [#5 — Giovanny Hernandez Arbelaez](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/pull/5), abierto el 2026-10-27 desde main del fork hacia main del repositorio oficial. Las evaluaciones oficiales se consultan en ese único PR. Tras corregirse el bloqueo inicial del calificador, la ejecución 40545100582 obtuvo 4.4/5.0 (129/145). Se preparó compatibilidad para metadata tipo/tipoCompra y se renombró el test de chatbot sin cambiar sus aserciones; suite actual de 75 pruebas aprobadas. El resultado oficial de cada revisión se consulta en el PR y su historial en VERIFICACION.md. No se modificó .github/. La guía original se encuentra en el [repositorio de la instructora](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5). Evidencias y pendientes reales: [VERIFICACION.md](VERIFICACION.md); usos de IA: [BITACORA-IA.md](BITACORA-IA.md).
 
-### "Se esperaba HTTP 200 y tu API respondió 502" en pagos
-Tu cliente de Stripe no está usando `STRIPE_URL_API`.
+## Si Sillón tuviera 500 salones
 
-### Todo el criterio 05 en cero con "503"
-Tu proveedor de IA no lee `SILLON_IA_OPENAI_URL` o `GEMINI_LLAVE`.
+Reflexión propuesta con asistencia de IA y revisada y aprobada por el estudiante:
 
-### "No encontré en tu README.md una URL de Render"
-Agrega la URL completa (`https://tu-app.onrender.com`) a tu README.
-
-### Error 403 al hacer push
-Clonaste el repo de la profe en vez de tu fork. Vuelve al Paso 2 con la URL de **tu** fork.
-
-### "Please tell me who you are"
-Configura Git una sola vez:
-
-```bash
-git config --global user.name "Tu Nombre"
-git config --global user.email "tu-correo@ejemplo.com"
-```
-
----
-
-<small>© 2026 Ana Alvarado · Educadora Tech & Desarrolladora Full Stack · Todos los derechos reservados · linkedin.com/in/ana-alvarado-instructora-full-stack</small>
+Cuidaría primero la agenda y la separación de los datos de cada salón.<br>
+Con 500 salones, las reservas simultáneas podrían aumentar los conflictos de horarios y el riesgo de mostrar información ajena.<br>
+Por eso vigilaría las consultas, los bloqueos al reservar y los permisos de acceso.

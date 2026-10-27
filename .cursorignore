@@ -1,0 +1,10 @@
+secrets.properties
+**/secrets.properties
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+*.key
+*.p12
+*.pfx
