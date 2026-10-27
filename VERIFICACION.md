@@ -36,6 +36,12 @@ Diagnóstico de solo lectura: el archivo oficial .github/calificador/calificar.j
 
 La corrección corresponde al responsable del calificador oficial. No se publicó un mensaje adicional a la instructora ni se abrió otro PR. La entrega mantiene pendiente obtener una evaluación oficial que termine correctamente; no se atribuyen puntuaciones parciales ni se afirma aprobación mientras exista este bloqueo.
 
+### Nueva evaluación solicitada tras la corrección oficial
+
+El 2026-10-27 el estudiante pidió reenviar la entrega. Se comprobó que el PR #5 sigue abierto y que el fork está sincronizado con la revisión documental be3f649. El archivo oficial del calificador cambió al blob SHA 20ca80f7a26a8f413649678cb30f51a1e6602e20: ahora importa node:https y selecciona https o http según la URL. Esto resuelve la causa concreta diagnosticada arriba; no demuestra aún que toda la entrega apruebe.
+
+Se solicita otra ejecución mediante un push documental a la misma rama main del fork, que actualiza el PR existente. No se crea otro PR, no se incorpora ni modifica el calificador local y no se repiten tests de la aplicación por este cambio exclusivamente documental. El resultado de la nueva evaluación se revisará en GitHub.
+
 ## Fase 10: pruebas automáticas
 
 Fecha: 2026-10-21. El estudiante aprobó conservar solo los casos mínimos de las páginas 26–27. Suite actual: **70 pruebas aprobadas, sin fallos, errores ni omisiones**, BUILD SUCCESS en target/fase10-tests.log. Matriz de todos los casos y límites en TESTS-ENTREGA.md. Servicios probados sin Spring, repositorios/IA simulados, Clock fijo y ninguna llamada real a Gemini/Stripe; se conserva el test de contexto completo con MySQL. Se retiraron pruebas adicionales, incluidas regresiones anteriores, sin modificar lógica productiva. Las cifras históricas de las fases siguientes no representan el tamaño actual de la suite. JUnit gestionado por Boot conserva la excepción autorizada documentada.
