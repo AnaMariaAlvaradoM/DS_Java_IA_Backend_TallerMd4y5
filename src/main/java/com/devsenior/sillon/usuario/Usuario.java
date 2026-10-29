@@ -1,6 +1,10 @@
 package com.devsenior.sillon.usuario;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.devsenior.sillon.salon.Salon;
+import com.devsenior.sillon.servicio.Servicio;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,6 +13,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -34,6 +41,14 @@ public class Usuario {
 
     @ManyToOne
     private Salon salon;
+
+    @ManyToMany
+    @JoinTable(name = "estilista_servicios", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "servicio_id"))
+    private Set<Servicio> servicios = new HashSet<>();
+
+    public boolean ofreceServicio(Long servicioId) {
+        return servicios.stream().anyMatch(servicio -> servicio.getId().equals(servicioId));
+    }
 
     public Long getId() {
         return id;
@@ -89,5 +104,13 @@ public class Usuario {
 
     public void setSalon(Salon salon) {
         this.salon = salon;
+    }
+
+    public Set<Servicio> getServicios() {
+        return servicios;
+    }
+
+    public void setServicios(Set<Servicio> servicios) {
+        this.servicios = servicios;
     }
 }
