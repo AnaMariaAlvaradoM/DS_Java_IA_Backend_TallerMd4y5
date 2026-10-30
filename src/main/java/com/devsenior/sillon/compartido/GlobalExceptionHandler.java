@@ -135,4 +135,14 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.PAYMENT_REQUIRED);
     }
+    @ExceptionHandler(AccesoDenegadoException.class)
+    public ResponseEntity<ErrorRespuesta> manejarAcceso(AccesoDenegadoException ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.FORBIDDEN.getReasonPhrase(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
 }

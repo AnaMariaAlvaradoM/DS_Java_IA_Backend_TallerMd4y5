@@ -28,8 +28,7 @@ public class Cliente {
     public Cliente() {
     }
 
-    public Cliente(Long id, String nombre, Salon salon, String telefono) {
-        this.id = id;
+    public Cliente( String nombre, Salon salon, String telefono) {
         this.nombre = nombre;
         this.salon = salon;
         this.telefono = telefono;

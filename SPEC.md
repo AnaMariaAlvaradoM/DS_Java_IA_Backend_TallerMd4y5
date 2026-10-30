@@ -93,7 +93,19 @@ El salón necesita registrar y gestionar los turnos internos respetando los hora
 2. **Validación de Horarios:** No se puede agendar en el pasado, fuera del horario del salón, un domingo si no abre, ni con un estilista que no ofrece el servicio (409 Conflict).
 3. **Manejo del Tiempo:** "Hoy" y "ahora" se calculan con el reloj en `America/Bogota`.
 4. **Prevención de Cruces:** Un estilista no puede tener dos citas superpuestas. Solo ocupan agenda las citas PENDIENTE y CONFIRMADA (409 Conflict).
-5. **Transiciones de Estado:** PENDIENTE → CONFIRMADA o CANCELADA; CONFIRMADA → COMPLETADA, CANCELADA o NO_ASISTIO. (Estados finales: COMPLETADA, CANCELADA, NO_ASISTIO). Otras transiciones: 409 Conflict.
+   5. **Transiciones de Estado:**
+   
+   | Estado actual | Estado siguiente | Caso real de negocio |
+   |---|---|---|
+   | PENDIENTE|CONFIRMADA|El dueño o estilista revisa la solicitud y acepta la cita en el sistema.|
+   | PENDIENTE|CANCELADA|El dueño o estilista cancela la cita antes de que se cumpla.|
+   | CONFIRMADA|COMPLETADA|El cliente asistió puntualmente y el estilista terminó de prestar el servicio.|
+   | CONFIRMADA|NO_ASISTIO|El cliente no asistió a la cita.|
+   | CONFIRMADO|CANCELADA|El cliente cancela de última hora por un imprevisto tras haber sido confirmada.|
+   | COMPLETADA|NINGUNO|Estado final. No se permiten más cambios.|
+   | NO_ASISTIO|NINGUNO|Estado final. No se permiten más cambios.|
+   | CANCELADA|NINGUNO|Estado final. No se permiten más cambios.|
+        
 6. **Restricción de Estilista:** Un estilista solo puede cambiar sus propias citas, y solo a COMPLETADA o NO_ASISTIO (403 Forbidden).
 ## Criterios de aceptación
 - [ ] Agendar en el pasado, fuera de horario, o en domingo (si el salón cierra) devuelve `409 Conflict`.

@@ -34,16 +34,15 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final LocalDate fechaCreacion;
 
-    public AuthService(UsuarioRepository usuarioRepository, SalonRepository salonRepository, GeneradorSlugService generadorSlugService, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, LocalDate fechaCreacion) {
+
+    public AuthService(UsuarioRepository usuarioRepository, SalonRepository salonRepository, GeneradorSlugService generadorSlugService, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
         this.usuarioRepository = usuarioRepository;
         this.salonRepository = salonRepository;
         this.generadorSlugService = generadorSlugService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
-        this.fechaCreacion = fechaCreacion;
     }
 
     @Transactional
@@ -67,7 +66,7 @@ public class AuthService {
         salon.setStripeSubscriptionId("SIN_SUSCRIPCION");
         salon.setConfiguracion(ConfiguracionSalon.porDefecto());
         salon.setNombresalon(nombreSalon);
-        salon.setFechaCreacion(fechaCreacion);
+        salon.setFechaCreacion( LocalDate.now());
 
         Salon salonGuardado = salonRepository.save(salon);
 

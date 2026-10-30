@@ -1,4 +1,5 @@
 package com.devsenior.sillon.security;
+import com.devsenior.sillon.usuario.model.Rol;
 import com.devsenior.sillon.usuario.model.Usuario;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,11 +14,11 @@ public class UsuarioPrincipal implements UserDetails {
     private final Long salonId;
     private final String email;
     private final String password;
-    private final String rol;
+    private final Rol rol;
     private final boolean activo;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public UsuarioPrincipal(Long id, Long salonId, String email, String password, String rol, boolean activo, Collection<? extends GrantedAuthority> authorities) {
+    public UsuarioPrincipal(Long id, Long salonId, String email, String password, Rol rol, boolean activo, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.salonId = salonId;
         this.email = email;
@@ -39,7 +40,7 @@ public class UsuarioPrincipal implements UserDetails {
                 usuario.getSalon() != null ? usuario.getSalon().getId() : null,
                 usuario.getEmail(),
                 usuario.getContrasena(),
-                nombreRol,
+                usuario.getRol(),
                 true, // o el estado activo del usuario si existe atributo en la entidad
                 List.of(authority)
         );
@@ -96,7 +97,7 @@ public class UsuarioPrincipal implements UserDetails {
         return email;
     }
 
-    public String getRol() {
+    public Rol getRol() {
         return rol;
     }
 }
