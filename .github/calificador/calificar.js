@@ -10,6 +10,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const http = require("node:http");
+const https = require("node:https");
 const { spawn, spawnSync } = require("node:child_process");
 
 const RAIZ = path.join(__dirname, "..", "..");
@@ -88,14 +89,20 @@ function primerErrorMaven(salida) {
   return error ? error.replace(/^\[ERROR\]\s*/, "") : "Maven terminó con error";
 }
 
+// Sirve para http (la app local) y https (Render). Si algo falla devuelve 0, nunca tumba el calificador.
 function peticionHttp(url, msTimeout) {
   return new Promise((resolve) => {
-    const req = http.get(url, { timeout: msTimeout }, (res) => {
-      res.resume();
-      resolve(res.statusCode);
-    });
-    req.on("timeout", () => { req.destroy(); resolve(0); });
-    req.on("error", () => resolve(0));
+    try {
+      const cliente = url.startsWith("https:") ? https : http;
+      const req = cliente.get(url, { timeout: msTimeout }, (res) => {
+        res.resume();
+        resolve(res.statusCode);
+      });
+      req.on("timeout", () => { req.destroy(); resolve(0); });
+      req.on("error", () => resolve(0));
+    } catch {
+      resolve(0);
+    }
   });
 }
 
@@ -256,8 +263,10 @@ function comandoPython() {
 function urlProduccion() {
   if (process.env.CALIFICADOR_PRODUCCION_LOCAL === "1") return `http://localhost:${PUERTO_APP}`;
   if (process.env.SILLON_URL_PRODUCCION) return process.env.SILLON_URL_PRODUCCION.replace(/\/+$/, "");
-  const urls = leer("README.md").match(/https:\/\/[a-z0-9][a-z0-9-]*\.onrender\.com/gi) || [];
-  return urls.find((u) => !/TU-APP/i.test(u)) || "";
+  // Acepta la URL escrita con http:// o https://; Render siempre se prueba por https
+  const urls = leer("README.md").match(/https?:\/\/[a-z0-9][a-z0-9-]*\.onrender\.com/gi) || [];
+  const url = urls.find((u) => !/TU-APP/i.test(u)) || "";
+  return url.replace(/^http:/i, "https:");
 }
 
 function revisarTests(compilo) {
