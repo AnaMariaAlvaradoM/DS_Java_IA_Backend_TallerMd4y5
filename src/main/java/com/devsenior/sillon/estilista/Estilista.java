@@ -1,7 +1,7 @@
 package com.devsenior.sillon.estilista;
 
 import com.devsenior.sillon.salon.Salon;
-import com.devsenior.sillon.servicio.ServicioSalon;
+import com.devsenior.sillon.servicio.Servicio;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class Estilista {
             joinColumns = @JoinColumn(name = "estilista_id"),
             inverseJoinColumns = @JoinColumn(name = "servicio_id")
     )
-    private List<ServicioSalon> servicios = new ArrayList<>();
+    private List<Servicio> servicios = new ArrayList<>();
 
     public Estilista() {}
 
@@ -77,11 +77,11 @@ public class Estilista {
         this.salon = salon;
     }
 
-    public List<ServicioSalon> getServicios() {
+    public List<Servicio> getServicios() {
         return servicios;
     }
 
-    public void setServicios(List<ServicioSalon> servicios) {
+    public void setServicios(List<Servicio> servicios) {
         this.servicios = servicios;
     }
 }

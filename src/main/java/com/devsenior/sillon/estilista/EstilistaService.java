@@ -8,7 +8,7 @@ import com.devsenior.sillon.estilista.dto.HorarioEstilistaDto;
 import com.devsenior.sillon.salon.Salon;
 import com.devsenior.sillon.salon.SalonRepository;
 import com.devsenior.sillon.servicio.ServicioRepository;
-import com.devsenior.sillon.servicio.ServicioSalon;
+import com.devsenior.sillon.servicio.Servicio;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +47,7 @@ public class EstilistaService {
         estilista.setSalon(salon);
 
         if (request.serviciosIds() != null && !request.serviciosIds().isEmpty()) {
-            List<ServicioSalon> servicios = servicioRepository.findAllById(request.serviciosIds());
+            List<Servicio> servicios = servicioRepository.findAllById(request.serviciosIds());
             estilista.setServicios(servicios);
         }
 
@@ -71,7 +71,7 @@ public class EstilistaService {
         estilista.setEspecialidad(request.especialidad() != null ? request.especialidad().trim() : null);
 
         if (request.serviciosIds() != null) {
-            List<ServicioSalon> servicios = servicioRepository.findAllById(request.serviciosIds());
+            List<Servicio> servicios = servicioRepository.findAllById(request.serviciosIds());
             estilista.setServicios(servicios);
         }
 
@@ -122,7 +122,7 @@ public class EstilistaService {
 
     private EstilistaResponseDto mapearADto(Estilista estilista) {
         List<Long> serviciosIds = estilista.getServicios() != null
-                ? estilista.getServicios().stream().map(ServicioSalon::getId).toList()
+                ? estilista.getServicios().stream().map(Servicio::getId).toList()
                 : new ArrayList<>();
 
         return new EstilistaResponseDto(

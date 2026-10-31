@@ -18,7 +18,7 @@ public class Servicio {
     private Integer duracionMinutos;
     private boolean activo = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "salon_id", nullable = false)
     private Salon salon;
 

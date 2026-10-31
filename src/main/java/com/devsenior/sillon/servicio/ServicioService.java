@@ -27,7 +27,7 @@ public class ServicioService {
         Salon salon = salonRepository.findById(salonId)
                 .orElseThrow(() -> new NoEncontradoException("Salon no encontrado"));
 
-        ServicioSalon servicio = new ServicioSalon();
+        Servicio servicio = new Servicio();
         servicio.setNombre(request.nombre().trim());
         servicio.setDescripcion(request.descripcion() != null ? request.descripcion().trim() : null);
         servicio.setPrecio(request.precio());
@@ -48,7 +48,7 @@ public class ServicioService {
 
     @Transactional
     public ServicioResponseDto actualizarServicio(Long id, Long salonId, ServicioRequestDto request) {
-        ServicioSalon servicio = servicioRepository.findByIdAndSalonId(id, salonId)
+        Servicio servicio = servicioRepository.findByIdAndSalonId(id, salonId)
                 .orElseThrow(() -> new NoEncontradoException("Servicio no encontrado en su salon"));
 
         servicio.setNombre(request.nombre().trim());
@@ -62,14 +62,14 @@ public class ServicioService {
 
     @Transactional
     public void cambiarEstado(Long id, Long salonId, boolean activo) {
-        ServicioSalon servicio = servicioRepository.findByIdAndSalonId(id, salonId)
+        Servicio servicio = servicioRepository.findByIdAndSalonId(id, salonId)
                 .orElseThrow(() -> new NoEncontradoException("Servicio no encontrado en su salon"));
 
         servicio.setActivo(activo);
         servicioRepository.save(servicio);
     }
 
-    private ServicioResponseDto mapearADto(ServicioSalon servicio) {
+    private ServicioResponseDto mapearADto(Servicio servicio) {
         return new ServicioResponseDto(
                 servicio.getId(),
                 servicio.getNombre(),
