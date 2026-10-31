@@ -24,9 +24,11 @@ import jakarta.validation.Valid;
 public class CitaController {
 
     private final CitaService citaService;
+    private final RecordatorioService recordatorioService;
 
-    public CitaController(CitaService citaService) {
+    public CitaController(CitaService citaService, RecordatorioService recordatorioService) {
         this.citaService = citaService;
+        this.recordatorioService = recordatorioService;
     }
 
     @PostMapping
@@ -48,5 +50,11 @@ public class CitaController {
             @PathVariable Long id, @Valid @RequestBody CambiarEstadoRequest request) {
         return citaService.cambiarEstado(principal.getSalonId(), id, principal.getId(), principal.getRol(),
                 request.estado());
+    }
+
+    @PostMapping("/{id}/recordatorio")
+    public RecordatorioRespuesta recordatorio(@AuthenticationPrincipal UsuarioPrincipal principal,
+            @PathVariable Long id) {
+        return recordatorioService.generar(principal.getSalonId(), id);
     }
 }

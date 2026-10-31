@@ -137,4 +137,16 @@ public class CitaService {
 
         return CitaMapper.aRespuesta(citaRepository.saveAndFlush(cita));
     }
+
+    @Transactional(readOnly = true)
+    public DatosRecordatorio obtenerDatosRecordatorio(Long salonId, Long citaId) {
+        Cita cita = citaRepository.findByIdAndSalonId(citaId, salonId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada"));
+
+        if (cita.getEstado() != EstadoCita.PENDIENTE && cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new ReglaNegocioException("Solo se puede enviar recordatorio de citas pendientes o confirmadas");
+        }
+
+        return RecordatorioMapper.aDatosRecordatorio(cita);
+    }
 }
