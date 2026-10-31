@@ -20,7 +20,7 @@ public class ServicioSalon {
     @Column(nullable = false)
     private BigDecimal precio;
 
-    @Column(name = "duracion_minutos", nullable = false)
+    @Column(nullable = false)
     private Integer duracionMinutos;
 
     @Column(nullable = false)
@@ -31,6 +31,15 @@ public class ServicioSalon {
     private Salon salon;
 
     public ServicioSalon() {}
+
+    public ServicioSalon(String nombre, String descripcion, BigDecimal precio, Integer duracionMinutos, boolean activo, Salon salon) {
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.precio = precio;
+        this.duracionMinutos = duracionMinutos;
+        this.activo = activo;
+        this.salon = salon;
+    }
 
     public Long getId() {
         return id;
