@@ -4,7 +4,8 @@
 //
 // En GitHub Actions lo corre el workflow "Calificar proyecto" en cada push del Pull Request.
 // En local (solo la profe): node .github/calificador/calificar.js
-//   Necesita MySQL, Java 17, Maven, Python 3, Newman y stripe-mock en el puerto 12111.
+//   Necesita MySQL, Java (17 o más, la que pida el pom.xml), Maven, Python 3, Newman y stripe-mock en el puerto 12111.
+//   En GitHub Actions el JDK lo elige version-java.sh según el pom.xml del estudiante.
 
 const fs = require("node:fs");
 const os = require("node:os");
@@ -42,8 +43,21 @@ const ENTORNO_APP = {
 };
 
 const procesos = [];
+// Avisos que no son de un criterio puntual (versión de Java, plugin de Spring Boot…)
+const avisosGenerales = [];
 
 // ---------- utilidades ----------
+
+// Versión del JDK con el que se está calificando (la deja el workflow; en local se pregunta a java)
+function javaUsada() {
+  if (/^\d+$/.test(process.env.JAVA_USADA || "")) return process.env.JAVA_USADA;
+  const r = spawnSync("java", ["-version"], { encoding: "utf8", shell: process.platform === "win32" });
+  const m = `${r.stderr || ""}${r.stdout || ""}`.match(/version "(?:1\.)?(\d+)/);
+  return m ? m[1] : "?";
+}
+
+// Los archivos .class guardan su versión como un número: Java N = N + 44
+const javaDeClase = (numero) => String(Number(numero) - 44);
 
 function existe(ruta) {
   return fs.existsSync(path.join(RAIZ, ruta));
@@ -76,6 +90,11 @@ function maven(args, minutos, entorno) {
 
 function primerErrorMaven(salida) {
   const lineas = (salida || "").split(/\r?\n/);
+  const version = (salida || "").match(/(?:release version|invalid (?:target|source) release:?)\s*(?:1\.)?(\d+)/i);
+  if (version) {
+    return `Tu pom.xml pide Java ${version[1]}, pero se está calificando con Java ${javaUsada()}. ` +
+      "Escribe la versión con un número entre 17 y 27 en <java.version> de tu pom.xml (por ejemplo 21 o 25)";
+  }
   const compilacion = lineas.find((l) => /\[ERROR\].*\.java:\[\d+/.test(l));
   if (compilacion) {
     const m = compilacion.match(/(src\/[^\s:]+\.java):\[(\d+)[,\d]*\]\s*(.*)$/);
@@ -314,7 +333,11 @@ function revisarTests(compilo) {
   return { r, aviso, total };
 }
 
-async function arrancarApp() {
+const AVISO_SIN_PLUGIN = "Tu pom.xml no tiene el plugin spring-boot-maven-plugin, así que tu .jar no arranca solo " +
+  "(sale \"no main manifest attribute\"). El calificador lo armó por ti para poder calificarte, pero Render NO lo hará: " +
+  "agrega el plugin en <build><plugins> de tu pom.xml o el criterio 09 no te va a funcionar.";
+
+async function arrancarApp(reintento = false) {
   const jar = (fs.existsSync(path.join(RAIZ, "target")) ? fs.readdirSync(path.join(RAIZ, "target")) : [])
     .find((f) => f.endsWith(".jar") && !f.endsWith("-plain.jar"));
   if (!jar) return "No se encontró el .jar después de compilar";
@@ -327,6 +350,26 @@ async function arrancarApp() {
     if (estado > 0) return "";
   }
   const texto = fs.existsSync(log) ? fs.readFileSync(log, "utf8") : "";
+
+  // El .jar no es ejecutable porque falta spring-boot-maven-plugin: se reempaqueta una vez y se reintenta
+  if (/no main manifest attribute/i.test(texto) && !reintento) {
+    const reempaque = maven(["-DskipTests", "package", "org.springframework.boot:spring-boot-maven-plugin:repackage"], 10);
+    if (reempaque.status !== 0) {
+      return "Tu .jar no arranca porque a tu pom.xml le falta el plugin spring-boot-maven-plugin " +
+        "(sale \"no main manifest attribute\"): agrégalo en <build><plugins>";
+    }
+    avisosGenerales.push(AVISO_SIN_PLUGIN);
+    return arrancarApp(true);
+  }
+
+  // Se compiló para un Java más nuevo que el que lo ejecuta
+  const clase = texto.match(/class file version (\d+)(?:\.\d+)?[\s\S]*?up to (\d+)/);
+  if (clase) {
+    const necesita = javaDeClase(clase[1]);
+    return `Tu proyecto (o una de sus librerías) necesita Java ${necesita} y se ejecutó con Java ${javaDeClase(clase[2])}: ` +
+      `pon ${necesita} en <java.version> de tu pom.xml`;
+  }
+
   const descripcion = texto.match(/Description:\s*\n+([^\n]+)/);
   if (descripcion) return `La aplicación no arrancó: ${descripcion[1].trim()}`;
   const causa = [...texto.matchAll(/Caused by: ([^\n]+)/g)].pop();
@@ -341,8 +384,26 @@ function icono(r) {
   return r.pasados > 0 ? "🟡" : "❌";
 }
 
+function lineaJava() {
+  const pedida = process.env.JAVA_PEDIDA;
+  const usada = javaUsada();
+  return pedida ? `☕ Tu pom.xml pide Java ${pedida} · se calificó con Java ${usada}`
+    : `☕ Tu pom.xml no dice la versión de Java · se calificó con Java ${usada}`;
+}
+
+function avisosDeVersion() {
+  const pedida = Number(process.env.JAVA_PEDIDA || 0);
+  const usada = Number(process.env.JAVA_USADA || 0);
+  if (!pedida || !usada) return;
+  if (pedida < 17) avisosGenerales.push(`Spring Boot necesita Java 17 o más y tu pom.xml dice ${pedida}: se calificó con Java ${usada}.`);
+  else if (pedida > usada) avisosGenerales.push(`Tu pom.xml pide Java ${pedida}, que todavía no está disponible: se calificó con Java ${usada}.`);
+}
+
 function imprimirEnConsola(resultados, resumen) {
   console.log(`\n${CONFIG.curso} · Resultado de tu proyecto\n`);
+  console.log(lineaJava());
+  for (const a of avisosGenerales) console.log(`⚠️  ${a}`);
+  console.log("");
   for (const r of resultados) {
     console.log(`${icono(r)} ${r.id} ${r.titulo.padEnd(34)} ${r.pasados}/${r.total}`);
     if (r.aviso) console.log(`     ⚠️  ${r.aviso}`);
@@ -370,6 +431,9 @@ function escribirResumenGithub(resultados, resumen) {
     `## 🎯 Nota: ${resumen.nota.toFixed(1)} / 5.0`,
     `Pruebas aprobadas: **${resumen.pasados}/${resumen.total}**`,
     "",
+    lineaJava(),
+    ...avisosGenerales.map((a) => `\n> [!WARNING]\n> ${a}`),
+    "",
     "| Estado | Criterio | Pruebas |",
     "|---|---|---|",
     ...filas,
@@ -393,6 +457,7 @@ async function principal() {
   const porId = Object.fromEntries(CONFIG.ejercicios.map((e) => [e.id, e]));
   const parciales = {};
   const coleccionLocal = ["01", "02", "03", "04", "05", "06"].map((id) => porId[id]);
+  avisosDeVersion();
 
   const hayPom = existe("pom.xml");
   const compilacion = hayPom ? maven(["-DskipTests", "package"], 10) : { status: 1, stdout: "" };
