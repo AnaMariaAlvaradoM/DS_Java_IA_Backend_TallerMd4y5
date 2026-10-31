@@ -1,0 +1,4 @@
+secrets.properties
+.env
+*.pem
+*.key
