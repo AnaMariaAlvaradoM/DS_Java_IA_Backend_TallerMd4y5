@@ -11,7 +11,6 @@ public class ConfiguracionSalon {
     private boolean abreDomingos;
     private int intervaloMinutos;
 
-    // Constructor vacío obligatorio para JPA
     public ConfiguracionSalon() {
     }
 
@@ -22,7 +21,6 @@ public class ConfiguracionSalon {
         this.intervaloMinutos = intervaloMinutos;
     }
 
-    // Método solicitado: devuelve la configuración por defecto de la guía
     public static ConfiguracionSalon crearPorDefecto() {
         return new ConfiguracionSalon(
                 LocalTime.of(8, 0),
@@ -32,7 +30,6 @@ public class ConfiguracionSalon {
         );
     }
 
-    // --- GETTERS Y SETTERS EXPLICITOS (SIN LOMBOK) ---
 
     public LocalTime getHoraApertura() {
         return horaApertura;

@@ -55,8 +55,8 @@ public class ManejadorGlobalExcepciones {
         return construir(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    @ExceptionHandler(CredencialesInvalidasException.class)
-    public ResponseEntity<ErrorApi> manejarCredencialesInvalidas(CredencialesInvalidasException ex){
+    @ExceptionHandler(CredencialesInvalidasExcepcion.class)
+    public ResponseEntity<ErrorApi> manejarCredencialesInvalidas(CredencialesInvalidasExcepcion ex){
         return construir(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
