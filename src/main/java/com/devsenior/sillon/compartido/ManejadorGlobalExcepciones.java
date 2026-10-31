@@ -22,7 +22,11 @@ public class ManejadorGlobalExcepciones {
 
     private final Clock reloj;
 
-    public ManejadorGlobalExcepciones(Clock reloj){
+    public ManejadorGlobalExcepciones() {
+        this.reloj = Clock.systemUTC();
+    }
+
+    public ManejadorGlobalExcepciones(Clock reloj) {
         this.reloj = reloj;
     }
 
@@ -33,6 +37,12 @@ public class ManejadorGlobalExcepciones {
                 mensaje,
                 LocalDateTime.now(reloj));
         return ResponseEntity.status(estado).body(cuerpo);
+    }
+
+    // MANEJADOR FALTANTE PARA 409 CONFLICT (Registro duplicado y horarios imposibles)
+    @ExceptionHandler(ConflictoExcepcion.class)
+    public ResponseEntity<ErrorApi> manejarConflicto(ConflictoExcepcion ex) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(NoEncontradoException.class)
@@ -51,25 +61,24 @@ public class ManejadorGlobalExcepciones {
     }
 
     @ExceptionHandler(AccionNoPermitidaException.class)
-    public ResponseEntity<ErrorApi> manejarAccionNoPermitida(AccionNoPermitidaException ex){
+    public ResponseEntity<ErrorApi> manejarAccionNoPermitida(AccionNoPermitidaException ex) {
         return construir(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
     @ExceptionHandler(CredencialesInvalidasExcepcion.class)
-    public ResponseEntity<ErrorApi> manejarCredencialesInvalidas(CredencialesInvalidasExcepcion ex){
+    public ResponseEntity<ErrorApi> manejarCredencialesInvalidas(CredencialesInvalidasExcepcion ex) {
         return construir(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     @ExceptionHandler(FirmaInvalidaException.class)
-    public ResponseEntity<ErrorApi> manejarFirmaInvalida(FirmaInvalidaException ex){
+    public ResponseEntity<ErrorApi> manejarFirmaInvalida(FirmaInvalidaException ex) {
         return construir(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(ErrorPasarelaException.class)
-    public ResponseEntity<ErrorApi> manejarErrorPasarela(ErrorPasarelaException ex){
+    public ResponseEntity<ErrorApi> manejarErrorPasarela(ErrorPasarelaException ex) {
         return construir(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
-
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorApi> manejarValidacion(MethodArgumentNotValidException ex) {
@@ -96,7 +105,6 @@ public class ManejadorGlobalExcepciones {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorApi> manejarGlobal(Exception ex) {
-
         log.error("Error no controlado en el servidor", ex);
         return construir(HttpStatus.INTERNAL_SERVER_ERROR, "Ha ocurrido un error inesperado en el servidor");
     }
