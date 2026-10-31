@@ -18,4 +18,8 @@ public interface SalonRepository extends JpaRepository<Salon, Long> {
     @Modifying
     @Query("UPDATE Salon s SET s.creditosIa = s.creditosIa + :cantidad WHERE s.id = :salonId")
     void sumarCreditos(@Param("salonId") Long salonId, @Param("cantidad") int cantidad);
+
+    @Modifying
+    @Query("UPDATE Salon s SET s.creditosIa = s.creditosIa - 1 WHERE s.id = :salonId AND s.creditosIa > 0")
+    int restarCredito(@Param("salonId") Long salonId);
 }

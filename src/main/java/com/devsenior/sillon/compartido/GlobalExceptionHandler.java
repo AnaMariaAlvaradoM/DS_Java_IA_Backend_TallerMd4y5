@@ -4,6 +4,9 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+import com.devsenior.sillon.ia.IaNoDisponibleException;
+import com.devsenior.sillon.ia.RespuestaIAInvalidaException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -54,6 +57,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ErrorPasarelaException.class)
     public ResponseEntity<ErrorRespuesta> manejarErrorPasarela(ErrorPasarelaException ex) {
+        return construir(HttpStatus.BAD_GATEWAY, ex.getMessage());
+    }
+
+    @ExceptionHandler(IaNoDisponibleException.class)
+    public ResponseEntity<ErrorRespuesta> manejarIaNoDisponible(IaNoDisponibleException ex) {
+        return construir(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+
+    @ExceptionHandler(RespuestaIAInvalidaException.class)
+    public ResponseEntity<ErrorRespuesta> manejarRespuestaIaInvalida(RespuestaIAInvalidaException ex) {
         return construir(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
