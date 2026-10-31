@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.devsenior.sillon.chat.ChatRequest;
+import com.devsenior.sillon.chat.ChatRespuesta;
+import com.devsenior.sillon.chat.ChatbotService;
 import com.devsenior.sillon.cita.CitaRequest;
 import com.devsenior.sillon.cita.CitaRespuesta;
 
@@ -22,9 +25,11 @@ import jakarta.validation.Valid;
 public class PublicoController {
 
     private final CatalogoService catalogoService;
+    private final ChatbotService chatbotService;
 
-    public PublicoController(CatalogoService catalogoService) {
+    public PublicoController(CatalogoService catalogoService, ChatbotService chatbotService) {
         this.catalogoService = catalogoService;
+        this.chatbotService = chatbotService;
     }
 
     @GetMapping("/{slug}")
@@ -43,5 +48,10 @@ public class PublicoController {
             @Valid @RequestBody CitaRequest request) {
         CitaRespuesta respuesta = catalogoService.reservar(slug, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
+    }
+
+    @PostMapping("/{slug}/chat")
+    public ChatRespuesta chat(@PathVariable String slug, @Valid @RequestBody ChatRequest request) {
+        return chatbotService.chatear(slug, request);
     }
 }
