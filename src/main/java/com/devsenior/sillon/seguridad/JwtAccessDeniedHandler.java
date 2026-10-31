@@ -18,6 +18,10 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
 
     private final ObjectMapper objectMapper;
 
+    public JwtAccessDeniedHandler() {
+        this.objectMapper = new ObjectMapper();
+    }
+
     public JwtAccessDeniedHandler(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }

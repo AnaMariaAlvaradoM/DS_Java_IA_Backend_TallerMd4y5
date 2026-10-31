@@ -18,6 +18,10 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
 
+    public JwtAuthenticationEntryPoint() {
+        this.objectMapper = new ObjectMapper();
+    }
+
     public JwtAuthenticationEntryPoint(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
