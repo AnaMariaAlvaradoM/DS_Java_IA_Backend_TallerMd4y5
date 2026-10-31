@@ -9,10 +9,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/salon")
+@Tag(name = "2 Mi salón")
+@SecurityRequirement(name = "bearerAuth")
 public class SalonController {
 
     private final SalonService salonService;

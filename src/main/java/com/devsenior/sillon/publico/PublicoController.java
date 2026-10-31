@@ -18,10 +18,12 @@ import com.devsenior.sillon.chat.ChatbotService;
 import com.devsenior.sillon.cita.CitaRequest;
 import com.devsenior.sillon.cita.CitaRespuesta;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/publico/salones")
+@Tag(name = "0 Público")
 public class PublicoController {
 
     private final CatalogoService catalogoService;

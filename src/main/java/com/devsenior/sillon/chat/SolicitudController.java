@@ -11,8 +11,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/solicitudes")
+@Tag(name = "8 Solicitudes")
+@SecurityRequirement(name = "bearerAuth")
 public class SolicitudController {
 
     private final SolicitudContactoService solicitudContactoService;

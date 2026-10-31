@@ -13,10 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/estilistas")
+@Tag(name = "4 Estilistas")
+@SecurityRequirement(name = "bearerAuth")
 public class EstilistaController {
 
     private final EstilistaService estilistaService;
