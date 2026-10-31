@@ -1,0 +1,6 @@
+target
+.git
+secrets.properties
+.env
+.idea
+.vscode
