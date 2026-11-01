@@ -1,0 +1,9 @@
+# Bitácora de uso de IA
+
+| # | Fase | Herramienta y modo | Para qué la usé | Qué revisé | Qué rechacé o corregí |
+|---|------|--------------------|-----------------|------------|-----------------------|
+| 1 | 0 | Claude (chat) | Entendimiento mejor del taller. | Comprender de otra forma el taller |nada |
+| 2 | 0 | Claude (chat) | Revisar la base del proyecto antes del primer commit | El estado de Git y el .gitignore | El .gitignore de Initializr había borrado la regla de secrets.properties; lo fusioné con el de la profesora |
+| 3 | 2 | Claude (chat) | Revisar el filtro de autenticación JWT de manera stateless | Que el filtro extraiga el email, usuarioId, salonId y rol desde los claims del token JWT y construya el objeto UsuarioPrincipal sin realizar consultas adicionales a la base de datos en cada petición HTTP. | Eliminé la consulta a UsuarioRepository dentro del filtro para evitar latencia por I/O en la base de datos y garantizar una arquitectura 100% stateless. | 
+| 4 | 2 | Claude (chat) | Revisión del error "Horario imposible (abre después de cerrar" | El código de estado HTTP retornado ante excepciones de negocio y la captura de ConflictoExcepcion en @RestControllerAdvice | Rechacé la respuesta por defecto 500 Internal Server Error agregando el método @ExceptionHandler(ConflictoExcepcion.class) en ManejadorGlobalExcepciones para responder con el código HTTP 409 Conflict y el formato JSON unificado exigido por la API |
+| 5 | 3 | Claude (chat) | Entender el error `DuplicateMappingException` al arrancar | Leí el mensaje y encontré dos entidades, `Servicio` y `ServicioSalon`, mapeadas a la tabla `servicios` | Borré `ServicioSalon`, pasé sus `nullable = false` a `Servicio` |
