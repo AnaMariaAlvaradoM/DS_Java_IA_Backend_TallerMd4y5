@@ -145,4 +145,14 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
+    @ExceptionHandler(CitaConflictoException.class)
+    public ResponseEntity<ErrorRespuesta> handleCitaConflicto(CitaConflictoException ex) {
+        ErrorRespuesta error=new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
 }

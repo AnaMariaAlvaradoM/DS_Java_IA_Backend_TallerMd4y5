@@ -52,7 +52,13 @@ public class ReglasAgenda {
                                                   boolean abreDomingo,
                                                   List<IntervaloOcupado> citasOcupadas,
                                                   LocalDateTime referenciaActual) {
+        if (fecha == null || apertura == null || cierre == null) {
+            return List.of();
+        }
 
+        if (referenciaActual == null) {
+            referenciaActual = LocalDateTime.now();
+        }
         if (fecha.getDayOfWeek() == DayOfWeek.SUNDAY && !abreDomingo) {
             return new ArrayList<>();
         }

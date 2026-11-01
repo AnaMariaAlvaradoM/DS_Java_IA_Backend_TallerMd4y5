@@ -56,9 +56,22 @@ public class CitaService {
                 .orElseThrow(() -> new NoEncontradoException("Salón no encontrado"));
 
         // Desde el salón, la cita arranca confirmada directamente
-        Cita cita = procesarAgendamiento(dto, salon, OrigenCita.SALON, EstadoCita.PENDIENTE);
+        Cita cita = procesarAgendamiento(dto, salon, OrigenCita.SALON, EstadoCita.CONFIRMADA);
         return CitaMapper.toResponse(cita);
     }
+
+    @Transactional
+    public CitaResponse reservarEnLinea(String slug, CitaResquest dto) {
+        // Busca el salón por el slug que viene de la URL pública
+        Salon salon = salonRepository.findBySlug(slug)
+                .orElseThrow(() -> new NoEncontradoException("Salón no encontrado"));
+
+        // Llama directamente al método privado existente dentro de la misma clase
+        Cita cita = procesarAgendamiento(dto, salon, OrigenCita.EN_LINEA, EstadoCita.PENDIENTE);
+
+        return CitaMapper.toResponse(cita);
+    }
+
     private Cita procesarAgendamiento(CitaResquest dto, Salon salon, OrigenCita origen, EstadoCita estadoInicial) {
 
         // 1. El servicio existe en el salón y está activo
