@@ -2,37 +2,46 @@ package com.devsenior.sillon.estilista;
 
 import com.devsenior.sillon.compartido.ConflictoExcepcion;
 import com.devsenior.sillon.compartido.NoEncontradoException;
+import com.devsenior.sillon.compartido.PagoRequeridoException;
 import com.devsenior.sillon.estilista.dto.EstilistaRequestDto;
 import com.devsenior.sillon.estilista.dto.EstilistaResponseDto;
-import com.devsenior.sillon.estilista.dto.HorarioEstilistaDto;
+import com.devsenior.sillon.salon.Plan;
 import com.devsenior.sillon.salon.Salon;
 import com.devsenior.sillon.salon.SalonRepository;
-import com.devsenior.sillon.servicio.ServicioRepository;
+import com.devsenior.sillon.usuario.Rol;
 import com.devsenior.sillon.servicio.Servicio;
+import com.devsenior.sillon.servicio.ServicioRepository;
+import com.devsenior.sillon.usuario.Usuario;
+import com.devsenior.sillon.usuario.UsuarioRepository;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
 public class EstilistaService {
 
-    private final EstilistaRepository estilistaRepository;
+    private final UsuarioRepository usuarioRepository;
     private final SalonRepository salonRepository;
     private final ServicioRepository servicioRepository;
-    private final HorarioEstilistaRepository horarioEstilistaRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Value("${sillon.limite-estilistas-gratis:2}")
+    private int limiteGratis;
 
     public EstilistaService(
-            EstilistaRepository estilistaRepository,
+            UsuarioRepository usuarioRepository,
             SalonRepository salonRepository,
             ServicioRepository servicioRepository,
-            HorarioEstilistaRepository horarioEstilistaRepository) {
-        this.estilistaRepository = estilistaRepository;
+            PasswordEncoder passwordEncoder) {
+        this.usuarioRepository = usuarioRepository;
         this.salonRepository = salonRepository;
         this.servicioRepository = servicioRepository;
-        this.horarioEstilistaRepository = horarioEstilistaRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -40,97 +49,56 @@ public class EstilistaService {
         Salon salon = salonRepository.findById(salonId)
                 .orElseThrow(() -> new NoEncontradoException("Salon no encontrado"));
 
-        Estilista estilista = new Estilista();
-        estilista.setNombre(request.nombre().trim());
-        estilista.setEspecialidad(request.especialidad() != null ? request.especialidad().trim() : null);
-        estilista.setActivo(true);
-        estilista.setSalon(salon);
-
-        if (request.serviciosIds() != null && !request.serviciosIds().isEmpty()) {
-            List<Servicio> servicios = servicioRepository.findAllById(request.serviciosIds());
-            estilista.setServicios(servicios);
+        if (salon.getPlan() == Plan.GRATIS) {
+            long actuales = usuarioRepository.countBySalonIdAndRol(salonId, Rol.ESTILISTA);
+            if (actuales >= limiteGratis) {
+                throw new PagoRequeridoException("El plan GRATIS solo permite un maximo de " + limiteGratis + " estilistas");
+            }
         }
 
-        estilista = estilistaRepository.save(estilista);
+        String emailLimpio = request.email().trim().toLowerCase();
+        if (usuarioRepository.existsByEmail(emailLimpio)) {
+            throw new ConflictoExcepcion("El email ya esta registrado");
+        }
+
+        List<Long> idsUnicos = request.servicioIds().stream().distinct().toList();
+        List<Servicio> servicios = servicioRepository.findByIdInAndSalonId(idsUnicos, salonId);
+
+        if (servicios.size() != idsUnicos.size()) {
+            throw new NoEncontradoException("Uno o mas servicios no pertenecen al salon o no existen");
+        }
+
+        Usuario estilista = new Usuario(
+                request.nombre().trim(),
+                emailLimpio,
+                passwordEncoder.encode(request.password()),
+                Rol.ESTILISTA,
+                salon
+        );
+        estilista.setServicios(new HashSet<>(servicios));
+
+        estilista = usuarioRepository.save(estilista);
         return mapearADto(estilista);
     }
 
     @Transactional(readOnly = true)
     public List<EstilistaResponseDto> listarEstilistas(Long salonId) {
-        return estilistaRepository.findBySalonId(salonId).stream()
+        return usuarioRepository.findBySalonIdAndRol(salonId, Rol.ESTILISTA).stream()
                 .map(this::mapearADto)
                 .toList();
     }
 
-    @Transactional
-    public EstilistaResponseDto actualizarEstilista(Long id, Long salonId, EstilistaRequestDto request) {
-        Estilista estilista = estilistaRepository.findByIdAndSalonId(id, salonId)
-                .orElseThrow(() -> new NoEncontradoException("Estilista no encontrado en su salon"));
-
-        estilista.setNombre(request.nombre().trim());
-        estilista.setEspecialidad(request.especialidad() != null ? request.especialidad().trim() : null);
-
-        if (request.serviciosIds() != null) {
-            List<Servicio> servicios = servicioRepository.findAllById(request.serviciosIds());
-            estilista.setServicios(servicios);
-        }
-
-        estilista = estilistaRepository.save(estilista);
-        return mapearADto(estilista);
-    }
-
-    @Transactional
-    public void cambiarEstado(Long id, Long salonId, boolean activo) {
-        Estilista estilista = estilistaRepository.findByIdAndSalonId(id, salonId)
-                .orElseThrow(() -> new NoEncontradoException("Estilista no encontrado en su salon"));
-
-        estilista.setActivo(activo);
-        estilistaRepository.save(estilista);
-    }
-
-    @Transactional
-    public List<HorarioEstilistaDto> asignarHorarios(Long estilistaId, Long salonId, List<HorarioEstilistaDto> horariosDto) {
-        Estilista estilista = estilistaRepository.findByIdAndSalonId(estilistaId, salonId)
-                .orElseThrow(() -> new NoEncontradoException("Estilista no encontrado en su salon"));
-
-        for (HorarioEstilistaDto h : horariosDto) {
-            if (!h.horaInicio().isBefore(h.horaFin())) {
-                throw new ConflictoExcepcion("La hora de inicio debe ser anterior a la hora de fin para el dia " + h.diaSemana());
-            }
-        }
-
-        horarioEstilistaRepository.deleteByEstilistaId(estilistaId);
-
-        List<HorarioEstilista> nuevosHorarios = horariosDto.stream()
-                .map(dto -> new HorarioEstilista(dto.diaSemana(), dto.horaInicio(), dto.horaFin(), estilista))
-                .toList();
-
-        horarioEstilistaRepository.saveAll(nuevosHorarios);
-
-        return horariosDto;
-    }
-
-    @Transactional(readOnly = true)
-    public List<HorarioEstilistaDto> obtenerHorarios(Long estilistaId, Long salonId) {
-        Estilista estilista = estilistaRepository.findByIdAndSalonId(estilistaId, salonId)
-                .orElseThrow(() -> new NoEncontradoException("Estilista no encontrado en su salon"));
-
-        return horarioEstilistaRepository.findByEstilistaId(estilista.getId()).stream()
-                .map(h -> new HorarioEstilistaDto(h.getDiaSemana(), h.getHoraInicio(), h.getHoraFin()))
-                .toList();
-    }
-
-    private EstilistaResponseDto mapearADto(Estilista estilista) {
-        List<Long> serviciosIds = estilista.getServicios() != null
-                ? estilista.getServicios().stream().map(Servicio::getId).toList()
-                : new ArrayList<>();
+    private EstilistaResponseDto mapearADto(Usuario estilista) {
+        List<String> nombresServicios = estilista.getServicios() != null
+                ? estilista.getServicios().stream().map(Servicio::getNombre).toList()
+                : List.of();
 
         return new EstilistaResponseDto(
                 estilista.getId(),
                 estilista.getNombre(),
-                estilista.getEspecialidad(),
+                estilista.getEmail(),
                 estilista.isActivo(),
-                serviciosIds
+                nombresServicios
         );
     }
 }

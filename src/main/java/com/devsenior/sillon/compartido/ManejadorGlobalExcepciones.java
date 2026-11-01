@@ -22,11 +22,7 @@ public class ManejadorGlobalExcepciones {
 
     private final Clock reloj;
 
-    public ManejadorGlobalExcepciones() {
-        this.reloj = Clock.systemUTC();
-    }
-
-    public ManejadorGlobalExcepciones(Clock reloj) {
+    public ManejadorGlobalExcepciones(Clock reloj){
         this.reloj = reloj;
     }
 
@@ -39,19 +35,13 @@ public class ManejadorGlobalExcepciones {
         return ResponseEntity.status(estado).body(cuerpo);
     }
 
-    // MANEJADOR FALTANTE PARA 409 CONFLICT (Registro duplicado y horarios imposibles)
-    @ExceptionHandler(ConflictoExcepcion.class)
-    public ResponseEntity<ErrorApi> manejarConflicto(ConflictoExcepcion ex) {
-        return construir(HttpStatus.CONFLICT, ex.getMessage());
-    }
-
     @ExceptionHandler(NoEncontradoException.class)
     public ResponseEntity<ErrorApi> manejarNoEncontrado(NoEncontradoException ex) {
         return construir(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler(ReglaNegocioException.class)
-    public ResponseEntity<ErrorApi> manejarReglaNegocio(ReglaNegocioException ex) {
+    @ExceptionHandler({ReglaNegocioException.class, ConflictoExcepcion.class})
+    public ResponseEntity<ErrorApi> manejarReglaNegocio(Exception ex) {
         return construir(HttpStatus.CONFLICT, ex.getMessage());
     }
 
@@ -61,22 +51,22 @@ public class ManejadorGlobalExcepciones {
     }
 
     @ExceptionHandler(AccionNoPermitidaException.class)
-    public ResponseEntity<ErrorApi> manejarAccionNoPermitida(AccionNoPermitidaException ex) {
+    public ResponseEntity<ErrorApi> manejarAccionNoPermitida(AccionNoPermitidaException ex){
         return construir(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
     @ExceptionHandler(CredencialesInvalidasExcepcion.class)
-    public ResponseEntity<ErrorApi> manejarCredencialesInvalidas(CredencialesInvalidasExcepcion ex) {
+    public ResponseEntity<ErrorApi> manejarCredencialesInvalidas(CredencialesInvalidasExcepcion ex){
         return construir(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     @ExceptionHandler(FirmaInvalidaException.class)
-    public ResponseEntity<ErrorApi> manejarFirmaInvalida(FirmaInvalidaException ex) {
+    public ResponseEntity<ErrorApi> manejarFirmaInvalida(FirmaInvalidaException ex){
         return construir(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(ErrorPasarelaException.class)
-    public ResponseEntity<ErrorApi> manejarErrorPasarela(ErrorPasarelaException ex) {
+    public ResponseEntity<ErrorApi> manejarErrorPasarela(ErrorPasarelaException ex){
         return construir(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 

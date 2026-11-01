@@ -5,7 +5,7 @@ import java.util.List;
 public record EstilistaResponseDto(
         Long id,
         String nombre,
-        String especialidad,
+        String email,
         boolean activo,
-        List<Long> serviciosIds
+        List<String> servicios
 ) {}

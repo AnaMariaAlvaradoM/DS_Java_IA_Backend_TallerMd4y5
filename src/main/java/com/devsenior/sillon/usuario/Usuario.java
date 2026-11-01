@@ -1,7 +1,11 @@
 package com.devsenior.sillon.usuario;
 
 import com.devsenior.sillon.salon.Salon;
+import com.devsenior.sillon.servicio.Servicio;
 import jakarta.persistence.*;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "usuarios")
@@ -30,8 +34,34 @@ public class Usuario {
     @JoinColumn(name = "salon_id", nullable = false)
     private Salon salon;
 
+    @ManyToMany
+    @JoinTable(
+            name = "estilista_servicios",
+            joinColumns = @JoinColumn(name = "estilista_id"),
+            inverseJoinColumns = @JoinColumn(name = "servicio_id")
+    )
+
+    private Set<Servicio> servicios = new HashSet<>();
+
     public Usuario(){
 
+    }
+
+    public Usuario(String nombre, String email, String password, Rol rol, Salon salon) {
+        this.nombre = nombre;
+        this.email = email;
+        this.password = password;
+        this.rol = rol;
+        this.salon = salon;
+        this.activo = true;
+    }
+
+    public boolean ofreceServicio(Long servicioId) {
+        if (servicioId == null || servicios == null || servicios.isEmpty()) {
+            return false;
+        }
+        return servicios.stream()
+                .anyMatch(servicio -> servicio.getId() != null && servicio.getId().equals(servicioId));
     }
 
     public Long getId() {
@@ -88,5 +118,13 @@ public class Usuario {
 
     public void setSalon(Salon salon) {
         this.salon = salon;
+    }
+
+    public Set<Servicio> getServicios() {
+        return servicios;
+    }
+
+    public void setServicios(Set<Servicio> servicios) {
+        this.servicios = servicios;
     }
 }
