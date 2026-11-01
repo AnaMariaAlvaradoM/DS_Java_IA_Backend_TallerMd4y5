@@ -71,6 +71,14 @@ SPEC.md, AGENTS.md, BITACORA-IA.md (5 entradas o más), colección propia en `po
 El `pom.xml` debe quedar en la raíz de tu fork, al lado de este README.
 Si lo dejas dentro de una subcarpeta, el calificador no lo encuentra y la nota es 0.0.
 
+### Tu versión de Java
+El calificador lee `<java.version>` de tu `pom.xml` e instala esa misma versión (de 17 a 27).
+Usa la que tienes instalada (`java -version`) y no pongas otra distinta en `<release>`.
+
+### El plugin de Spring Boot
+No borres `spring-boot-maven-plugin` de `<build><plugins>`.
+Sin él, tu `.jar` no arranca solo y Render no puede ejecutar tu API.
+
 ### El contrato de la API
 Rutas, nombres de campos y códigos HTTP **exactamente** como dice la sección 4 del enunciado.
 Un campo con otro nombre hace fallar la prueba aunque tu lógica esté bien.
@@ -230,6 +238,15 @@ Abre ese archivo en esa línea. Mientras no compile, casi todos los criterios qu
 
 ### "La aplicación no arrancó: …"
 Lee el motivo. Lo más común: una propiedad que no tiene valor de relleno, o un bean que Spring no sabe crear.
+
+### "Tu pom.xml pide Java N, pero se está calificando con Java M"
+El calificador no pudo leer tu versión. Escríbela como número en `<java.version>` (por ejemplo `21`).
+
+### "Tu pom.xml no tiene el plugin spring-boot-maven-plugin"
+Te calificó igual, pero vuelve a poner el plugin en tu `pom.xml`: Render lo necesita.
+
+### "Tu proyecto (o una de sus librerías) necesita Java N"
+Alguna librería pide un Java más nuevo que el de tu `pom.xml`. Pon ese número en `<java.version>`.
 
 ### "Se esperaba HTTP 201 y tu API respondió 404"
 La ruta no existe o se llama distinto al contrato.

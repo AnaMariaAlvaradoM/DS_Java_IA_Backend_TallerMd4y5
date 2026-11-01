@@ -64,11 +64,16 @@ jobs:
           done
           rm -rf entrega
 
-      - name: Instalar Java 17
+      # Cada estudiante usa una versión distinta: se instala la que pide SU pom.xml
+      - name: Elegir la versión de Java que pide el pom.xml
+        id: java
+        run: bash .github/calificador/version-java.sh pom.xml
+
+      - name: Instalar Java ${{ steps.java.outputs.usada }}
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: ${{ steps.java.outputs.usada }}
           cache-jdk: "false"
 
       - name: Instalar Node.js
@@ -80,7 +85,14 @@ jobs:
       - name: Instalar Newman
         run: npm install --global newman@6
 
+      # Si el runner no trae Maven se usa el mvnw del estudiante (desde Windows llega sin permiso de ejecución)
+      - name: Preparar el wrapper de Maven
+        run: if [ -f mvnw ]; then chmod +x mvnw; fi
+
       - name: Compilar, probar, arrancar y calificar
+        env:
+          JAVA_PEDIDA: ${{ steps.java.outputs.pedida }}
+          JAVA_USADA: ${{ steps.java.outputs.usada }}
         run: node .github/calificador/calificar.js
 
       - name: Guardar resultado para publicar la nota
