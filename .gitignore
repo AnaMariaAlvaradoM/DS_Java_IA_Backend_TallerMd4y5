@@ -15,3 +15,6 @@ _docente/
 # Secretos locales
 secrets.properties
 .env
+
+.vscode/
+HELP.md
