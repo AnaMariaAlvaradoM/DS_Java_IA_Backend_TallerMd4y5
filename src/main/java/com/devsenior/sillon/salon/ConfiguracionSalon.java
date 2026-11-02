@@ -6,13 +6,12 @@ import java.time.LocalTime;
 @Embeddable
 public class ConfiguracionSalon {
 
-    private LocalTime horaApertura;
-    private LocalTime horaCierre;
-    private boolean abreDomingos;
-    private int intervaloMinutos;
+    private LocalTime horaApertura = LocalTime.of(8, 0);
+    private LocalTime horaCierre = LocalTime.of(19, 0);
+    private boolean abreDomingos = false;
+    private int intervaloMinutos = 30;
 
-    public ConfiguracionSalon() {
-    }
+    public ConfiguracionSalon() {}
 
     public ConfiguracionSalon(LocalTime horaApertura, LocalTime horaCierre, boolean abreDomingos, int intervaloMinutos) {
         this.horaApertura = horaApertura;
@@ -29,7 +28,6 @@ public class ConfiguracionSalon {
                 30
         );
     }
-
 
     public LocalTime getHoraApertura() {
         return horaApertura;
@@ -63,4 +61,3 @@ public class ConfiguracionSalon {
         this.intervaloMinutos = intervaloMinutos;
     }
 }
-

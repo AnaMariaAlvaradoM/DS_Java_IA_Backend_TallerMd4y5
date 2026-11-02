@@ -176,3 +176,19 @@ La factura de la IA tiene: `proveedor`, `modelo`, `tokensEntrada`, `tokensSalida
 - Recordatorios automáticos programados y reportes.
 - Pagos del cliente final al salón, que exigirían Stripe Connect.
 - Interfaz gráfica: el cliente de la API es Postman.
+
+## 6. Tabla de transciones
+### Tabla de Transiciones de Estado de Cita
+
+| Estado Origen | Estado Destino | Permite Transición | Caso de Uso de Negocio |
+|---|---|---|---|
+| **PENDIENTE** | **CONFIRMADA** |  Sí | El dueño o el sistema confirman la reserva creada en línea. |
+| **PENDIENTE** | **CANCELADA** |  Sí | El cliente o el salón cancelan la reserva antes de ser atendida. |
+| **PENDIENTE** | **COMPLETADA** |  No | No se puede marcar como realizada una cita sin haber sido confirmada. |
+| **PENDIENTE** | **NO_ASISTIO** |  No | Solo se reporta inasistencia sobre citas previamente confirmadas. |
+| **CONFIRMADA** | **COMPLETADA** |  Sí | El estilista finaliza la atención del cliente exitosamente. |
+| **CONFIRMADA** | **CANCELADA** |  Sí | Cancelación de último momento por parte del cliente o del salón. |
+| **CONFIRMADA** | **NO_ASISTIO** |  Sí | Transcurrió la hora de la cita y el cliente nunca se presentó. |
+| **COMPLETADA** | *(Cualquiera)* |  No | Estado final e inmutable (historial financiero y de servicio). |
+| **CANCELADA** | *(Cualquiera)* |  No | Estado final e inmutable. |
+| **NO_ASISTIO** | *(Cualquiera)* |  No | Estado final e inmutable. |

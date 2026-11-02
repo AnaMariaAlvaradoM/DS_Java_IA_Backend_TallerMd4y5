@@ -12,10 +12,19 @@ public class Servicio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 80)
     private String nombre;
+
+    @Column(length = 300)
     private String descripcion;
-    private BigDecimal precio;
+
+    @Column(nullable = false)
+    private Integer precio;
+
+    @Column(name = "duracion_minutos", nullable = false)
     private Integer duracionMinutos;
+
+    @Column(nullable = false)
     private boolean activo = true;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -34,8 +43,8 @@ public class Servicio {
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
-    public BigDecimal getPrecio() { return precio; }
-    public void setPrecio(BigDecimal precio) { this.precio = precio; }
+    public Integer getPrecio() { return precio; }
+    public void setPrecio(Integer precio) { this.precio = precio; }
 
     public Integer getDuracionMinutos() { return duracionMinutos; }
     public void setDuracionMinutos(Integer duracionMinutos) { this.duracionMinutos = duracionMinutos; }
