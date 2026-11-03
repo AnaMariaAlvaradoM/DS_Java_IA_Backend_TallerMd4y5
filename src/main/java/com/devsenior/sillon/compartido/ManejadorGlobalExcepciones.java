@@ -14,6 +14,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class ManejadorGlobalExcepciones {
@@ -33,6 +36,21 @@ public class ManejadorGlobalExcepciones {
                 mensaje,
                 LocalDateTime.now(reloj));
         return ResponseEntity.status(estado).body(cuerpo);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorApi> manejarAccesoDenegado(AccessDeniedException ex) {
+        return construir(HttpStatus.FORBIDDEN, "No tiene permiso para realizar esta accion");
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorApi> manejarNoAutenticado(AuthenticationException ex) {
+        return construir(HttpStatus.UNAUTHORIZED, "Debe autenticarse para acceder a este recurso");
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorApi> manejarRutaInexistente(NoResourceFoundException ex) {
+        return construir(HttpStatus.NOT_FOUND, "El recurso solicitado no existe");
     }
 
     @ExceptionHandler(NoEncontradoException.class)

@@ -190,4 +190,17 @@ public class CitaService {
         cita = citaRepository.saveAndFlush(cita);
         return mapearADto(cita);
     }
+
+    @Transactional
+    public CitaResponseDto reservarEnLinea(String slug, CitaRequestDto request) {
+        Salon salon = salonRepository.findBySlug(slug)
+                .orElseThrow(() -> new NoEncontradoException("Salón no encontrado"));
+
+        return agendar(
+                salon.getId(),
+                request,
+                EstadoCita.PENDIENTE,
+                OrigenCita.EN_LINEA
+        );
+    }
 }

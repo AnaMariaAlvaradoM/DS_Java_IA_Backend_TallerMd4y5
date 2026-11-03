@@ -39,4 +39,11 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
     );
 
     Optional<Cita> findByIdAndSalonId(Long id, Long salonId);
+
+    List<Cita> findByEstilistaIdAndEstadoInAndInicioBetween(
+            Long estilistaId,
+            Collection<EstadoCita> estados,
+            LocalDateTime desde,
+            LocalDateTime hasta
+    );
 }

@@ -19,4 +19,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     List<Usuario> findBySalonIdAndRol(Long salonId, Rol rol);
 
     Optional<Usuario> findByIdAndSalonIdAndRol(Long id, Long salonId, Rol rol);
+
+    List<Usuario> findBySalonIdAndRolAndActivoTrue(Long salonId, Rol rol);
 }
