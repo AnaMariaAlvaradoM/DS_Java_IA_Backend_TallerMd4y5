@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import com.devsenior.sillon.compartido.ErrorApi;
+import com.devsenior.sillon.compartido.SolicitudInvalidaExcepcion;
 
 @RestControllerAdvice
 public class ManejadorGlobalExcepciones {
@@ -116,4 +118,11 @@ public class ManejadorGlobalExcepciones {
         log.error("Error no controlado en el servidor", ex);
         return construir(HttpStatus.INTERNAL_SERVER_ERROR, "Ha ocurrido un error inesperado en el servidor");
     }
+
+    @ExceptionHandler(SolicitudInvalidaExcepcion.class)
+    public ResponseEntity<ErrorApi> manejarSolicitudInvalida(SolicitudInvalidaExcepcion ex) {
+        return construir(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+
 }
