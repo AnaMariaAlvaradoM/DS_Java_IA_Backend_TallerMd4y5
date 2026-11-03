@@ -8,6 +8,8 @@ import com.devsenior.sillon.salon.dto.SalonResponseDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class SalonService {
 
@@ -64,5 +66,13 @@ public class SalonService {
                 salon.getConfiguracion(),
                 salon.getFechaCreacion()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<SalonResponseDto> listarTodos() {
+        return salonRepository.findAll()
+                .stream()
+                .map(this::mapearADto)
+                .toList();
     }
 }

@@ -69,7 +69,7 @@ public class ReglasAgenda {
             );
 
             if (!hayCruce) {
-                horariosLibres.add(candidato.toLocalTime().format(FORMATO_HORA));
+                horariosLibres.add(candidato.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME));
             }
 
             inicioTentativo = inicioTentativo.plusMinutes(intervalo);
