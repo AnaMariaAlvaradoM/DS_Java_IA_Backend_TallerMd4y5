@@ -58,8 +58,8 @@ public class AuthService {
 
         Salon salon = new Salon();
         salon.setSlug(slug);
-        salon.setCiudad("Bogotá");
-        salon.setDireccion(request.direccion());
+        salon.setCiudad(request.ciudad() == null ? "" : request.ciudad().trim());
+        salon.setDireccion(request.direccion() == null ? "" : request.direccion().trim());
         salon.setTelefono(request.telefono() == null ? "" : request.telefono().trim());
         salon.setPlan(Plan.GRATIS);
         salon.setCreditosIa(10);
@@ -88,7 +88,8 @@ public class AuthService {
                 usuario.getEmail(),
                 usuario.getRol().name(),
                 salonGuardado.getId(),
-                salonGuardado.getSlug()
+                salonGuardado.getSlug(),
+                jwtService.obtenerExpiracionEnMinutos()
         );
     }
 
@@ -100,6 +101,6 @@ public class AuthService {
         Usuario usuario = usuarioRepository.findByEmail(request.email())
                 .orElseThrow(() -> new NoEncontradoException("No existe un usuario con ese email"));
         String token = jwtService.generarToken(UsuarioPrincipal.build(usuario));
-        return  AuthResponse.of(token, usuario.getEmail(), usuario.getRol().name(), usuario.getSalon().getId(), usuario.getSalon().getSlug());
+        return  AuthResponse.of(token, usuario.getEmail(), usuario.getRol().name(), usuario.getSalon().getId(), usuario.getSalon().getSlug(), jwtService.obtenerExpiracionEnMinutos());
     }
 }

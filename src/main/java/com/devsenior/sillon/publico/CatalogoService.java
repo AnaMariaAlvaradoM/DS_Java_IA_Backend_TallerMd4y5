@@ -2,12 +2,10 @@ package com.devsenior.sillon.publico;
 
 import com.devsenior.sillon.cita.CitaService;
 import com.devsenior.sillon.cita.ReglasAgenda;
-import com.devsenior.sillon.cita.dto.CitaResponse;
-import com.devsenior.sillon.cita.dto.CitaResquest;
-import com.devsenior.sillon.cita.mapper.CitaMapper;
+
 import com.devsenior.sillon.cita.model.Cita;
 import com.devsenior.sillon.cita.model.EstadoCita;
-import com.devsenior.sillon.cita.model.OrigenCita;
+
 import com.devsenior.sillon.cita.repository.CitaRepository;
 import com.devsenior.sillon.compartido.NoEncontradoException;
 import com.devsenior.sillon.publico.dto.CatalogoResponse;

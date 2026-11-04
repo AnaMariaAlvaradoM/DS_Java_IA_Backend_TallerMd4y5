@@ -6,9 +6,10 @@ public record AuthResponse(
         String email,
         String rol,
         Long salonId,
-        String slug
+        String slug,
+        Long expiraEnMinutos
 ) {
-    public static AuthResponse of(String token, String email, String rol, Long salonId, String slug) {
-        return new AuthResponse(token, "Bearer", email, rol, salonId, slug);
+    public static AuthResponse of(String token, String email, String rol, Long salonId, String slug, Long expiraEnMinutos) {
+        return new AuthResponse(token, "Bearer", email, rol, salonId, slug, expiraEnMinutos);
     }
 }

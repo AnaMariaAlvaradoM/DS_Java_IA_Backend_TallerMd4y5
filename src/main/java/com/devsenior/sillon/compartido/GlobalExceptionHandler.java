@@ -1,5 +1,6 @@
 package com.devsenior.sillon.compartido;
 import com.devsenior.sillon.dto.ErrorRespuesta;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    // --- 1. EXCEPCIONES PROPIAS DEL DOMINIO ---
+
 
     @ExceptionHandler(NoEncontradoException.class)
     public ResponseEntity<ErrorRespuesta> manejarNoEncontrado(NoEncontradoException ex) {
@@ -155,4 +156,6 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
+
+
 }

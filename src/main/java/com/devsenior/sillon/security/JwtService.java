@@ -88,4 +88,7 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+    public long obtenerExpiracionEnMinutos() {
+        return expirationMs / 60000; // Convertir milisegundos a minutos
+    }
 }

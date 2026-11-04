@@ -55,7 +55,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/error"
                         ).permitAll()
-
+                        .requestMatchers(HttpMethod.GET, "/api/publico/salones/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
