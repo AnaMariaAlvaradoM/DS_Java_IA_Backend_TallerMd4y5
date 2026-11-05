@@ -94,4 +94,14 @@ public class ManejadorGlobalErrores {
     public ResponseEntity<ErrorRespuesta> manejarGeneral(Exception ex) {
         return construirRespuesta(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
+    @ExceptionHandler(ExcepcionesNegocio.RecursoDuplicadoException.class)
+    public ResponseEntity<ErrorRespuesta> manejarDuplicado(ExcepcionesNegocio.RecursoDuplicadoException ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                HttpStatus.CONFLICT.value(),
+                "CONFLICT",
+                ex.getMessage(),
+                LocalDateTime.now(clock)
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
 }

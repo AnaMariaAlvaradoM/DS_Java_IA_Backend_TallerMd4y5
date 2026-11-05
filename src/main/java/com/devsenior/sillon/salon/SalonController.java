@@ -22,8 +22,8 @@ public class SalonController {
     }
 
     @PostMapping("/registro")
-    public ResponseEntity<SalonRespuesta> registrarSalon(@Valid @RequestBody RegistroSalonRequest request) {
-        SalonRespuesta respuesta = salonService.registrarSalon(request);
+    public ResponseEntity<RegistroSalonRespuesta> registrarSalon(@Valid @RequestBody RegistroSalonRequest request) {
+        RegistroSalonRespuesta respuesta = salonService.registrarSalon(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
     }
 

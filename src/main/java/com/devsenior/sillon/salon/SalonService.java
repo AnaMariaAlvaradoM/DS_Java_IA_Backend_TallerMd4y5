@@ -1,6 +1,7 @@
 package com.devsenior.sillon.salon;
 
 import com.devsenior.sillon.compartido.ExcepcionesNegocio;
+import com.devsenior.sillon.seguridad.JwtUtil;
 import com.devsenior.sillon.usuario.Rol;
 import com.devsenior.sillon.usuario.Usuario;
 import com.devsenior.sillon.usuario.UsuarioRepository;
@@ -19,24 +20,27 @@ public class SalonService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
+    private final JwtUtil jwtUtil;
     private final int creditosIniciales;
 
     public SalonService(SalonRepository salonRepository,
                         UsuarioRepository usuarioRepository,
                         PasswordEncoder passwordEncoder,
                         Clock clock,
+                        JwtUtil jwtUtil,
                         @Value("${sillon.creditos.registro:10}") int creditosIniciales) {
         this.salonRepository = salonRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
+        this.jwtUtil = jwtUtil;
         this.creditosIniciales = creditosIniciales;
     }
 
     @Transactional
-    public SalonRespuesta registrarSalon(RegistroSalonRequest request) {
+    public RegistroSalonRespuesta registrarSalon(RegistroSalonRequest request) {
         if (usuarioRepository.existsByEmail(request.email())) {
-            throw new ExcepcionesNegocio.ReglaNegocioException("El correo ya está registrado en el sistema");
+            throw new ExcepcionesNegocio.RecursoDuplicadoException("El correo ya está registrado en el sistema");
         }
 
         String slug = generarSlugUnico(request.nombreSalon());
@@ -64,7 +68,16 @@ public class SalonService {
 
         usuarioRepository.save(dueno);
 
-        return SalonRespuesta.desdeEntidad(salon);
+        String token = jwtUtil.generarToken(dueno.getEmail(), salon.getId(), dueno.getRol().name());
+
+        return new RegistroSalonRespuesta(
+                salon.getId(),
+                salon.getNombre(),
+                salon.getSlug(),
+                dueno.getEmail(),
+                dueno.getRol(),
+                token
+        );
     }
 
     public SalonRespuesta obtenerPorSlug(String slug) {
@@ -83,6 +96,7 @@ public class SalonService {
         }
         return candidato;
     }
+
     public ConfiguracionSalon obtenerConfiguracionPorId(Long salonId) {
         Salon salon = salonRepository.findById(salonId)
                 .orElseThrow(() -> new ExcepcionesNegocio.RecursoNoEncontradoException("Salón no encontrado"));

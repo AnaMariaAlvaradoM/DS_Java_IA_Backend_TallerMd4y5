@@ -43,4 +43,9 @@ public class ExcepcionesNegocio {
             super(mensaje);
         }
     }
+    public static class RecursoDuplicadoException extends RuntimeException {
+        public RecursoDuplicadoException(String mensaje) {
+            super(mensaje);
+        }
+    }
 }
