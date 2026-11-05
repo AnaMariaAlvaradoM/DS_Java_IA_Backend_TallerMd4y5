@@ -1,10 +1,13 @@
 package com.devsenior.sillon.compartido;
 
+import com.devsenior.sillon.ia.IaNoDisponibleException;
+import com.devsenior.sillon.ia.RespuestaIAInvalidaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -39,6 +42,7 @@ public class ManejadorGlobalExcepciones {
                 LocalDateTime.now(reloj));
         return ResponseEntity.status(estado).body(cuerpo);
     }
+
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorApi> manejarAccesoDenegado(AccessDeniedException ex) {
@@ -111,6 +115,16 @@ public class ManejadorGlobalExcepciones {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorApi> manejarTipoIncorrecto(MethodArgumentTypeMismatchException ex) {
         return construir(HttpStatus.BAD_REQUEST, "Tipo de parámetro inválido para: " + ex.getName());
+    }
+
+    @ExceptionHandler(IaNoDisponibleException.class)
+    public ResponseEntity<ErrorApi> manejarIaNoDisponible(IaNoDisponibleException ex) {
+        return construir(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+
+    @ExceptionHandler(RespuestaIAInvalidaException.class)
+    public ResponseEntity<ErrorApi> manejarRespuestaIAInvalida(RespuestaIAInvalidaException ex) {
+        return construir(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
