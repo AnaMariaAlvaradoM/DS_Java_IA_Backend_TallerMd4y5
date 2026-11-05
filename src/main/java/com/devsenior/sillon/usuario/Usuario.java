@@ -1,7 +1,11 @@
 package com.devsenior.sillon.usuario;
 
+import com.devsenior.sillon.catalogo.Servicio;
 import com.devsenior.sillon.salon.Salon;
 import jakarta.persistence.*;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "usuarios")
@@ -30,6 +34,14 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "salon_id", nullable = false)
     private Salon salon;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "usuario_servicios",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "servicio_id")
+    )
+    private Set<Servicio> servicios = new HashSet<>();
 
     public Usuario() {
     }
@@ -88,5 +100,13 @@ public class Usuario {
 
     public void setSalon(Salon salon) {
         this.salon = salon;
+    }
+
+    public Set<Servicio> getServicios() {
+        return servicios;
+    }
+
+    public void setServicios(Set<Servicio> servicios) {
+        this.servicios = servicios;
     }
 }

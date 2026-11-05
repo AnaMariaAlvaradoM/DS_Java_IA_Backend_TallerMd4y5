@@ -10,9 +10,15 @@ import org.springframework.web.bind.annotation.*;
 public class SalonController {
 
     private final SalonService salonService;
+    private final com.devsenior.sillon.catalogo.ServicioService servicioService;
+    private final com.devsenior.sillon.usuario.EstilistaService estilistaService;
 
-    public SalonController(SalonService salonService) {
+    public SalonController(SalonService salonService,
+                           com.devsenior.sillon.catalogo.ServicioService servicioService,
+                           com.devsenior.sillon.usuario.EstilistaService estilistaService) {
         this.salonService = salonService;
+        this.servicioService = servicioService;
+        this.estilistaService = estilistaService;
     }
 
     @PostMapping("/registro")
@@ -40,4 +46,15 @@ public class SalonController {
         ConfiguracionSalon config = salonService.actualizarConfiguracion(principal.salonId(), request);
         return ResponseEntity.ok(config);
     }
+    @GetMapping("/publico/{slug}/servicios")
+    public ResponseEntity<java.util.List<com.devsenior.sillon.catalogo.ServicioRespuesta>> obtenerServiciosPublicos(
+            @PathVariable String slug) {
+        return ResponseEntity.ok(servicioService.listarActivosPorSlug(slug));
+    }
+    @GetMapping("/publico/{slug}/estilistas")
+    public ResponseEntity<java.util.List<com.devsenior.sillon.usuario.EstilistaRespuesta>> obtenerEstilistasPublicos(
+            @PathVariable String slug) {
+        return ResponseEntity.ok(estilistaService.listarActivosPorSlug(slug));
+    }
+
 }
