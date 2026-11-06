@@ -223,3 +223,320 @@ No se agregan esas restricciones o funcionalidades.
 - Las claves se guardan en secrets.properties para desarrollo
   o en variables de entorno para producción.
 - Nunca se incluyen claves en código, Git ni prompts.
+
+## 13. Fuera de alcance
+
+El proyecto no incluye:
+
+- Envío real de mensajes por WhatsApp o correo electrónico.
+- Recordatorios automáticos programados.
+- Reportes.
+- Pagos del cliente final al salón mediante Stripe Connect.
+- Interfaz gráfica.
+
+Los pagos implementados corresponden al plan PRO y a los
+paquetes de créditos que compra el salón para usar la plataforma.
+
+## 14. Contrato de la API
+
+### 14.1 Formatos generales
+
+- Fechas: AAAA-MM-DD.
+- Fecha y hora: AAAA-MM-DDTHH:mm:ss.
+- Horas enviadas: HH:mm; devueltas: HH:mm:ss.
+- Precios: números enteros en pesos colombianos, sin separadores
+  ni decimales. Ejemplo: 35000.
+
+### 14.2 Formato de errores
+
+Todos los errores, incluidos los de seguridad, devuelven:
+
+- codigo: número del código HTTP.
+- error: nombre estándar del código HTTP.
+- mensaje: explicación en español. En validaciones, campos y
+  mensajes separados por punto y coma.
+- fecha: fecha y hora del error.
+
+### 14.3 Códigos de error
+
+| Código | Uso |
+| --- | --- |
+| 400 | Datos inválidos, JSON mal formado, parámetro faltante o firma de webhook inválida. |
+| 401 | Token ausente o inválido, o credenciales incorrectas. |
+| 402 | Límite del plan GRATIS o saldo insuficiente de créditos de IA. |
+| 403 | Rol sin permiso o transición no permitida para el estilista. |
+| 404 | Recurso inexistente o perteneciente a otro salón. |
+| 409 | Conflicto con una regla de negocio. |
+| 502 | Respuesta de Stripe o de IA que no se puede utilizar. |
+| 503 | Ningún proveedor de IA disponible. |
+
+### 14.4 Autenticación — rutas públicas
+
+#### POST /api/auth/registro
+
+Recibe:
+- salonNombre: máximo 100 caracteres.
+- ciudad: máximo 60 caracteres.
+- direccion: máximo 150 caracteres.
+- telefono: máximo 30 caracteres.
+- nombre: máximo 100 caracteres.
+- email: formato válido.
+- password: entre 8 y 72 caracteres.
+
+Responde 201 con:
+token, tipo ("Bearer"), expiraEnMinutos, usuarioId, nombre,
+rol, salonId y salonSlug.
+
+Errores: 400 por datos inválidos y 409 por correo duplicado.
+
+#### POST /api/auth/login
+
+Recibe: email y password.
+
+Responde 200 con el mismo objeto del registro.
+Credenciales incorrectas: 401.
+
+Las rutas privadas reciben la cabecera:
+Authorization: Bearer <token>
+
+### 14.5 Mi salón — rol DUENO
+
+#### GET /api/salon
+
+Responde 200 con:
+id, nombre, slug, ciudad, direccion, telefono, plan,
+creditosIa, configuracion y fechaCreacion.
+
+configuracion contiene:
+horaApertura, horaCierre, abreDomingos e intervaloMinutos.
+
+#### PUT /api/salon/configuracion
+
+Recibe, todos obligatorios:
+horaApertura, horaCierre, abreDomingos e intervaloMinutos.
+
+intervaloMinutos debe estar entre 15 y 60.
+horaApertura debe ser anterior a horaCierre.
+
+Responde 200 con el salón actualizado.
+Errores: 400 por datos inválidos y 409 por horario incoherente.
+
+### 14.6 Servicios
+
+#### POST /api/servicios — DUENO
+
+Recibe:
+- nombre: máximo 80 caracteres.
+- descripcion: opcional, máximo 300 caracteres.
+- duracionMinutos: entre 15 y 480.
+- precio: entero positivo en COP.
+- activo: opcional; por defecto, true.
+
+Responde 201 con:
+id, nombre, descripcion, duracionMinutos, precio y activo.
+
+Datos inválidos: 400.
+
+#### GET /api/servicios — DUENO y ESTILISTA
+
+Responde 200 con la lista de servicios del salón.
+
+#### PUT /api/servicios/{id} — DUENO
+
+Recibe los mismos campos que POST /api/servicios.
+
+Responde 200.
+Errores: 400 por datos inválidos y 404 si el servicio no existe
+o pertenece a otro salón.
+
+### 14.7 Estilistas — DUENO
+
+#### POST /api/estilistas
+
+Recibe:
+- nombre.
+- email.
+- password: entre 8 y 72 caracteres.
+- servicioIds: lista con al menos un identificador.
+
+Responde 201 con:
+id, nombre, email, activo y servicios (lista de nombres).
+
+Errores:
+- 400: datos inválidos.
+- 402: límite de estilistas del plan GRATIS.
+- 404: servicio inexistente o de otro salón.
+- 409: correo duplicado.
+
+#### GET /api/estilistas
+
+Responde 200 con la lista de estilistas del salón.
+
+### 14.8 Clientes — DUENO
+
+#### GET /api/clientes
+
+Responde 200 con la lista de clientes del salón.
+Cada cliente contiene: id, nombre y telefono.
+
+### 14.9 Agenda
+
+#### POST /api/citas — DUENO
+
+Recibe:
+- clienteNombre.
+- clienteTelefono: entre 7 y 30 caracteres.
+- servicioId.
+- estilistaId.
+- inicio.
+- nota: opcional, máximo 300 caracteres.
+
+Responde 201 con la cita.
+Errores: 400, 404 y 409.
+
+#### GET /api/citas?fecha= — DUENO y ESTILISTA
+
+fecha es opcional; si se omite, se consulta hoy.
+
+Responde 200 con las citas del día ordenadas por hora.
+El ESTILISTA solo ve sus propias citas.
+
+#### PATCH /api/citas/{id}/estado — DUENO y ESTILISTA
+
+Recibe: estado.
+
+Responde 200 con la cita.
+Se aplican las transiciones y permisos de la sección 9.
+Errores: 400, 403, 404 y 409.
+
+#### Objeto de respuesta de una cita
+
+id, inicio, fin, estado, origen, precio, servicioId,
+servicioNombre, estilistaId, estilistaNombre, clienteNombre,
+clienteTelefono, nota, fechaCreacion y fechaActualizacion.
+
+#### POST /api/citas/{id}/recordatorio — DUENO
+
+No recibe cuerpo.
+
+Responde 200 con:
+citaId, telefonoCliente, mensaje, creditosRestantes y factura.
+
+Errores: 402, 404, 409, 502 y 503.
+
+La factura de IA contiene:
+proveedor, modelo, tokensEntrada, tokensSalida,
+costoEstimadoUsd y milisegundos.
+
+### 14.10 Catálogo público y reservas — sin token
+
+Ruta base: /api/publico/salones/{slug}
+
+#### GET /api/publico/salones/{slug}
+
+Responde 200 con:
+nombre, slug, ciudad, direccion, telefono, horario (texto),
+servicios (solo activos) y estilistas.
+
+Cada estilista contiene: id, nombre y servicioIds.
+La respuesta nunca incluye correos electrónicos.
+
+Salón inexistente: 404.
+
+#### GET /api/publico/salones/{slug}/disponibilidad
+
+Parámetros obligatorios:
+servicioId, estilistaId y fecha.
+
+Responde 200 con:
+fecha, servicio, estilista, duracionMinutos y horariosLibres
+(lista de horas).
+
+Errores: 400, 404 y 409.
+
+#### POST /api/publico/salones/{slug}/reservas
+
+Recibe los mismos campos que POST /api/citas.
+
+Responde 201 con la cita en estado PENDIENTE y origen EN_LINEA.
+Errores: 400, 404 y 409.
+
+#### POST /api/publico/salones/{slug}/chat
+
+Recibe:
+- clienteNombre.
+- clienteContacto: máximo 120 caracteres.
+- historial: entre 1 y 20 turnos.
+
+Cada turno contiene:
+- rol: CLIENTE o ASISTENTE.
+- texto: máximo 500 caracteres.
+
+Responde 200 con:
+respuesta, escalado (true o false), solicitudId (o null) y factura.
+
+La factura tiene los campos definidos en la sección 14.9.
+Errores: 400, 402, 404, 502 y 503.
+
+### 14.11 Solicitudes del chatbot — DUENO
+
+#### GET /api/solicitudes
+
+Responde 200 con las solicitudes del salón, las más recientes primero.
+
+Cada solicitud contiene:
+id, clienteNombre, clienteContacto, mensajes, motivo,
+estado y fechaCreacion.
+
+#### PATCH /api/solicitudes/{id}/atendida
+
+No recibe cuerpo.
+
+Responde 200.
+Errores: 404 si no existe o pertenece a otro salón;
+409 si ya estaba atendida.
+
+### 14.12 Pagos
+
+#### POST /api/pagos/suscripcion — DUENO
+
+No recibe cuerpo.
+
+Responde 200 con:
+tipo (SUSCRIPCION_PRO), sesionId y urlPago.
+
+Errores: 409 si el salón ya es PRO y 502 por fallo de pasarela.
+
+#### POST /api/pagos/creditos — DUENO
+
+No recibe cuerpo.
+
+Responde 200 con:
+tipo (PAQUETE_CREDITOS), sesionId y urlPago.
+
+Error: 502 por fallo de pasarela.
+
+#### POST /api/pagos/webhook — Stripe
+
+Recibe el evento de Stripe y la cabecera Stripe-Signature.
+
+Responde 200 con recibido y procesado.
+Firma ausente o inválida: 400.
+Los eventos repetidos no vuelven a aplicar beneficios.
+
+#### GET /api/pagos/resultado?estado= — público
+
+Recibe estado con valor exito o cancelado.
+
+Responde 200 con un mensaje.
+Esta ruta no activa beneficios; eso corresponde al webhook.
+
+### 14.13 Administración — ADMIN
+
+#### GET /api/admin/salones
+
+Responde 200 con todos los salones de la plataforma.
+Un usuario autenticado con otro rol recibe 403.
+
+El primer ADMIN se crea registrando una cuenta normal y
+cambiando su rol directamente en la base de datos.
