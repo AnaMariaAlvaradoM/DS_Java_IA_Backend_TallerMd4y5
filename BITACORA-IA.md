@@ -6,6 +6,8 @@ Registro del apoyo de inteligencia artificial utilizado durante el desarrollo de
 |---|---|---|---|---|---|
 | 1 | Fase 0 | ChatGPT — chat del navegador | Apoyo para redactar SPEC.md y AGENTS.md a partir del enunciado. | Reglas de negocio, planes, horarios, estados de citas, permisos y alcance del proyecto. | Se corrigió FREE por GRATIS, se aclaró que el horario pertenece al salón y que solo PENDIENTE y CONFIRMADA bloquean la agenda. Se descartó inventar un plazo de cancelación. |
 | 2 | Fase 0 | ChatGPT — chat del navegador | Análisis de los errores del calificador de GitHub y revisión de variables de entorno. | Cambios en application.properties, BUILD SUCCESS, revisión del diff y commit e75ff06c. | Se corrigió la configuración de MySQL para admitir las variables SPRING_DATASOURCE_* y la URL de Gemini para admitir SILLON_IA_OPENAI_URL. |
+| 3 | Fase 1 | ChatGPT — chat del navegador | Apoyo paso a paso para desarrollar el manejo de errores, el reloj del sistema y las entidades Salon y Usuario. | Se verificó BUILD SUCCESS, el arranque de Spring Boot y las tablas salones y usuarios en MySQL, incluida su relación. También se ejecutaron las pruebas JUnit existentes. | Se mantuvieron el registro, JWT y BCrypt para la Fase 2, según el enunciado. Quedan pendientes las pruebas específicas de errores y slugs. |
+
 
 ## Observaciones
 
