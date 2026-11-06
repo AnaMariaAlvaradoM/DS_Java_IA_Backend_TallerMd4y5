@@ -5,11 +5,7 @@
 ### Herramienta utilizada
 ChatGPT.
 
-### Apoyo solicitado
-Orientación paso a paso para preparar el proyecto en VS Code,
-configurar dependencias, conectar MySQL y organizar las tareas.
-
-## 2. Documentación de reglas e instrucciones
+## Documentación de reglas e instrucciones
 
 ### Apoyo solicitado
 Ayuda para redactar SPEC.md y AGENTS.md a partir de la actividad.
@@ -28,3 +24,25 @@ Ayuda para redactar SPEC.md y AGENTS.md a partir de la actividad.
 ### Estado
 Las reglas están documentadas; su implementación y sus pruebas
 de negocio siguen pendientes.
+
+## 2. Ajuste de configuración — 6 de noviembre de 2026
+
+### Apoyo de IA
+ChatGPT revisó el enunciado y orientó los cambios paso a paso.
+Los cambios y comandos se ejecutaron manualmente en VS Code.
+
+### Cambios realizados
+- Configuración centralizada en application.properties, sin perfiles.
+- Variables para el negocio, JWT, Stripe y Gemini.
+- Actualización de secrets.example.properties.
+- Creación de .cursorignore.
+- Creación de sillon_db y asignación de permisos a sillon_app.
+
+### Verificaciones realizadas
+- Conexión a sillon_db con sillon_app por TCP.
+- secrets.properties ignorado por Git.
+- ./mvnw clean compile terminó con BUILD SUCCESS.
+- Arranque correcto después de eliminar los perfiles.
+- Commit 2256b91 subido al fork.
+- Arranque correcto sin cargar secrets.properties, usando DB_PASSWORD
+  y una ruta de importación opcional inexistente.

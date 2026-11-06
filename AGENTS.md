@@ -45,3 +45,12 @@
 - No inventar evidencias, resultados de pruebas ni entradas
   de la bitácora.
 - Revisar los cambios antes de confirmarlos en Git.
+
+## Reglas adicionales de implementación
+
+- Usar un Clock inyectado con la zona America/Bogota para las
+  reglas que dependan de la fecha o la hora.
+- Guardar los prompts en archivos dentro de src/main/resources/prompts.
+- Java calcula y verifica los datos; la IA redacta las respuestas.
+- Nunca modificar una prueba únicamente para hacerla pasar.
+- No agregar dependencias sin consultar primero al desarrollador.

@@ -88,8 +88,6 @@ No se utilizará Lombok ni SDK de IA.
 
 ## 7. Reglas de citas
 
-## 7. Reglas de citas
-
 - Cada cita pertenece a un salón. Sus servicios y estilistas
   deben pertenecer al mismo salón; un recurso ajeno devuelve 404.
 - El estilista debe ofrecer el servicio seleccionado; si no,
