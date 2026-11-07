@@ -176,4 +176,20 @@ public class GlobalExceptionHandler {
                 "codigo", 400
         ));
     }
-}
+    @ExceptionHandler(IaNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> handleIaNoDisponible(IaNoDisponibleException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                "error", "SERVICE_UNAVAILABLE",
+                "mensaje", ex.getMessage(),
+                "codigo", 503
+        ));
+    }
+    @ExceptionHandler(SinCreditosException.class)
+    public ResponseEntity<Map<String, Object>> handleSinCreditos(SinCreditosException ex) {
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(Map.of(
+                "error", "PAYMENT_REQUIRED",
+                "mensaje", ex.getMessage(),
+                "codigo", 402
+        ));
+    }
+    }

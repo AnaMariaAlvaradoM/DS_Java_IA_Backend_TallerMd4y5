@@ -1,7 +1,7 @@
 package com.devsenior.sillon.pago.service;
 import com.devsenior.sillon.compartido.ReglaNegocioException;
 import com.devsenior.sillon.compartido.ServicioExternoException;
-import com.devsenior.sillon.config.StripeProperties;
+import com.devsenior.sillon.pago.config.StripeProperties;
 import com.devsenior.sillon.pago.dto.PagoResponse;
 import com.devsenior.sillon.salon.model.Salon;
 import com.devsenior.sillon.salon.repository.SalonRepository;

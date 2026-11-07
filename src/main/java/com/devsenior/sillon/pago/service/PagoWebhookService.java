@@ -1,7 +1,7 @@
 package com.devsenior.sillon.pago.service;
 import com.devsenior.sillon.compartido.FirmaStripeInvalidaException;
 import com.devsenior.sillon.compartido.ServicioExternoException;
-import com.devsenior.sillon.config.StripeProperties;
+import com.devsenior.sillon.pago.config.StripeProperties;
 
 
 import com.devsenior.sillon.pago.model.EventoStripe;

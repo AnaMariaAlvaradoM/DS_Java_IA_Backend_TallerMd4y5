@@ -1,4 +1,4 @@
-package com.devsenior.sillon.config;
+package com.devsenior.sillon.pago.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 

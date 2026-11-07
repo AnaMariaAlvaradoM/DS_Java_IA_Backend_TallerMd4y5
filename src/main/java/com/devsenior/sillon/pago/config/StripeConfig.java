@@ -1,4 +1,4 @@
-package com.devsenior.sillon.config;
+package com.devsenior.sillon.pago.config;
 
 import com.stripe.StripeClient;
 import org.springframework.context.annotation.Bean;
