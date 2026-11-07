@@ -56,6 +56,8 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/publico/salones/**").permitAll()
+                        .requestMatchers("/api/pagos/webhook").permitAll()
+                        .requestMatchers("/api/pagos/resultado").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

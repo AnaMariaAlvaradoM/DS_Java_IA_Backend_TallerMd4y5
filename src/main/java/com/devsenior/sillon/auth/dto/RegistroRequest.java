@@ -22,7 +22,7 @@ public record RegistroRequest(
 
         @NotBlank(message = "La contraseña es obligatoria")
         @Size(min = 8,max = 72, message = "La contraseña debe tener al menos 8 caracteres")
-        String contrasena,
+        String password,
         @NotBlank(message = "El numero es obligatorio")
         String telefono,
         @NotBlank(message = "La direccion es obligatoria")

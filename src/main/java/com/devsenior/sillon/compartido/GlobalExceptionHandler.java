@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -157,5 +158,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
-
+    @ExceptionHandler(ServicioExternoException.class)
+    public ResponseEntity<ErrorRespuesta> manejarServicioExterno(ServicioExternoException ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.BAD_GATEWAY.value(), // 502
+                HttpStatus.BAD_GATEWAY.getReasonPhrase(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_GATEWAY);
+    }
+    @ExceptionHandler(FirmaStripeInvalidaException.class)
+    public ResponseEntity<Map<String, Object>> handleFirmaInvalida(FirmaStripeInvalidaException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "error", "BAD_REQUEST",
+                "mensaje", ex.getMessage(),
+                "codigo", 400
+        ));
+    }
 }

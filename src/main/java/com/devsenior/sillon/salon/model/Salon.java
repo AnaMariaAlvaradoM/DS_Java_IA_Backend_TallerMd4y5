@@ -1,5 +1,6 @@
 package com.devsenior.sillon.salon.model;
 
+import com.devsenior.sillon.compartido.ReglaNegocioException;
 import com.devsenior.sillon.usuario.model.Usuario;
 import jakarta.persistence.*;
 import org.hibernate.validator.constraints.Length;
@@ -54,6 +55,8 @@ public class Salon {
     private LocalDate fechaCreacion;
     @OneToMany(mappedBy = "salon", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Usuario> usuarios;
+    private String suscripcionStripeId;
+
     public Salon() {
     }
 
@@ -143,5 +146,14 @@ public class Salon {
 
     public void setFechaCreacion(LocalDate fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
+    }
+    public boolean isPro() {
+        return this.plan == Plan.PRO;
+    }
+    public String getSuscripcionStripeId() { return suscripcionStripeId; }
+    public void setSuscripcionStripeId(String suscripcionStripeId) { this.suscripcionStripeId = suscripcionStripeId; }
+
+    public void setPro(boolean b) {
+        this.plan = b ? Plan.PRO : Plan.GRATIS;
     }
 }

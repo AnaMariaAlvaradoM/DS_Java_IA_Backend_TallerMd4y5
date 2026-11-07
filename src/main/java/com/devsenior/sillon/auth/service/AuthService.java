@@ -73,7 +73,7 @@ public class AuthService {
         Usuario usuario = new Usuario();
         usuario.setNombre(request.nombre());
         usuario.setEmail(emailNormalizado);
-        usuario.setContrasena(passwordEncoder.encode(request.contrasena()));
+        usuario.setContrasena(passwordEncoder.encode(request.password()));
         usuario.setRol(Rol.DUENO);
         usuario.setActivo(true);
         usuario.setSalon(salonGuardado);

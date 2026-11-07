@@ -11,6 +11,5 @@ public interface SalonRepository extends JpaRepository<Salon, Long> {
     boolean existsBySlug(String slug);
 
     Optional<Salon> findByStripeSubscriptionId(String stripeSubscriptionId);
-
-
+    Optional<Salon> findBySuscripcionStripeId(String suscripcionStripeId);
 }
