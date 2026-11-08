@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -34,6 +36,7 @@ class PagosIntegracionTests {
     private static final String SECRETO_PRUEBA = "whsec_prueba_ficticia";
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
+    @Autowired EventoStripeRepositorio eventos;
     @MockitoBean CheckoutGateway checkout;
 
     @Test
@@ -84,6 +87,7 @@ class PagosIntegracionTests {
         webhook(pro, firmar(pro)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.recibido").value(true))
                 .andExpect(jsonPath("$.procesado").value(true));
+        assertTrue(eventos.existsById("evt_pro_ficticio"));
         mvc.perform(get("/api/salon").header("Authorization", bearer(tokenA)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.plan").value("PRO"))
                 .andExpect(jsonPath("$.creditosIa").value(310));
@@ -97,40 +101,80 @@ class PagosIntegracionTests {
         mvc.perform(post("/api/pagos/suscripcion").header("Authorization", bearer(tokenA)))
                 .andExpect(status().isConflict());
 
-        String paquete = eventoCheckout("evt_paquete_ficticio", salonB, "PAQUETE_CREDITOS", null);
+        String paquete = eventoCheckout("evt_paquete_ficticio", salonA, "PAQUETE_CREDITOS", null);
         webhook(paquete, firmar(paquete)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.procesado").value(true));
+        mvc.perform(get("/api/salon").header("Authorization", bearer(tokenA)))
+                .andExpect(jsonPath("$.creditosIa").value(510));
+        webhook(paquete, firmar(paquete)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.procesado").value(false));
+        mvc.perform(get("/api/salon").header("Authorization", bearer(tokenA)))
+                .andExpect(jsonPath("$.creditosIa").value(510));
         mvc.perform(get("/api/salon").header("Authorization", bearer(tokenB)))
                 .andExpect(jsonPath("$.plan").value("GRATIS"))
-                .andExpect(jsonPath("$.creditosIa").value(210));
-        mvc.perform(get("/api/salon").header("Authorization", bearer(tokenA)))
-                .andExpect(jsonPath("$.creditosIa").value(310));
+                .andExpect(jsonPath("$.creditosIa").value(10));
 
         String cancelacion = """
-                {"id":"evt_cancelacion_ficticia","object":"event","type":"customer.subscription.deleted",
-                 "data":{"object":{"id":"sub_ficticia_1","object":"subscription"}}}
+                {"id":"evt_cancelacion_ficticia","object":"event","api_version":"2026-09-30.endive",
+                 "type":"customer.subscription.deleted",
+                 "data":{"object":{"id":"sub_ficticia_1","object":"subscription","status":"canceled"}}}
                 """;
         webhook(cancelacion, firmar(cancelacion)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.procesado").value(true));
         mvc.perform(get("/api/salon").header("Authorization", bearer(tokenA)))
                 .andExpect(jsonPath("$.plan").value("GRATIS"))
-                .andExpect(jsonPath("$.creditosIa").value(310));
+                .andExpect(jsonPath("$.creditosIa").value(510));
         webhook(cancelacion, firmar(cancelacion)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.procesado").value(false));
         webhook(pro, "t=1,v1=firma_falsa").andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.codigo").value(400));
+        webhook(pro.replace("SUSCRIPCION_PRO", "PAQUETE_CREDITOS"), firmar(pro))
+                .andExpect(status().isBadRequest());
         mvc.perform(post("/api/pagos/webhook").contentType(MediaType.APPLICATION_JSON).content(pro))
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void eventoFirmadoSinVersionApiTambienSeProcesa() throws Exception {
+        JsonNode dueno = registrar("Pagos sin version");
+        String token = dueno.get("token").asString();
+        long salonId = dueno.get("salonId").asLong();
+        String pro = eventoCheckout("evt_sin_version_" + UUID.randomUUID(), salonId,
+                "SUSCRIPCION_PRO", "sub_sin_version_" + UUID.randomUUID())
+                .replace("\"api_version\":\"2026-09-30.endive\",", "");
+
+        webhook(pro, firmar(pro)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.procesado").value(true));
+        mvc.perform(get("/api/salon").header("Authorization", bearer(token)))
+                .andExpect(jsonPath("$.plan").value("PRO"))
+                .andExpect(jsonPath("$.creditosIa").value(310));
+    }
+
+    @Test
+    void pagoProSinIdentificadorDeSuscripcionNoDejaCambiosParciales() throws Exception {
+        JsonNode dueno = registrar("Pago incompleto");
+        String token = dueno.get("token").asString();
+        long salonId = dueno.get("salonId").asLong();
+        String idEvento = "evt_incompleto_" + UUID.randomUUID();
+        String incompleto = eventoCheckout(idEvento, salonId, "SUSCRIPCION_PRO", null);
+
+        webhook(incompleto, firmar(incompleto)).andExpect(status().isBadGateway());
+        assertFalse(eventos.existsById(idEvento));
+        mvc.perform(get("/api/salon").header("Authorization", bearer(token)))
+                .andExpect(jsonPath("$.plan").value("GRATIS"))
+                .andExpect(jsonPath("$.creditosIa").value(10));
+    }
+
     private String eventoCheckout(String id, long salonId, String tipoCompra, String suscripcionId) {
         String suscripcion = suscripcionId == null ? "null" : "\"" + suscripcionId + "\"";
+        String modo = suscripcionId == null ? "payment" : "subscription";
         return """
-                {"id":"%s","object":"event","type":"checkout.session.completed",
+                {"id":"%s","object":"event","api_version":"2026-09-30.endive",
+                 "type":"checkout.session.completed",
                  "data":{"object":{"id":"cs_test_ficticia","object":"checkout.session",
-                 "payment_status":"paid","subscription":%s,
-                 "metadata":{"salonId":"%d","tipoCompra":"%s"}}}}
-                """.formatted(id, suscripcion, salonId, tipoCompra);
+                 "mode":"%s","payment_status":"paid","subscription":%s,
+                 "metadata":{"salonId":"%d","tipo":"%s"}}}}
+                """.formatted(id, modo, suscripcion, salonId, tipoCompra);
     }
 
     private org.springframework.test.web.servlet.ResultActions webhook(String cuerpo, String firma) throws Exception {

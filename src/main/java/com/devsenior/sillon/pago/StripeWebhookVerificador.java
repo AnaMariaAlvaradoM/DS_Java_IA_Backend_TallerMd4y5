@@ -47,7 +47,7 @@ public class StripeWebhookVerificador implements VerificadorWebhook {
             if (metadata == null) { throw new PasarelaException("Faltan metadatos de la sesión"); }
             try {
                 Long salonId = Long.valueOf(metadata.get("salonId"));
-                TipoCompra tipo = TipoCompra.valueOf(metadata.get("tipoCompra"));
+                TipoCompra tipo = TipoCompra.valueOf(metadata.get("tipo"));
                 if (salonId <= 0) { throw new IllegalArgumentException(); }
                 return new EventoVerificado(evento.getId(), evento.getType(), salonId, tipo,
                         true, sesion.getSubscription());

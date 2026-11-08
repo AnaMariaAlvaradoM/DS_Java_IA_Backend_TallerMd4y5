@@ -58,12 +58,12 @@ public class PagoServicio {
                 .setSuccessUrl(urlPublica + "/api/pagos/resultado?estado=exito")
                 .setCancelUrl(urlPublica + "/api/pagos/resultado?estado=cancelado")
                 .putMetadata("salonId", salonId)
-                .putMetadata("tipoCompra", tipo.name())
+                .putMetadata("tipo", tipo.name())
                 .addLineItem(SessionCreateParams.LineItem.builder().setPrice(precio).setQuantity(1L).build());
         if (tipo == TipoCompra.SUSCRIPCION_PRO) {
             parametros.setSubscriptionData(SessionCreateParams.SubscriptionData.builder()
                     .putMetadata("salonId", salonId)
-                    .putMetadata("tipoCompra", tipo.name()).build());
+                    .putMetadata("tipo", tipo.name()).build());
         }
         SesionCheckout sesion = checkout.crear(parametros.build());
         if (sesion == null || sesion.id() == null || sesion.id().isBlank()

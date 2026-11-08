@@ -59,9 +59,9 @@ class PagoServicioTests {
         assertEquals("dueno@ejemplo.co", parametros.getCustomerEmail());
         assertEquals("7", parametros.getClientReferenceId());
         assertEquals("7", parametros.getMetadata().get("salonId"));
-        assertEquals("SUSCRIPCION_PRO", parametros.getMetadata().get("tipoCompra"));
+        assertEquals("SUSCRIPCION_PRO", parametros.getMetadata().get("tipo"));
         assertEquals("7", parametros.getSubscriptionData().getMetadata().get("salonId"));
-        assertEquals("SUSCRIPCION_PRO", parametros.getSubscriptionData().getMetadata().get("tipoCompra"));
+        assertEquals("SUSCRIPCION_PRO", parametros.getSubscriptionData().getMetadata().get("tipo"));
         assertEquals("price_pro_ficticio", parametros.getLineItems().get(0).getPrice());
         assertEquals("https://sillon.example/api/pagos/resultado?estado=exito", parametros.getSuccessUrl());
         assertEquals("https://sillon.example/api/pagos/resultado?estado=cancelado", parametros.getCancelUrl());
