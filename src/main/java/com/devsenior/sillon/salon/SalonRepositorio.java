@@ -12,6 +12,9 @@ public interface SalonRepositorio extends JpaRepository<Salon, Long> {
     boolean existsBySlug(String slug);
     Optional<Salon> findByStripeSuscripcionId(String stripeSuscripcionId);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Salon s where s.stripeSuscripcionId = :suscripcionId")
+    Optional<Salon> buscarPorSuscripcionParaActualizar(@Param("suscripcionId") String suscripcionId);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from Salon s where s.id = :id")
     Optional<Salon> buscarParaActualizar(@Param("id") Long id);
 }
