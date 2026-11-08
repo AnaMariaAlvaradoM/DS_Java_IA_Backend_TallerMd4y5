@@ -13,6 +13,8 @@ public interface UsuarioRepositorio extends JpaRepository<Usuario, Long> {
     boolean existsByEmail(String email);
     long countBySalon_IdAndRol(Long salonId, Rol rol);
     List<Usuario> findAllBySalon_IdAndRolOrderByIdAsc(Long salonId, Rol rol);
+    List<Usuario> findAllBySalon_IdAndRolAndActivoTrueOrderByIdAsc(Long salonId, Rol rol);
+    Optional<Usuario> findByIdAndSalon_IdAndRol(Long id, Long salonId, Rol rol);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from Usuario u where u.id = :id and u.salon.id = :salonId and u.rol = :rol")
     Optional<Usuario> buscarEstilistaParaAgendar(@Param("id") Long id,

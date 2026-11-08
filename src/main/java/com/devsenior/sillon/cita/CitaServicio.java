@@ -43,7 +43,11 @@ public class CitaServicio {
         return agendar(salonId, solicitud, EstadoCita.CONFIRMADA, OrigenCita.SALON);
     }
 
-    // La Fase 5 podrá reutilizar este flujo con PENDIENTE y EN_LINEA.
+    @Transactional
+    public CitaRespuesta agendarEnLinea(Long salonId, CitaSolicitud solicitud) {
+        return agendar(salonId, solicitud, EstadoCita.PENDIENTE, OrigenCita.EN_LINEA);
+    }
+
     private CitaRespuesta agendar(Long salonId, CitaSolicitud solicitud, EstadoCita estado, OrigenCita origen) {
         Servicio servicio = servicios.findByIdAndSalon_Id(solicitud.servicioId(), salonId)
                 .orElseThrow(() -> new NoEncontradoException("Servicio no encontrado"));
