@@ -65,7 +65,7 @@ public class ManejadorGlobalExcepciones {
     }
 
     @ExceptionHandler({ReglaNegocioException.class, ConflictoExcepcion.class})
-    public ResponseEntity<ErrorApi> manejarReglaNegocio(Exception ex) {
+    public ResponseEntity<ErrorApi> manejarReglaNegocio(RuntimeException ex) {
         return construir(HttpStatus.CONFLICT, ex.getMessage());
     }
 
