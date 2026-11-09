@@ -78,6 +78,22 @@ public class CatalogoServicio {
     @Transactional(readOnly = true)
     public Long salonId(String slug) { return buscarSalon(slug).getId(); }
 
+    @Transactional(readOnly = true)
+    public ContextoChatSalon contextoChat(String slug) {
+        Salon salon = buscarSalon(slug);
+        StringBuilder catalogo = new StringBuilder();
+        for (Servicio servicio : servicios.findAllBySalon_IdAndActivoTrueOrderByIdAsc(salon.getId())) {
+            if (!catalogo.isEmpty()) catalogo.append('\n');
+            catalogo.append(servicio.getNombre()).append(": ")
+                    .append(servicio.getDuracionMinutos()).append(" minutos, $")
+                    .append(java.text.NumberFormat.getIntegerInstance(Locale.forLanguageTag("es-CO"))
+                            .format(servicio.getPrecio()));
+        }
+        return new ContextoChatSalon(salon.getId(), salon.getNombre(),
+                salon.getDireccion() + ", " + salon.getCiudad(),
+                horarioTexto(salon.getConfiguracion()), catalogo.toString());
+    }
+
     private Salon buscarSalon(String slug) {
         return salones.findBySlug(slug).orElseThrow(() -> new NoEncontradoException("Salón no encontrado"));
     }

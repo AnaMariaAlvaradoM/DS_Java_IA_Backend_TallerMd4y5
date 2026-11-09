@@ -3,6 +3,9 @@ package com.devsenior.sillon.publico;
 import com.devsenior.sillon.cita.CitaRespuesta;
 import com.devsenior.sillon.cita.CitaServicio;
 import com.devsenior.sillon.cita.CitaSolicitud;
+import com.devsenior.sillon.chat.ChatRespuesta;
+import com.devsenior.sillon.chat.ChatServicio;
+import com.devsenior.sillon.chat.ChatSolicitud;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,10 +24,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicoControlador {
     private final CatalogoServicio catalogo;
     private final CitaServicio citas;
+    private final ChatServicio chat;
 
-    public PublicoControlador(CatalogoServicio catalogo, CitaServicio citas) {
+    public PublicoControlador(CatalogoServicio catalogo, CitaServicio citas, ChatServicio chat) {
         this.catalogo = catalogo;
         this.citas = citas;
+        this.chat = chat;
     }
 
     @GetMapping
@@ -42,5 +47,10 @@ public class PublicoControlador {
             @Valid @RequestBody CitaSolicitud solicitud) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(citas.agendarEnLinea(catalogo.salonId(slug), solicitud));
+    }
+
+    @PostMapping("/chat")
+    public ChatRespuesta chat(@PathVariable String slug, @Valid @RequestBody ChatSolicitud solicitud) {
+        return chat.responder(slug, solicitud);
     }
 }
