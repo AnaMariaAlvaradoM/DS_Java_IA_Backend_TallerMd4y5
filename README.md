@@ -4,6 +4,15 @@
 
 ---
 
+## Despliegue en producción de Sillón
+
+- API pública en Render: https://sillon-api-xuml.onrender.com
+- La aplicación se construye con el [Dockerfile](Dockerfile) multietapa: Maven y Java 17 generan el JAR de Spring Boot; la imagen final lo ejecuta con JRE 17.
+- En producción utiliza PostgreSQL de Supabase. Render suministra `PORT` y la conexión mediante `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD`. Las credenciales se configuran como variables de entorno, fuera de la imagen.
+- La colección está en [postman/sillon.postman_collection.json](postman/sillon.postman_collection.json). Para probar esta URL, importe también [postman/sillon-produccion.postman_environment.json](postman/sillon-produccion.postman_environment.json) en Postman y seleccione ese entorno. Las primeras seis carpetas son automatizadas; la séptima se ejecuta después de un pago manual en modo prueba.
+
+---
+
 ## ¿Qué es esto?
 
 ### El proyecto
