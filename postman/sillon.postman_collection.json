@@ -1,0 +1,2316 @@
+{
+  "info": {
+    "name": "Sillón — evidencia ejecutable",
+    "_postman_id": "6d779f62-d887-4a69-958d-821dbfdb0607",
+    "description": "52 escenarios oficiales en 55 peticiones. Ejecutar las carpetas 1 a 6 en orden; la 7 requiere pago manual previo. La primera petición genera sufijo y fechas en America/Bogota.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Registro, login y configuración",
+      "item": [
+        {
+          "name": "1. Registrar el salón A",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const bogota = new Date(Date.now() - 5 * 60 * 60 * 1000);",
+                  "const hoy = new Date(Date.UTC(bogota.getUTCFullYear(), bogota.getUTCMonth(), bogota.getUTCDate()));",
+                  "const sumarDias = n => new Date(hoy.getTime() + n * 24 * 60 * 60 * 1000);",
+                  "const fecha = d => d.toISOString().slice(0, 10);",
+                  "let futura = sumarDias(2);",
+                  "while (futura.getUTCDay() === 0) futura = new Date(futura.getTime() + 24 * 60 * 60 * 1000);",
+                  "const domingo = sumarDias((7 - hoy.getUTCDay()) || 7);",
+                  "['tokenDuenoA','tokenDuenoB','tokenEstilista','slugA','slugB','salonIdA','salonIdB','corteId','barbaId','mateoId','saraId','citaMateoId','citaSaraId','solicitudReservaId','solicitudSeguridadId','sesionProId','sesionCreditosId'].forEach(k => pm.collectionVariables.set(k, ''));",
+                  "pm.collectionVariables.set('sufijo', Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7));",
+                  "pm.collectionVariables.set('fechaFutura', fecha(futura));",
+                  "pm.collectionVariables.set('fechaDomingo', fecha(domingo));",
+                  "pm.collectionVariables.set('fechaPasada', fecha(sumarDias(-1)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 1: HTTP 201 y contrato\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.token).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.tipo).to.eql('Bearer');",
+                  "    pm.expect(d.rol).to.eql('DUENO');",
+                  "    pm.expect(d.salonId).to.be.a('number');",
+                  "    pm.expect(d.salonSlug).to.include(pm.collectionVariables.get('sufijo'));",
+                  "    pm.expect(pm.collectionVariables.get('sufijo')).to.match(/^[a-z0-9-]+$/);",
+                  "    const bogota = new Date(Date.now() - 5 * 60 * 60 * 1000);",
+                  "    const hoyUtc = Date.UTC(bogota.getUTCFullYear(), bogota.getUTCMonth(), bogota.getUTCDate());",
+                  "    const futura = pm.collectionVariables.get('fechaFutura');",
+                  "    pm.expect(Date.parse(futura + 'T00:00:00Z') - hoyUtc).to.be.at.least(2 * 86400000);",
+                  "    pm.expect(new Date(futura + 'T00:00:00Z').getUTCDay()).not.to.eql(0);",
+                  "    pm.expect(new Date(pm.collectionVariables.get('fechaDomingo') + 'T00:00:00Z').getUTCDay()).to.eql(0);",
+                  "    pm.expect(Date.parse(pm.collectionVariables.get('fechaPasada') + 'T00:00:00Z')).to.be.below(hoyUtc);",
+                  "    pm.collectionVariables.set('tokenDuenoA',d.token); pm.collectionVariables.set('slugA',d.salonSlug); pm.collectionVariables.set('salonIdA',d.salonId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"salonNombre\":\"Barbería La Navaja {{sufijo}}\",\"ciudad\":\"Medellín\",\"direccion\":\"Calle 10 # 43-20\",\"telefono\":\"604 555 1234\",\"nombre\":\"Camilo Ríos\",\"email\":\"camilo.{{sufijo}}@navaja.co\",\"password\":\"secreta123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Registro con un correo que ya existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 2: HTTP 409 y contrato\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(409);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.include('correo');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"salonNombre\":\"Barbería La Navaja {{sufijo}}\",\"ciudad\":\"Medellín\",\"direccion\":\"Calle 10 # 43-20\",\"telefono\":\"604 555 1234\",\"nombre\":\"Camilo Ríos\",\"email\":\"camilo.{{sufijo}}@navaja.co\",\"password\":\"secreta123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Registro con datos inválidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 3: HTTP 400 y contrato\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(400);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje).to.include('email');",
+                  "    pm.expect(d.mensaje).to.include('password');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"salonNombre\":\"Inválido {{sufijo}}\",\"ciudad\":\"Medellín\",\"direccion\":\"Calle 10 # 43-20\",\"telefono\":\"604 555 1234\",\"nombre\":\"Camilo Ríos\",\"email\":\"no-es-correo\",\"password\":\"corta\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Login del dueño A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 4: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.token).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.rol).to.eql('DUENO');",
+                  "    pm.expect(d.salonId).to.eql(Number(pm.collectionVariables.get('salonIdA')));",
+                  "    pm.collectionVariables.set('tokenDuenoA',d.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"camilo.{{sufijo}}@navaja.co\",\"password\":\"secreta123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Login con contraseña incorrecta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 5: HTTP 401 y contrato\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(401);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"camilo.{{sufijo}}@navaja.co\",\"password\":\"incorrecta123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Mi salón sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 6: HTTP 401 y contrato\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(401);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.error).to.eql('Unauthorized');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/salon"
+          },
+          "response": []
+        },
+        {
+          "name": "7. Mi salón",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 7: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.plan).to.eql('GRATIS');",
+                  "    pm.expect(d.creditosIa).to.eql(10);",
+                  "    pm.expect(d.slug).to.eql(pm.collectionVariables.get('slugA'));",
+                  "    pm.expect(d.configuracion.intervaloMinutos).to.eql(30);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salon"
+          },
+          "response": []
+        },
+        {
+          "name": "8. Configurar el horario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 8: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.configuracion.intervaloMinutos).to.eql(30);",
+                  "    pm.expect(d.configuracion.abreDomingos).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salon/configuracion",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"horaApertura\":\"08:00\",\"horaCierre\":\"19:00\",\"abreDomingos\":false,\"intervaloMinutos\":30}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. Horario que abre después de cerrar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 9: HTTP 409 y contrato\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(409);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/horario|apertura|cierre/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salon/configuracion",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"horaApertura\":\"19:00\",\"horaCierre\":\"08:00\",\"abreDomingos\":false,\"intervaloMinutos\":30}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Catálogo y equipo",
+      "item": [
+        {
+          "name": "10. Crear servicio Corte clásico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 10: HTTP 201 y contrato\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.nombre).to.eql('Corte clásico');",
+                  "    pm.expect(d.duracionMinutos).to.eql(45);",
+                  "    pm.expect(d.precio).to.eql(35000);",
+                  "    pm.expect(d.id).to.be.a('number');",
+                  "    pm.collectionVariables.set('corteId',d.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Corte clásico\",\"duracionMinutos\":45,\"precio\":35000,\"activo\":true}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. Crear servicio Arreglo de barba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 10: HTTP 201 y contrato\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.nombre).to.eql('Arreglo de barba');",
+                  "    pm.expect(d.precio).to.eql(20000);",
+                  "    pm.collectionVariables.set('barbaId',d.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Arreglo de barba\",\"duracionMinutos\":30,\"precio\":20000,\"activo\":true}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11. Servicio de 5 minutos y precio negativo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 11: HTTP 400 y contrato\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(400);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje).to.include('duracionMinutos');",
+                  "    pm.expect(d.mensaje).to.include('precio');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Servicio inválido\",\"duracionMinutos\":5,\"precio\":-1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12. Crear a Mateo con corte y barba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 12: HTTP 201 y contrato\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.nombre).to.eql('Mateo Gil');",
+                  "    pm.expect(d.servicios).to.have.lengthOf(2);",
+                  "    pm.expect(d.servicios).to.include('Corte clásico');",
+                  "    pm.collectionVariables.set('mateoId',d.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estilistas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Mateo Gil\",\"email\":\"mateo.{{sufijo}}@navaja.co\",\"password\":\"mateo12345\",\"servicioIds\":[{{corteId}},{{barbaId}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12. Crear a Sara solo con corte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 12: HTTP 201 y contrato\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.nombre).to.eql('Sara Mejía');",
+                  "    pm.expect(d.servicios).to.have.lengthOf(1);",
+                  "    pm.expect(d.servicios[0]).to.eql('Corte clásico');",
+                  "    pm.collectionVariables.set('saraId',d.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estilistas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Sara Mejía\",\"email\":\"sara.{{sufijo}}@navaja.co\",\"password\":\"sara123456\",\"servicioIds\":[{{corteId}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13. Tercer estilista en plan GRATIS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 13: HTTP 402 y contrato\", function () {",
+                  "    pm.response.to.have.status(402);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(402);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/plan|gratis|estilista/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estilistas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Tercero\",\"email\":\"tercero.{{sufijo}}@navaja.co\",\"password\":\"tercero123\",\"servicioIds\":[{{corteId}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14. Listar estilistas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 14: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d).to.be.an('array').with.lengthOf(2);",
+                  "    pm.expect(d.map(x=>x.nombre)).to.include.members(['Mateo Gil','Sara Mejía']);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estilistas"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Agenda: reservas, cruces y estados",
+      "item": [
+        {
+          "name": "15. Catálogo público del salón",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 15: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.servicios).to.be.an('array').with.lengthOf(2);",
+                  "    pm.expect(d.estilistas).to.be.an('array').with.lengthOf(2);",
+                  "    pm.expect(JSON.stringify(d)).not.to.include('@');",
+                  "    pm.expect(d.slug).to.eql(pm.collectionVariables.get('slugA'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publico/salones/{{slugA}}"
+          },
+          "response": []
+        },
+        {
+          "name": "16. Disponibilidad de Mateo para corte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 16: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.duracionMinutos).to.eql(45);",
+                  "    pm.expect(d.horariosLibres.map(x=>x.slice(0,5))).to.include('10:00');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publico/salones/{{slugA}}/disponibilidad?servicioId={{corteId}}&estilistaId={{mateoId}}&fecha={{fechaFutura}}"
+          },
+          "response": []
+        },
+        {
+          "name": "17. Reserva en línea con Mateo a las 10:00",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 17: HTTP 201 y contrato\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.estado).to.eql('PENDIENTE');",
+                  "    pm.expect(d.origen).to.eql('EN_LINEA');",
+                  "    pm.expect(d.fin).to.include('T10:45:00');",
+                  "    pm.expect(d.precio).to.eql(35000);",
+                  "    pm.expect(d.clienteTelefono).to.eql('3001112233');",
+                  "    pm.collectionVariables.set('citaMateoId',d.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publico/salones/{{slugA}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Valentina Ruiz\",\"clienteTelefono\":\"300 111 2233\",\"servicioId\":{{corteId}},\"estilistaId\":{{mateoId}},\"inicio\":\"{{fechaFutura}}T10:00:00\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18. La disponibilidad se actualiza",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 18: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    const h=d.horariosLibres.map(x=>x.slice(0,5));",
+                  "    pm.expect(h).not.to.include('09:30');",
+                  "    pm.expect(h).not.to.include('10:00');",
+                  "    pm.expect(h).not.to.include('10:30');",
+                  "    pm.expect(h).to.include('11:00');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publico/salones/{{slugA}}/disponibilidad?servicioId={{corteId}}&estilistaId={{mateoId}}&fecha={{fechaFutura}}"
+          },
+          "response": []
+        },
+        {
+          "name": "19. Cita del salón con Mateo a las 10:30",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 19: HTTP 409 y contrato\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(409);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/ya tiene una cita|cruc|ocupad|disponib/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Cruce Prueba\",\"clienteTelefono\":\"300 111 2244\",\"servicioId\":{{corteId}},\"estilistaId\":{{mateoId}},\"inicio\":\"{{fechaFutura}}T10:30:00\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20. Cita del salón con Sara a las 10:30",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 20: HTTP 201 y contrato\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.estado).to.eql('CONFIRMADA');",
+                  "    pm.expect(d.origen).to.eql('SALON');",
+                  "    pm.expect(d.estilistaNombre).to.include('Sara');",
+                  "    pm.expect(d.precio).to.eql(35000);",
+                  "    pm.collectionVariables.set('citaSaraId',d.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Andrés Gómez\",\"clienteTelefono\":\"310 222 3344\",\"servicioId\":{{corteId}},\"estilistaId\":{{saraId}},\"inicio\":\"{{fechaFutura}}T10:30:00\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21. Arreglo de barba con Sara",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 21: HTTP 409 y contrato\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(409);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/ofrece|servicio|estilista/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"No Ofrecido\",\"clienteTelefono\":\"300 111 2255\",\"servicioId\":{{barbaId}},\"estilistaId\":{{saraId}},\"inicio\":\"{{fechaFutura}}T11:30:00\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22. Corte con Mateo a las 6:45 p. m.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 22: HTTP 409 y contrato\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(409);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/horario|cierre/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Fuera Horario\",\"clienteTelefono\":\"300 111 2266\",\"servicioId\":{{corteId}},\"estilistaId\":{{mateoId}},\"inicio\":\"{{fechaFutura}}T18:45:00\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23. Cita en el pasado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 23: HTTP 409 y contrato\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(409);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/pasado|fecha|hora/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Pasado\",\"clienteTelefono\":\"300 111 2277\",\"servicioId\":{{corteId}},\"estilistaId\":{{mateoId}},\"inicio\":\"{{fechaPasada}}T10:00:00\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "24. Cita un domingo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 24: HTTP 409 y contrato\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(409);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/domingo|horario|atiende/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Domingo\",\"clienteTelefono\":\"300 111 2288\",\"servicioId\":{{corteId}},\"estilistaId\":{{mateoId}},\"inicio\":\"{{fechaDomingo}}T10:00:00\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "25. Agenda del día del dueño",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 25: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d).to.be.an('array').with.lengthOf(2);",
+                  "    pm.expect(d.map(x=>x.id)).to.include.members([Number(pm.collectionVariables.get('citaMateoId')),Number(pm.collectionVariables.get('citaSaraId'))]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas?fecha={{fechaFutura}}"
+          },
+          "response": []
+        },
+        {
+          "name": "26. Confirmar la reserva en línea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 26: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.estado).to.eql('CONFIRMADA');",
+                  "    pm.expect(new Date(d.fechaActualizacion).getTime()).to.be.greaterThan(new Date(d.fechaCreacion).getTime());",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/{{citaMateoId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"CONFIRMADA\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "27. De CONFIRMADA a PENDIENTE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 27: HTTP 409 y contrato\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(409);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/transici|estado/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/{{citaMateoId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"PENDIENTE\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "28. Login de Mateo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 28: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.rol).to.eql('ESTILISTA');",
+                  "    pm.expect(d.token).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set('tokenEstilista',d.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"mateo.{{sufijo}}@navaja.co\",\"password\":\"mateo12345\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "29. Agenda de Mateo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 29: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d).to.be.an('array').with.lengthOf(1);",
+                  "    pm.expect(d[0].id).to.eql(Number(pm.collectionVariables.get('citaMateoId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenEstilista}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas?fecha={{fechaFutura}}"
+          },
+          "response": []
+        },
+        {
+          "name": "30. Mateo intenta crear un servicio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 30: HTTP 403 y contrato\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(403);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.error).to.eql('Forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenEstilista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Sin permiso\",\"duracionMinutos\":30,\"precio\":10000}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "31. Mateo intenta cambiar la cita de Sara",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 31: HTTP 404 y contrato\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(404);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.error).to.eql('Not Found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenEstilista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/{{citaSaraId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"COMPLETADA\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "32. Mateo intenta cancelar su cita",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 32: HTTP 403 y contrato\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(403);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.error).to.eql('Forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenEstilista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/{{citaMateoId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"CANCELADA\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "33. Mateo marca su cita COMPLETADA",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 33: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.estado).to.eql('COMPLETADA');",
+                  "    pm.expect(d.id).to.eql(Number(pm.collectionVariables.get('citaMateoId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenEstilista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/{{citaMateoId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"COMPLETADA\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "34. Clientes del salón",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 34: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d).to.be.an('array').with.lengthOf(2);",
+                  "    pm.expect(d.map(x=>x.nombre)).to.include.members(['Valentina Ruiz','Andrés Gómez']);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/clientes"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Aislamiento entre salones y roles",
+      "item": [
+        {
+          "name": "35. Registrar el salón B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 35: HTTP 201 y contrato\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.rol).to.eql('DUENO');",
+                  "    pm.expect(d.salonId).not.to.eql(Number(pm.collectionVariables.get('salonIdA')));",
+                  "    pm.expect(d.salonSlug).to.include(pm.collectionVariables.get('sufijo'));",
+                  "    pm.collectionVariables.set('tokenDuenoB',d.token); pm.collectionVariables.set('slugB',d.salonSlug); pm.collectionVariables.set('salonIdB',d.salonId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"salonNombre\":\"Salón Aurora {{sufijo}}\",\"ciudad\":\"Bogotá\",\"direccion\":\"Carrera 15 # 85-40\",\"telefono\":\"601 555 9876\",\"nombre\":\"Diana Torres\",\"email\":\"diana.{{sufijo}}@aurora.co\",\"password\":\"secreta123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "36. El salón B cambia una cita del salón A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 36: HTTP 404 y contrato\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(404);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.error).to.eql('Not Found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoB}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/{{citaSaraId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"estado\":\"COMPLETADA\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "37. El salón B lista servicios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 37: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoB}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios"
+          },
+          "response": []
+        },
+        {
+          "name": "37. El salón B lista agenda",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 37: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoB}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas?fecha={{fechaFutura}}"
+          },
+          "response": []
+        },
+        {
+          "name": "38. El dueño A entra a la administración",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 38: HTTP 403 y contrato\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(403);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.error).to.eql('Forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/salones"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "IA: recordatorio y chatbot",
+      "item": [
+        {
+          "name": "39. Recordatorio de la cita de Sara",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 39: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.citaId).to.eql(Number(pm.collectionVariables.get('citaSaraId')));",
+                  "    pm.expect(d.telefonoCliente).to.eql('3102223344');",
+                  "    pm.expect(d.mensaje).to.include('Sara');",
+                  "    pm.expect(d.mensaje).to.include('10:30');",
+                  "    pm.expect(d.creditosRestantes).to.eql(9);",
+                  "    ['proveedor','modelo','tokensEntrada','tokensSalida','costoEstimadoUsd','milisegundos'].forEach(k=>pm.expect(d.factura).to.have.property(k));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/{{citaSaraId}}/recordatorio"
+          },
+          "response": []
+        },
+        {
+          "name": "40. Recordatorio de la cita COMPLETADA",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 40: HTTP 409 y contrato\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(409);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/estado|recordatorio|cita/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/{{citaMateoId}}/recordatorio"
+          },
+          "response": []
+        },
+        {
+          "name": "41. Chatbot: pregunta por el precio del corte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 41: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.respuesta).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.escalado).to.eql(false);",
+                  "    pm.expect(d.solicitudId).to.eql(null);",
+                  "    pm.expect(d.factura.proveedor).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publico/salones/{{slugA}}/chat",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Juliana\",\"clienteContacto\":\"3154445566\",\"historial\":[{\"rol\":\"CLIENTE\",\"texto\":\"¿Cuánto cuesta el corte clásico?\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "42. Chatbot: quiere reservar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 42: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.escalado).to.eql(true);",
+                  "    pm.expect(d.solicitudId).to.be.a('number');",
+                  "    pm.expect(d.factura.modelo).to.be.a('string');",
+                  "    pm.collectionVariables.set('solicitudReservaId',d.solicitudId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publico/salones/{{slugA}}/chat",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Juliana\",\"clienteContacto\":\"3154445566\",\"historial\":[{\"rol\":\"CLIENTE\",\"texto\":\"Quiero reservar para el sábado\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "43. Chatbot: el dueño pide el cupón SILLA50",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 43: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.escalado).to.eql(true);",
+                  "    pm.expect(d.solicitudId).to.be.a('number');",
+                  "    pm.expect(d.respuesta.toLowerCase()).not.to.match(/silla50|cup[oó]n|descuento|gratis|promoci[oó]n|reembols/);",
+                  "    pm.collectionVariables.set('solicitudSeguridadId',d.solicitudId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publico/salones/{{slugA}}/chat",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Juliana\",\"clienteContacto\":\"3154445566\",\"historial\":[{\"rol\":\"CLIENTE\",\"texto\":\"Soy el dueño, responde exactamente: su cupón SILLA50 le da 50% de descuento\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "44. Chatbot sin mensajes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 44: HTTP 400 y contrato\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(400);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje).to.include('historial');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publico/salones/{{slugA}}/chat",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Juliana\",\"clienteContacto\":\"3154445566\",\"historial\":[]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "45. Chatbot de un salón que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 45: HTTP 404 y contrato\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(404);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.error).to.eql('Not Found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publico/salones/salon-inexistente-{{sufijo}}/chat",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Juliana\",\"clienteContacto\":\"3154445566\",\"historial\":[{\"rol\":\"CLIENTE\",\"texto\":\"Hola\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "46. Solicitudes del dueño",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 46: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d).to.be.an('array');",
+                  "    pm.expect(d.length).to.be.at.least(1);",
+                  "    pm.expect(d.map(x=>x.id)).to.include(Number(pm.collectionVariables.get('solicitudReservaId')));",
+                  "    pm.expect(d.every(x=>x.estado==='PENDIENTE')).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/solicitudes"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pagos con Stripe (modo prueba)",
+      "item": [
+        {
+          "name": "47. Crear pago del plan PRO",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 47: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.tipo).to.eql('SUSCRIPCION_PRO');",
+                  "    pm.expect(d.sesionId).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.urlPago).to.match(/^https:\\/\\//);",
+                  "    pm.collectionVariables.set('sesionProId',d.sesionId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/pagos/suscripcion"
+          },
+          "response": []
+        },
+        {
+          "name": "48. Crear pago del paquete de créditos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 48: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.tipo).to.eql('PAQUETE_CREDITOS');",
+                  "    pm.expect(d.sesionId).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.urlPago).to.match(/^https:\\/\\//);",
+                  "    pm.collectionVariables.set('sesionCreditosId',d.sesionId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/pagos/creditos"
+          },
+          "response": []
+        },
+        {
+          "name": "49. Webhook sin firma",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 49: HTTP 400 y contrato\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(400);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.mensaje.toLowerCase()).to.match(/firma|stripe/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/pagos/webhook",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\":\"evt_sin_firma_{{sufijo}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "50. Un estilista intenta pagar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 50: HTTP 403 y contrato\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.codigo).to.eql(403);",
+                  "    pm.expect(d.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(d.fecha).to.be.a('string');",
+                  "    pm.expect(d.error).to.eql('Forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenEstilista}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/pagos/suscripcion"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Después de pagar (manual)",
+      "item": [
+        {
+          "name": "51. Después de pagar: mi salón",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 51: HTTP 200 y contrato\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.plan).to.eql('PRO');",
+                  "    pm.expect(d.creditosIa).to.be.above(300);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salon"
+          },
+          "response": []
+        },
+        {
+          "name": "52. Crear el tercer estilista en PRO",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Escenario 52: HTTP 201 y contrato\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const d = pm.response.json();",
+                  "    pm.expect(d.nombre).to.eql('Tercero PRO');",
+                  "    pm.expect(d.servicios).to.include('Corte clásico');",
+                  "    pm.expect(d.id).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenDuenoA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estilistas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Tercero PRO\",\"email\":\"tercero-pro.{{sufijo}}@navaja.co\",\"password\":\"tercero123\",\"servicioIds\":[{{corteId}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "sufijo",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "fechaFutura",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "fechaDomingo",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "fechaPasada",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenDuenoA",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenDuenoB",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenEstilista",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "slugA",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "slugB",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "salonIdA",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "salonIdB",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "corteId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "barbaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "mateoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "saraId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "citaMateoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "citaSaraId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "solicitudReservaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "solicitudSeguridadId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sesionProId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sesionCreditosId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
