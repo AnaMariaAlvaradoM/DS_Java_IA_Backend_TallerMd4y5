@@ -137,6 +137,4 @@ public class ManejadorGlobalExcepciones {
     public ResponseEntity<ErrorApi> manejarSolicitudInvalida(SolicitudInvalidaExcepcion ex) {
         return construir(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
-
-
 }

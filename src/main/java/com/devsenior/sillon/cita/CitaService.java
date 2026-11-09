@@ -2,11 +2,13 @@ package com.devsenior.sillon.cita;
 
 import com.devsenior.sillon.cita.dto.CitaRequestDto;
 import com.devsenior.sillon.cita.dto.CitaResponseDto;
+import com.devsenior.sillon.cita.dto.DatosRecordatorioCita;
 import com.devsenior.sillon.cliente.Cliente;
 import com.devsenior.sillon.cliente.ClienteService;
 import com.devsenior.sillon.compartido.AccionNoPermitidaException;
 import com.devsenior.sillon.compartido.ConflictoExcepcion;
 import com.devsenior.sillon.compartido.NoEncontradoException;
+import com.devsenior.sillon.compartido.ReglaNegocioException;
 import com.devsenior.sillon.salon.Salon;
 import com.devsenior.sillon.salon.SalonRepository;
 import com.devsenior.sillon.usuario.Rol;
@@ -21,7 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class CitaService {
@@ -203,4 +207,46 @@ public class CitaService {
                 OrigenCita.EN_LINEA
         );
     }
+
+    @Transactional(readOnly = true)
+    public DatosRecordatorioCita obtenerDatosVerificadosRecordatorio(Long citaId, Long salonId) {
+        Cita cita = citaRepository.findByIdAndSalonId(citaId, salonId)
+                .orElseThrow(() -> new NoEncontradoException("Cita no encontrada"));
+
+        if (!cita.getEstado().ocupaAgenda()) {
+            throw new ConflictoExcepcion("Solo se pueden generar recordatorios para citas en estado PENDIENTE o CONFIRMADA");
+        }
+
+        Locale localeEs = Locale.forLanguageTag("es-CO");
+        DateTimeFormatter formatoFecha = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", localeEs);
+        DateTimeFormatter formatoHora = DateTimeFormatter.ofPattern("h:mm a", localeEs);
+
+        String fechaFormateada = cita.getInicio().format(formatoFecha);
+        String horaFormateada = cita.getInicio().format(formatoHora)
+                .replace("\u202f", " ")
+                .replace("\u00a0", " ");
+
+        long duracionMinutos = java.time.Duration.between(cita.getInicio(), cita.getFin()).toMinutes();
+        String servicioTexto = String.format("%s (%d minutos)", cita.getServicio().getNombre(), duracionMinutos);
+        String valorTexto = String.format("$%,d", cita.getPrecio().longValue()).replace(',', '.');
+        String direccionTexto = String.format("%s, %s", cita.getSalon().getDireccion(), cita.getSalon().getCiudad());
+
+        String datosTexto = String.format(
+                "Servicio: %s\nEstilista: %s\nFecha: %s\nHora: %s\nValor: %s\nDirección: %s",
+                servicioTexto,
+                cita.getEstilista().getNombre(),
+                fechaFormateada,
+                horaFormateada,
+                valorTexto,
+                direccionTexto
+        );
+
+        return new DatosRecordatorioCita(
+                cita.getSalon().getNombre(),
+                cita.getCliente().getNombre(),
+                cita.getCliente().getTelefono(),
+                datosTexto
+        );
+    }
+
 }
