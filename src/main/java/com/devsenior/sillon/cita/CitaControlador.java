@@ -21,8 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/citas")
 public class CitaControlador {
     private final CitaServicio servicio;
+    private final RecordatorioServicio recordatorios;
 
-    public CitaControlador(CitaServicio servicio) { this.servicio = servicio; }
+    public CitaControlador(CitaServicio servicio, RecordatorioServicio recordatorios) {
+        this.servicio = servicio;
+        this.recordatorios = recordatorios;
+    }
 
     @PostMapping
     public ResponseEntity<CitaRespuesta> crear(@AuthenticationPrincipal UsuarioPrincipal usuario,
@@ -40,5 +44,10 @@ public class CitaControlador {
     public CitaRespuesta cambiarEstado(@AuthenticationPrincipal UsuarioPrincipal usuario, @PathVariable Long id,
             @Valid @RequestBody EstadoCitaSolicitud solicitud) {
         return servicio.cambiarEstado(usuario, id, solicitud.estado());
+    }
+
+    @PostMapping("/{id}/recordatorio")
+    public RecordatorioRespuesta recordatorio(@AuthenticationPrincipal UsuarioPrincipal usuario, @PathVariable Long id) {
+        return recordatorios.generar(id, usuario.getSalonId());
     }
 }

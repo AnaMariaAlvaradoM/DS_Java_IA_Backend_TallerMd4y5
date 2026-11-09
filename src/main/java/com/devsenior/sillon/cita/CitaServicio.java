@@ -14,6 +14,9 @@ import com.devsenior.sillon.usuario.UsuarioRepositorio;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -120,5 +123,29 @@ public class CitaServicio {
         }
         cita.setFechaActualizacion(ahora);
         return CitaRespuesta.desde(citas.saveAndFlush(cita));
+    }
+
+    @Transactional(readOnly = true)
+    public DatosRecordatorio datosRecordatorio(Long id, Long salonId) {
+        Cita cita = citas.findByIdAndSalon_Id(id, salonId)
+                .orElseThrow(() -> new NoEncontradoException("Cita no encontrada"));
+        if (cita.getEstado() != EstadoCita.PENDIENTE && cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new ReglaNegocioException("La cita no permite generar un recordatorio");
+        }
+        Locale colombia = Locale.forLanguageTag("es-CO");
+        String fecha = cita.getInicio().format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", colombia));
+        String hora = cita.getInicio().format(DateTimeFormatter.ofPattern("h:mm a", colombia))
+                .replaceAll("[\\p{Zs}\\u00A0\\u202F]+", " ").toLowerCase(colombia);
+        String valor = NumberFormat.getIntegerInstance(colombia).format(cita.getPrecio())
+                .replaceAll("[\\p{Zs}\\u00A0\\u202F]+", " ");
+        String datos = "Servicio: " + cita.getServicio().getNombre() + " ("
+                + cita.getServicio().getDuracionMinutos() + " minutos)\n"
+                + "Estilista: " + cita.getEstilista().getNombre() + "\n"
+                + "Fecha: " + fecha + "\n"
+                + "Hora: " + hora + "\n"
+                + "Valor: $" + valor + "\n"
+                + "Dirección: " + cita.getSalon().getDireccion() + ", " + cita.getSalon().getCiudad();
+        return new DatosRecordatorio(cita.getId(), cita.getSalon().getNombre(),
+                cita.getCliente().getNombre(), cita.getCliente().getTelefono(), datos);
     }
 }
