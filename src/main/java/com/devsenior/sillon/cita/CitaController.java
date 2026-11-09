@@ -1,12 +1,14 @@
 package com.devsenior.sillon.cita;
 
 import com.devsenior.sillon.cita.dto.CambioEstadoRequestDto;
+import com.devsenior.sillon.cita.dto.CitaRequestDto;
 import com.devsenior.sillon.cita.dto.CitaResponseDto;
 import com.devsenior.sillon.cita.dto.RecordatorioRespuestaDto;
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 import com.devsenior.sillon.usuario.Rol;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +27,16 @@ public class CitaController {
     public CitaController(CitaService citaService, RecordatorioService recordatorioService) {
         this.citaService = citaService;
         this.recordatorioService = recordatorioService;
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('DUENO')")
+    public ResponseEntity<CitaResponseDto> crearCita(
+            @AuthenticationPrincipal UsuarioPrincipal usuario,
+            @Valid @RequestBody CitaRequestDto request) {
+
+        CitaResponseDto cita = citaService.crearCita(usuario.getSalonId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(cita);
     }
 
     @PostMapping("/{id}/recordatorio")
