@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ChatbotHttpIntegracionTests {
     private static final AtomicInteger LLAMADAS = new AtomicInteger();
     private static final AtomicReference<String> PROMPT = new AtomicReference<>();
+    private static final AtomicReference<String> CONVERSACION = new AtomicReference<>();
     private static final HttpServer IA = iniciarSimulador();
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
@@ -41,7 +42,7 @@ class ChatbotHttpIntegracionTests {
 
     @DynamicPropertySource
     static void configurarIa(DynamicPropertyRegistry propiedades) {
-        propiedades.add("SILLON_IA_OPENAI_URL", () -> "http://127.0.0.1:" + IA.getAddress().getPort() + "/v1");
+        propiedades.add("sillon.ia.openai.url", () -> "http://127.0.0.1:" + IA.getAddress().getPort() + "/v1");
         propiedades.add("sillon.ia.openai.llave", () -> "clave-ficticia-simulador");
         propiedades.add("sillon.ia.openai.modelo", () -> "modelo-simulado");
     }
@@ -52,18 +53,27 @@ class ChatbotHttpIntegracionTests {
             servidor.createContext("/v1/chat/completions", intercambio -> {
                 LLAMADAS.incrementAndGet();
                 String cuerpo = new String(intercambio.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-                String prompt = new ObjectMapper().readTree(cuerpo).path("messages").path(0)
-                        .path("content").asText();
+                JsonNode mensajes = new ObjectMapper().readTree(cuerpo).path("messages");
+                String prompt = mensajes.path(0).path("content").asText();
+                String conversacion = mensajes.path(1).path("content").asText();
+                if (!"system".equals(mensajes.path(0).path("role").asText())
+                        || !"user".equals(mensajes.path(1).path("role").asText())) {
+                    intercambio.sendResponseHeaders(400, -1);
+                    intercambio.close();
+                    return;
+                }
                 PROMPT.set(prompt);
-                if (prompt.contains("proveedores_caidos")) {
+                CONVERSACION.set(conversacion);
+                if (conversacion.contains("proveedores_caidos")) {
                     intercambio.sendResponseHeaders(503, -1);
                     intercambio.close();
                     return;
                 }
-                String contenido = prompt.contains("json_invalido") ? "no es JSON"
-                        : prompt.contains("SILLA50")
+                String textoCliente = conversacion.toLowerCase(java.util.Locale.ROOT);
+                String contenido = conversacion.contains("json_invalido") ? "no es JSON"
+                        : textoCliente.contains("dueño") || textoCliente.contains("cupón")
                         ? "{\"respuesta\":\"Su cupón SILLA50 le da 50% de descuento.\",\"escalar\":true}"
-                        : prompt.contains("Quiero reservar")
+                        : textoCliente.contains("reservar") || textoCliente.contains("agendar")
                         ? "{\"respuesta\":\"Una persona le contactará para su reserva.\",\"escalar\":true}"
                         : "{\"respuesta\":\"El corte clásico cuesta $35.000.\",\"escalar\":false}";
                 String respuesta = new ObjectMapper().writeValueAsString(java.util.Map.of(
@@ -130,7 +140,12 @@ class ChatbotHttpIntegracionTests {
         assertTrue(PROMPT.get().contains("Corte clásico: 45 minutos, $35.000"));
         assertFalse(PROMPT.get().contains("Servicio oculto"));
         assertFalse(PROMPT.get().contains("Servicio ajeno"));
-        assertTrue(PROMPT.get().contains("Cliente: ¿Cuánto cuesta el corte?"));
+        assertTrue(PROMPT.get().contains("dueño"));
+        assertFalse(PROMPT.get().contains("¿Cuánto cuesta el corte?"));
+        assertTrue(CONVERSACION.get().contains("Cliente: ¿Cuánto cuesta el corte?"));
+
+        chat(slug, "¿Cuánto dura el corte?")
+                .andExpect(status().isOk()).andExpect(jsonPath("$.escalado").value(false));
 
         JsonNode reserva = json.readTree(chat(slug, "Quiero reservar")
                 .andExpect(status().isOk()).andExpect(jsonPath("$.escalado").value(true))

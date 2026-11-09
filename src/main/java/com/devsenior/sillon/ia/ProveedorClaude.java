@@ -23,7 +23,7 @@ public class ProveedorClaude implements ProveedorIa {
 
     @Override public String nombre() { return "Claude"; }
 
-    @Override public RespuestaIa generar(String prompt) {
+    @Override public RespuestaIa generar(PeticionIa peticion) {
         if (TransactionSynchronizationManager.isActualTransactionActive())
             throw new IllegalStateException("La llamada IA no puede ejecutarse en una transacción JPA");
         if (configuracion.llave() == null || configuracion.llave().isBlank()
@@ -31,11 +31,16 @@ public class ProveedorClaude implements ProveedorIa {
             throw new FalloProveedorIa(FalloProveedorIa.Tipo.CONFIGURACION);
         long inicio = System.nanoTime();
         try {
+            Map<String, Object> cuerpoSolicitud = new java.util.HashMap<>();
+            cuerpoSolicitud.put("model", configuracion.modelo());
+            cuerpoSolicitud.put("max_tokens", 1024);
+            cuerpoSolicitud.put("messages", List.of(Map.of("role", "user", "content", peticion.usuario())));
+            if (peticion.sistema() != null && !peticion.sistema().isBlank())
+                cuerpoSolicitud.put("system", peticion.sistema());
             String cuerpo = cliente.post().uri(configuracion.url().replaceAll("/+$", "") + "/v1/messages")
                     .header("x-api-key", configuracion.llave())
                     .header("anthropic-version", "2023-06-01")
-                    .body(Map.of("model", configuracion.modelo(), "max_tokens", 1024,
-                            "messages", List.of(Map.of("role", "user", "content", prompt))))
+                    .body(cuerpoSolicitud)
                     .retrieve().body(String.class);
             JsonNode raiz = json.readTree(cuerpo);
             JsonNode contenido = raiz.path("content").path(0).path("text");

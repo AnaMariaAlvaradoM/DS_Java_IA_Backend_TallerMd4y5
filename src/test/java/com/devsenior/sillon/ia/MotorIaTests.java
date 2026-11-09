@@ -93,6 +93,49 @@ class MotorIaTests {
         servidor.verify();
     }
 
+    @Test void geminiSeparaInstruccionesYConversacion() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer servidor = MockRestServiceServer.bindTo(builder).build();
+        servidor.expect(requestTo("https://simulador.example/v1/chat/completions"))
+                .andExpect(jsonPath("$.messages[0].role").value("system"))
+                .andExpect(jsonPath("$.messages[0].content").value("Reglas del salón"))
+                .andExpect(jsonPath("$.messages[1].role").value("user"))
+                .andExpect(jsonPath("$.messages[1].content").value("Cliente: ¿Cuánto cuesta?"))
+                .andRespond(withSuccess("{\"choices\":[{\"message\":{\"content\":\"{\\\"respuesta\\\":\\\"$35.000\\\",\\\"escalar\\\":false}\"}}],\"usage\":{\"prompt_tokens\":8,\"completion_tokens\":4}}", MediaType.APPLICATION_JSON));
+        var proveedor = new ProveedorOpenAi(builder, json, new IaConfiguracion(
+                new IaConfiguracion.Proveedor("https://simulador.example/v1", "ficticia", "modelo", null, null),
+                null, Duration.ofSeconds(3)));
+        assertEquals(8, proveedor.generar(new PeticionIa("Reglas del salón", "Cliente: ¿Cuánto cuesta?"))
+                .factura().tokensEntrada());
+        servidor.verify();
+    }
+
+    @Test void claudeEnviaSistemaSeparadoDeUsuario() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer servidor = MockRestServiceServer.bindTo(builder).build();
+        servidor.expect(requestTo("https://claude.example/v1/messages"))
+                .andExpect(jsonPath("$.system").value("Reglas del salón"))
+                .andExpect(jsonPath("$.messages[0].role").value("user"))
+                .andExpect(jsonPath("$.messages[0].content").value("Cliente: Reservar"))
+                .andRespond(withSuccess("{\"content\":[{\"text\":\"{\\\"respuesta\\\":\\\"Le contactaremos\\\",\\\"escalar\\\":true}\"}],\"usage\":{\"input_tokens\":10,\"output_tokens\":5}}", MediaType.APPLICATION_JSON));
+        var proveedor = new ProveedorClaude(builder, json, new IaConfiguracion(null,
+                new IaConfiguracion.Proveedor("https://claude.example", "ficticia", "modelo", null, null),
+                Duration.ofSeconds(3)));
+        assertEquals(5, proveedor.generar(new PeticionIa("Reglas del salón", "Cliente: Reservar"))
+                .factura().tokensSalida());
+        servidor.verify();
+    }
+
+    @Test void fallbackConservaRolesDeLaPeticion() {
+        ProveedorIa principal = mock(ProveedorIa.class);
+        ProveedorIa respaldo = mock(ProveedorIa.class);
+        PeticionIa peticion = new PeticionIa("Reglas", "Cliente: reservar");
+        when(principal.generar(peticion)).thenThrow(new FalloProveedorIa(FalloProveedorIa.Tipo.TIMEOUT));
+        when(respaldo.generar(peticion)).thenReturn(new RespuestaIa("{}", null));
+        assertEquals("{}", new AsistenteIa(principal, respaldo).responder(peticion).contenido());
+        verify(respaldo).generar(peticion);
+    }
+
     @Test void noLlamaProveedorDentroDeTransaccion() {
         ProveedorIa principal = mock(ProveedorIa.class);
         ProveedorIa respaldo = mock(ProveedorIa.class);

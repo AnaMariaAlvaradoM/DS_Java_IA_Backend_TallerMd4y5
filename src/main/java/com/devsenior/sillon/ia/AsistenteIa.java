@@ -20,15 +20,23 @@ public class AsistenteIa {
     }
 
     public RespuestaIa responder(String prompt) {
+        return responderCon(proveedor -> proveedor.generar(prompt));
+    }
+
+    public RespuestaIa responder(PeticionIa peticion) {
+        return responderCon(proveedor -> proveedor.generar(peticion));
+    }
+
+    private RespuestaIa responderCon(java.util.function.Function<ProveedorIa, RespuestaIa> invocacion) {
         if (TransactionSynchronizationManager.isActualTransactionActive())
             throw new IllegalStateException("La llamada IA no puede ejecutarse en una transacción JPA");
         try {
-            return principal.generar(prompt);
+            return invocacion.apply(principal);
         } catch (FalloProveedorIa fallo) {
             registrar(principal, fallo);
         }
         try {
-            return respaldo.generar(prompt);
+            return invocacion.apply(respaldo);
         } catch (FalloProveedorIa fallo) {
             registrar(respaldo, fallo);
             throw new ProveedorNoDisponibleException("Ningún proveedor de IA está disponible");

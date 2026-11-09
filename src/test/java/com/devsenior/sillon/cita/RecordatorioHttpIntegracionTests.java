@@ -42,7 +42,7 @@ class RecordatorioHttpIntegracionTests {
 
     @DynamicPropertySource
     static void iaSimulada(DynamicPropertyRegistry propiedades) {
-        propiedades.add("SILLON_IA_OPENAI_URL", () -> "http://127.0.0.1:" + IA.getAddress().getPort() + "/v1");
+        propiedades.add("sillon.ia.openai.url", () -> "http://127.0.0.1:" + IA.getAddress().getPort() + "/v1");
         propiedades.add("sillon.ia.openai.llave", () -> "clave-ficticia-simulador");
         propiedades.add("sillon.ia.openai.modelo", () -> "modelo-simulado");
     }

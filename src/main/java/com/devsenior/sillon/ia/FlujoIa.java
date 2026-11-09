@@ -22,10 +22,16 @@ public class FlujoIa {
 
     public Resultado ejecutar(Runnable validarNegocio, Long salonId, String archivo, Map<String, String> contexto,
                               Map<String, Class<?>> campos) {
+        return ejecutar(validarNegocio, salonId, archivo, contexto, null, campos);
+    }
+
+    public Resultado ejecutar(Runnable validarNegocio, Long salonId, String archivo, Map<String, String> contexto,
+                              String entradaUsuario, Map<String, Class<?>> campos) {
         validarNegocio.run();
         creditos.verificar(salonId);
         String prompt = prompts.cargar(archivo, contexto);
-        RespuestaIa respuesta = asistente.responder(prompt);
+        RespuestaIa respuesta = entradaUsuario == null ? asistente.responder(prompt)
+                : asistente.responder(new PeticionIa(prompt, entradaUsuario));
         int restantes = creditos.consumir(salonId);
         JsonNode contenido = lector.leer(respuesta.contenido(), campos);
         return new Resultado(contenido, restantes, respuesta.factura());

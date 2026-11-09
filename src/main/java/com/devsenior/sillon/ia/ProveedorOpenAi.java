@@ -23,7 +23,7 @@ public class ProveedorOpenAi implements ProveedorIa {
 
     @Override public String nombre() { return "Gemini"; }
 
-    @Override public RespuestaIa generar(String prompt) {
+    @Override public RespuestaIa generar(PeticionIa peticion) {
         if (TransactionSynchronizationManager.isActualTransactionActive())
             throw new IllegalStateException("La llamada IA no puede ejecutarse en una transacción JPA");
         if (configuracion.llave() == null || configuracion.llave().isBlank())
@@ -33,7 +33,7 @@ public class ProveedorOpenAi implements ProveedorIa {
             String cuerpo = cliente.post().uri(configuracion.url().replaceAll("/+$", "") + "/chat/completions")
                     .header("Authorization", "Bearer " + configuracion.llave())
                     .body(Map.of("model", configuracion.modelo(),
-                            "messages", List.of(Map.of("role", "user", "content", prompt)),
+                            "messages", mensajes(peticion),
                             "response_format", Map.of("type", "json_object")))
                     .retrieve().body(String.class);
             JsonNode raiz = json.readTree(cuerpo);
@@ -51,6 +51,12 @@ public class ProveedorOpenAi implements ProveedorIa {
         } catch (RuntimeException error) {
             throw new FalloProveedorIa(FalloProveedorIa.Tipo.RESPUESTA_INVALIDA);
         }
+    }
+
+    private List<Map<String, String>> mensajes(PeticionIa peticion) {
+        Map<String, String> usuario = Map.of("role", "user", "content", peticion.usuario());
+        if (peticion.sistema() == null || peticion.sistema().isBlank()) return List.of(usuario);
+        return List.of(Map.of("role", "system", "content", peticion.sistema()), usuario);
     }
 
     private Integer entero(JsonNode nodo) { return nodo.isIntegralNumber() && nodo.asInt() >= 0 ? nodo.asInt() : null; }

@@ -51,8 +51,24 @@ class GeminiManualIT {
         assertTrue(respuesta.factura().tokensEntrada() > 0);
         assertTrue(respuesta.factura().tokensSalida() > 0);
         assertTrue(respuesta.factura().milisegundos() >= 0);
+        RespuestaIa conversacion;
+        try {
+            conversacion = gemini.generar(new PeticionIa(
+                    "Responda únicamente un objeto JSON con la clave mensaje y el valor exacto hola.",
+                    "Cliente: Salúdeme brevemente."));
+        } catch (FalloProveedorIa fallo) {
+            String codigo = fallo.getCodigoHttp() == null ? "sin respuesta HTTP" : "HTTP " + fallo.getCodigoHttp();
+            throw new AssertionError("Gemini con roles separados falló: " + codigo + ", causa " + fallo.getTipo());
+        }
+        assertEquals("hola", lector.leer(conversacion.contenido(), Map.of("mensaje", String.class))
+                .path("mensaje").asText());
+        assertEquals(configuracion.openai().modelo(), conversacion.factura().modelo());
+        assertTrue(conversacion.factura().tokensEntrada() > 0);
+        assertTrue(conversacion.factura().tokensSalida() > 0);
         System.out.println("Gemini respondió JSON válido; modelo=" + respuesta.factura().modelo()
                 + ", tokensEntrada=" + respuesta.factura().tokensEntrada()
-                + ", tokensSalida=" + respuesta.factura().tokensSalida());
+                + ", tokensSalida=" + respuesta.factura().tokensSalida()
+                + "; roles separados: tokensEntrada=" + conversacion.factura().tokensEntrada()
+                + ", tokensSalida=" + conversacion.factura().tokensSalida());
     }
 }

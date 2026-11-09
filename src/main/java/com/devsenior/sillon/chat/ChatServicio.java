@@ -38,7 +38,8 @@ public class ChatServicio {
         FlujoIa.Resultado resultado = flujo.ejecutar(() -> { }, contexto.salonId(), "chatbot.txt",
                 Map.of("salon", contexto.salon(), "direccion", contexto.direccion(),
                         "horario", contexto.horario(), "catalogo", contexto.catalogo(),
-                        "cliente", "Nombre: " + solicitud.clienteNombre() + "\nHistorial:\n" + historial),
+                        "cliente", solicitud.clienteNombre()),
+                historial.toString(),
                 Map.of("respuesta", String.class, "escalar", Boolean.class));
         String respuesta = resultado.contenido().path("respuesta").asText();
         boolean escalar = resultado.contenido().path("escalar").asBoolean();
