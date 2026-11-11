@@ -276,4 +276,8 @@ git config --global user.email "tu-correo@ejemplo.com"
 
 ---
 
+## Despliegue
+API en producción: https://ds-java-ia-backend-tallermd4y5-bp6w.onrender.com
+Documentación Swagger: https://ds-java-ia-backend-tallermd4y5-bp6w.onrender.com/swagger-ui.html
+
 <small>© 2026 Ana Alvarado · Educadora Tech & Desarrolladora Full Stack · Todos los derechos reservados · linkedin.com/in/ana-alvarado-instructora-full-stack</small>
