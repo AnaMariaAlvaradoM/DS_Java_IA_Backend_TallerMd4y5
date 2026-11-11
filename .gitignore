@@ -1,13 +1,44 @@
+# Calificador
 node_modules/
 resultado.json
 notas.csv
 
-# Java
-target/
-*.class
-
 # Secretos: nunca se suben
 /secrets.properties
+.env
 
-# Material privado de la profe (guía, solución y scripts): NO se sube al repo
-_docente/
+# Java / Maven
+HELP.md
+target/
+*.class
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/

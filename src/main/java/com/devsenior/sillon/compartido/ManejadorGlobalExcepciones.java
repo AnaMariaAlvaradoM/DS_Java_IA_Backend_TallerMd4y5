@@ -1,0 +1,146 @@
+package com.devsenior.sillon.compartido;
+
+import com.devsenior.sillon.ia.IaNoDisponibleException;
+import com.devsenior.sillon.ia.RespuestaIAInvalidaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import com.devsenior.sillon.compartido.ErrorApi;
+import com.devsenior.sillon.compartido.SolicitudInvalidaExcepcion;
+
+@RestControllerAdvice
+public class ManejadorGlobalExcepciones {
+
+    private static final Logger log = LoggerFactory.getLogger(ManejadorGlobalExcepciones.class);
+
+    private final Clock reloj;
+
+    public ManejadorGlobalExcepciones(Clock reloj){
+        this.reloj = reloj;
+    }
+
+    private ResponseEntity<ErrorApi> construir(HttpStatus estado, String mensaje) {
+        ErrorApi cuerpo = new ErrorApi(
+                estado.value(),
+                estado.getReasonPhrase(),
+                mensaje,
+                LocalDateTime.now(reloj));
+        return ResponseEntity.status(estado).body(cuerpo);
+    }
+
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorApi> manejarAccesoDenegado(AccessDeniedException ex) {
+        return construir(HttpStatus.FORBIDDEN, "No tiene permiso para realizar esta accion");
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorApi> manejarNoAutenticado(AuthenticationException ex) {
+        return construir(HttpStatus.UNAUTHORIZED, "Debe autenticarse para acceder a este recurso");
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorApi> manejarRutaInexistente(NoResourceFoundException ex) {
+        return construir(HttpStatus.NOT_FOUND, "El recurso solicitado no existe");
+    }
+
+    @ExceptionHandler(NoEncontradoException.class)
+    public ResponseEntity<ErrorApi> manejarNoEncontrado(NoEncontradoException ex) {
+        return construir(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler({ReglaNegocioException.class, ConflictoExcepcion.class})
+    public ResponseEntity<ErrorApi> manejarReglaNegocio(RuntimeException ex) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(PagoRequeridoException.class)
+    public ResponseEntity<ErrorApi> manejarPagoRequerido(PagoRequeridoException ex) {
+        return construir(HttpStatus.PAYMENT_REQUIRED, ex.getMessage());
+    }
+
+    @ExceptionHandler(AccionNoPermitidaException.class)
+    public ResponseEntity<ErrorApi> manejarAccionNoPermitida(AccionNoPermitidaException ex){
+        return construir(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(CredencialesInvalidasExcepcion.class)
+    public ResponseEntity<ErrorApi> manejarCredencialesInvalidas(CredencialesInvalidasExcepcion ex){
+        return construir(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(FirmaInvalidaException.class)
+    public ResponseEntity<ErrorApi> manejarFirmaInvalida(FirmaInvalidaException ex){
+        return construir(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(ErrorPasarelaException.class)
+    public ResponseEntity<ErrorApi> manejarErrorPasarela(ErrorPasarelaException ex){
+        return construir(HttpStatus.BAD_GATEWAY, ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorApi> manejarValidacion(MethodArgumentNotValidException ex) {
+        String mensaje = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        return construir(HttpStatus.BAD_REQUEST, mensaje);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorApi> manejarJsonMalFormado(HttpMessageNotReadableException ex) {
+        return construir(HttpStatus.BAD_REQUEST, "JSON mal formado o inválido");
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorApi> manejarParametroFaltante(MissingServletRequestParameterException ex) {
+        return construir(HttpStatus.BAD_REQUEST, "Parámetro faltante: " + ex.getParameterName());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorApi> manejarTipoIncorrecto(MethodArgumentTypeMismatchException ex) {
+        return construir(HttpStatus.BAD_REQUEST, "Tipo de parámetro inválido para: " + ex.getName());
+    }
+
+    @ExceptionHandler(IaNoDisponibleException.class)
+    public ResponseEntity<ErrorApi> manejarIaNoDisponible(IaNoDisponibleException ex) {
+        return construir(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+
+    @ExceptionHandler(RespuestaIAInvalidaException.class)
+    public ResponseEntity<ErrorApi> manejarRespuestaIAInvalida(RespuestaIAInvalidaException ex) {
+        return construir(HttpStatus.BAD_GATEWAY, ex.getMessage());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorApi> manejarMetodoNoPermitido(HttpRequestMethodNotSupportedException ex) {
+        return construir(HttpStatus.METHOD_NOT_ALLOWED, "Metodo HTTP no permitido para esta ruta");
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorApi> manejarGlobal(Exception ex) {
+        log.error("Error no controlado en el servidor", ex);
+        return construir(HttpStatus.INTERNAL_SERVER_ERROR, "Ha ocurrido un error inesperado en el servidor");
+    }
+
+    @ExceptionHandler(SolicitudInvalidaExcepcion.class)
+    public ResponseEntity<ErrorApi> manejarSolicitudInvalida(SolicitudInvalidaExcepcion ex) {
+        return construir(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+}
