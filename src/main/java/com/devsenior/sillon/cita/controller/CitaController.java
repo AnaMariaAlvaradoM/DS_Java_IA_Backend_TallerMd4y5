@@ -1,10 +1,12 @@
-package com.devsenior.sillon.cita;
+package com.devsenior.sillon.cita.controller;
 
 import com.devsenior.sillon.cita.dto.CitaResponse;
 import com.devsenior.sillon.cita.dto.CitaResquest;
 import com.devsenior.sillon.cita.dto.EstadoCitaDto;
+import com.devsenior.sillon.cita.dto.RecordatorioResponse;
+import com.devsenior.sillon.cita.service.CitaService;
+import com.devsenior.sillon.cita.service.RecordatorioService;
 import com.devsenior.sillon.security.UsuarioPrincipal;
-import com.devsenior.sillon.usuario.model.Rol;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -20,8 +22,11 @@ import java.util.List;
 @RequestMapping("/api/citas")
 public class CitaController {
     private final CitaService citaService;
-    public CitaController(CitaService citaService) {
+    private final RecordatorioService recordatorioService;
+
+    public CitaController(CitaService citaService, RecordatorioService recordatorioService) {
         this.citaService = citaService;
+        this.recordatorioService = recordatorioService;
     }
     @PostMapping
     @PreAuthorize("hasRole('DUENO')")
@@ -55,16 +60,13 @@ public class CitaController {
                 id, auth.getSalonId(), dto.estado(), auth.getId(), auth.getRol()));
     }
 
-    @PatchMapping("/{id}/recordatorio") // Ruta POST /api/citas/{id}/recordatorio
+    @PostMapping("/{citaId}/recordatorio") // Ruta POST /api/citas/{id}/recordatorio
     @PreAuthorize("hasRole('DUENO')")
-    public ResponseEntity<Object> enviarRecordatorio(@PathVariable Long id,
-                                                      @AuthenticationPrincipal UsuarioPrincipal auth) {
+    public ResponseEntity<RecordatorioResponse> generarRecordatorio(
+            @PathVariable Long citaId,
+            @AuthenticationPrincipal UsuarioPrincipal usuario) {
 
-        // Retorna 200 con detalles del recordatorio y factura[cite: 1]
-        // TODO: Crear este método en CitaService en la fase correspondiente a IA
-        // Object respuesta = citaService.enviarRecordatorioIa(id, auth.getSalonId());
-        // return ResponseEntity.ok(respuesta);
-
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        RecordatorioResponse response = recordatorioService.generarRecordatorio(usuario.getSalonId(), citaId);
+        return ResponseEntity.ok(response);
     }
 }

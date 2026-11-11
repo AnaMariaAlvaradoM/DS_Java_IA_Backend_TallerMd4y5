@@ -3,7 +3,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "atiende.ia")
+@ConfigurationProperties(prefix = "sillon.ia")
 public record IaProperties(
         int timeoutSegundos,
         int maxTokens,

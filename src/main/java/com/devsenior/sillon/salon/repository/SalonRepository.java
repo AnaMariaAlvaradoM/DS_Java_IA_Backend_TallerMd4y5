@@ -15,10 +15,10 @@ public interface SalonRepository extends JpaRepository<Salon, Long> {
 
     Optional<Salon> findByStripeSubscriptionId(String stripeSubscriptionId);
     Optional<Salon> findBySuscripcionStripeId(String suscripcionStripeId);
-    @Query("SELECT s.creditos FROM Salon s WHERE s.id = :salonId")
+    @Query("SELECT s.creditosIa FROM Salon s WHERE s.id = :salonId")
     Integer obtenerCreditos(@Param("salonId") Long salonId);
 
     @Modifying
-    @Query("UPDATE Salon s SET s.creditos = s.creditos - 1 WHERE s.id = :salonId AND s.creditos > 0")
+    @Query("UPDATE Salon s SET s.creditosIa = s.creditosIa - 1 WHERE s.id = :salonId AND s.creditosIa > 0")
     int consumirUnCredito(@Param("salonId") Long salonId);
 }

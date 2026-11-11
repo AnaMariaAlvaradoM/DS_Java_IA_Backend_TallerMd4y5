@@ -66,6 +66,10 @@ public class ProveedorOpenAi implements ProveedorIA {
                     .retrieve()
                     .body(OpenAiFormato.Respuesta.class);
         } catch (RestClientResponseException ex) {
+            // AGREGAR ESTA LÍNEA TEMPORALMENTE PARA VER EL ERROR REAL:
+            System.out.println("========== ERROR DE GEMINI ==========");
+            System.out.println(ex.getResponseBodyAsString());
+            System.out.println("=====================================");
             throw ProveedorIAException.desdeEstadoHttp(nombre(), ex.getStatusCode().value());
         } catch (ResourceAccessException ex) {
             throw new ProveedorIAException(nombre(), "sin conexión o tiempo agotado", false);

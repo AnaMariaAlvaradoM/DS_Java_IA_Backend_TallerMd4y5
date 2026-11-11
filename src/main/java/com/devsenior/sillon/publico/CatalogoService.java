@@ -1,6 +1,6 @@
 package com.devsenior.sillon.publico;
 
-import com.devsenior.sillon.cita.CitaService;
+import com.devsenior.sillon.cita.service.CitaService;
 import com.devsenior.sillon.cita.ReglasAgenda;
 
 import com.devsenior.sillon.cita.model.Cita;

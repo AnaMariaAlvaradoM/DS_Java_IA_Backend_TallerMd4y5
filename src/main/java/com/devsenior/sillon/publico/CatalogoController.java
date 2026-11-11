@@ -1,6 +1,6 @@
 package com.devsenior.sillon.publico;
 
-import com.devsenior.sillon.cita.CitaService;
+import com.devsenior.sillon.cita.service.CitaService;
 import com.devsenior.sillon.cita.dto.CitaResponse;
 import com.devsenior.sillon.cita.dto.CitaResquest;
 import com.devsenior.sillon.publico.dto.CatalogoResponse;

@@ -169,27 +169,33 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_GATEWAY);
     }
     @ExceptionHandler(FirmaStripeInvalidaException.class)
-    public ResponseEntity<Map<String, Object>> handleFirmaInvalida(FirmaStripeInvalidaException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                "error", "BAD_REQUEST",
-                "mensaje", ex.getMessage(),
-                "codigo", 400
-        ));
+    public ResponseEntity<ErrorRespuesta> handleFirmaInvalida(FirmaStripeInvalidaException ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
     @ExceptionHandler(IaNoDisponibleException.class)
-    public ResponseEntity<Map<String, Object>> handleIaNoDisponible(IaNoDisponibleException ex) {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
-                "error", "SERVICE_UNAVAILABLE",
-                "mensaje", ex.getMessage(),
-                "codigo", 503
-        ));
+    public ResponseEntity<ErrorRespuesta> handleIaNoDisponible(IaNoDisponibleException ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.SERVICE_UNAVAILABLE);
     }
     @ExceptionHandler(SinCreditosException.class)
-    public ResponseEntity<Map<String, Object>> handleSinCreditos(SinCreditosException ex) {
-        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(Map.of(
-                "error", "PAYMENT_REQUIRED",
-                "mensaje", ex.getMessage(),
-                "codigo", 402
-        ));
+    public ResponseEntity<ErrorRespuesta> handleSinCreditos(SinCreditosException ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.PAYMENT_REQUIRED.value(),
+                HttpStatus.PAYMENT_REQUIRED.getReasonPhrase(),
+                ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.PAYMENT_REQUIRED);
     }
     }

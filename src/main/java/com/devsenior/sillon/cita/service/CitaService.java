@@ -1,7 +1,9 @@
-package com.devsenior.sillon.cita;
+package com.devsenior.sillon.cita.service;
 
+import com.devsenior.sillon.cita.ReglasAgenda;
 import com.devsenior.sillon.cita.dto.CitaResponse;
 import com.devsenior.sillon.cita.dto.CitaResquest;
+import com.devsenior.sillon.cita.dto.DatosRecordatorio;
 import com.devsenior.sillon.cita.mapper.CitaMapper;
 import com.devsenior.sillon.cita.model.Cita;
 import com.devsenior.sillon.cita.model.EstadoCita;
@@ -26,7 +28,9 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class CitaService {
@@ -186,5 +190,58 @@ public class CitaService {
         Cita actualizada = citaRepository.saveAndFlush(cita);
 
         return CitaMapper.toResponse(actualizada);
+    }
+    @Transactional(readOnly = true)
+    public DatosRecordatorio obtenerDatosRecordatorio(Long citaId) {
+
+        Cita cita = citaRepository.findById(citaId)
+                .orElseThrow(() -> new ReglaNegocioException("Cita no encontrada"));
+
+        // 1. Validar el estado (solo PENDIENTE o CONFIRMADA)
+        if (cita.getEstadoCita() != EstadoCita.PENDIENTE && cita.getEstadoCita() != EstadoCita.CONFIRMADA) {
+            throw new ReglaNegocioException("Solo se pueden generar recordatorios para citas PENDIENTES o CONFIRMADAS.");
+        }
+
+
+        Locale localeCo = Locale.forLanguageTag("es-CO");
+
+        // 2. Formatear la fecha
+        DateTimeFormatter formatoFecha = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", localeCo);
+        String fechaFormateada = cita.getFechaHora().format(formatoFecha);
+
+        // 3. Formatear la hora y reemplazar el espacio invisible (\u202F y \u00A0)
+        DateTimeFormatter formatoHora = DateTimeFormatter.ofPattern("h:mm a", localeCo);
+        String horaFormateada = cita.getFechaHora().format(formatoHora)
+                .replace("\u202F", " ")
+                .replace("\u00A0", " ");
+
+        // 4. Formatear el valor monetario asegurando el formato $35.000
+        // Usamos String.format con Locale para garantizar el separador de miles correcto
+        String valorFormateado = String.format(localeCo, "$%,d", cita.getServicio().getPrecio().longValue());
+
+        // 5. Armar el bloque de texto con una línea por dato
+        String textoDatos = String.format("""
+                        Servicio: %s (%d minutos)
+                        Estilista: %s
+                        Fecha: %s
+                        Hora: %s
+                        Valor: %s
+                        Dirección: %s""",
+                cita.getServicio().getNombre(),
+                cita.getServicio().getDuracionMinutos(),
+                cita.getEstilista().getNombre(),
+                fechaFormateada,
+                horaFormateada,
+                valorFormateado,
+                cita.getSalon().getDireccion()
+        );
+
+        // 6. Retornar los datos limpios
+        return new DatosRecordatorio(
+                cita.getSalon().getNombresalon(),
+                cita.getCliente().getNombre(),
+                cita.getCliente().getTelefono(),
+                textoDatos
+        );
     }
 }
