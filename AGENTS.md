@@ -33,6 +33,8 @@ El dueño de cada decisión es humano; el agente propone y verifica contra la SP
 - Clases, métodos y variables en español.
 - Sin Lombok: getters y setters explícitos.
 - Validación de entrada con Jakarta Validation en los DTO de request.
+- Todo `throw` que use el constructor con causa `(mensaje, causa)` lleva el comentario
+  `// throw con causa` en la línea anterior. No se agregan otros comentarios al código.
 - "Hoy" y "ahora" salen del reloj del proyecto (bean `Clock`, `America/Bogota`),
   nunca de `LocalDate.now()` ni `LocalDateTime.now()` directamente.
 
