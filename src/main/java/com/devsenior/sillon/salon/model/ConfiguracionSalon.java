@@ -64,4 +64,11 @@ public class ConfiguracionSalon {
     public void setHoraApertura(LocalTime horaApertura) {
         this.horaApertura = horaApertura;
     }
+
+    @Override
+    public String toString() {
+        return "Horario del salón: " +
+                "de lunes a sábado de " + horaApertura + " a " + horaCierre +
+                ", se abre los domingos: " + (abreDomingos ? "Sí" : "No") + ".";
+    }
 }

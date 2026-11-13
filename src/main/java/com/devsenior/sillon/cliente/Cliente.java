@@ -18,7 +18,7 @@ public class Cliente {
     @Column(nullable = false)
     private String nombre;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String telefono;
 
     @ManyToOne(fetch = FetchType.LAZY)

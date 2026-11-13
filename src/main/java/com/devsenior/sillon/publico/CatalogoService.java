@@ -8,7 +8,9 @@ import com.devsenior.sillon.cita.model.EstadoCita;
 
 import com.devsenior.sillon.cita.repository.CitaRepository;
 import com.devsenior.sillon.compartido.NoEncontradoException;
+import com.devsenior.sillon.compartido.ReglaNegocioException;
 import com.devsenior.sillon.publico.dto.CatalogoResponse;
+import com.devsenior.sillon.publico.dto.ConocimientoChatbot;
 import com.devsenior.sillon.publico.dto.DisponibilidadResponse;
 import com.devsenior.sillon.publico.dto.EstilistaResponse1;
 import com.devsenior.sillon.salon.model.Salon;
@@ -28,6 +30,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 public class CatalogoService {
@@ -144,5 +147,29 @@ public class CatalogoService {
                 horariosLibres
         );
     }
+    @Transactional(readOnly = true)
+    public ConocimientoChatbot obtenerConocimientoParaChatbot(Long salonId) {
 
+        // 1. Obtener el salón (para sacar su horario)
+        Salon salon = salonRepository.findById(salonId)
+                .orElseThrow(() -> new NoEncontradoException("Salón no encontrado"));
+
+        // 2. Obtener SOLO los servicios activos de este salón
+        // (Asegúrate de tener este método en tu ServicioRepository)
+        List<Servicio> serviciosActivos = servicioRepository.findAllBySalonIdAndActivoTrue(salon.getId());
+
+        Locale localeCo = Locale.forLanguageTag("es-CO");
+
+        // 3. Armar el texto de servicios (una línea por servicio)
+        String textoServicios = serviciosActivos.stream()
+                .map(s -> String.format(localeCo, "- %s: %d minutos, $%,d",
+                        s.getNombre(),
+                        s.getDuracionMinutos(),
+                        s.getPrecio().longValue()))
+                .collect(Collectors.joining("\n"));
+
+        String textoHorario = salon.getConfiguracion().toString();
+
+        return new ConocimientoChatbot(textoServicios, textoHorario);
+    }
 }
