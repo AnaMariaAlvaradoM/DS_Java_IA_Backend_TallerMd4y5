@@ -69,7 +69,7 @@ El primer ADMIN se crea registrando una cuenta normal y cambiando el rol a `ADMI
 1. Un servicio dura entre **15 y 480 minutos** y cuesta un entero de pesos **> 0** (si no: **400**).
 2. Un estilista ofrece uno o más servicios **de su mismo salón**; servicio de otro salón → **404**.
 3. Límite del plan: en GRATIS, el **tercer estilista → 402**. En PRO no hay límite.
-4. Orden de validaciones al crear estilista: **límite del plan (402) → correo único (409) → servicioIds del salón (404)**.
+4. Orden de validaciones al crear estilista: **límite del plan (402) → servicioIds del salón (404) → correo único (409)**. El límite va primero para verificarlo antes de hacer búsquedas masivas. *(Orden definido por el dueño del proyecto el 2026-11-08; reemplaza el orden original 402 → 409 → 404.)*
 
 ### 4.3 Agenda
 
