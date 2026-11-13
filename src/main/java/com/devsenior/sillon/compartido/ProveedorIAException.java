@@ -17,6 +17,10 @@ public class ProveedorIAException extends RuntimeException {
         return new ProveedorIAException(proveedor, "respondió HTTP " + estadoHttp, deConfiguracion);
     }
 
+    public static ProveedorIAException desdeErrorDeRed(String proveedor) {
+        return new ProveedorIAException(proveedor, "sin conexión o tiempo agotado", false);
+    }
+
     public boolean isErrorDeConfiguracion() {
         return errorDeConfiguracion;
     }

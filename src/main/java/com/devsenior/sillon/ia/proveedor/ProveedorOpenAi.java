@@ -72,7 +72,7 @@ public class ProveedorOpenAi implements ProveedorIA {
             System.out.println("=====================================");
             throw ProveedorIAException.desdeEstadoHttp(nombre(), ex.getStatusCode().value());
         } catch (ResourceAccessException ex) {
-            throw new ProveedorIAException(nombre(), "sin conexión o tiempo agotado", false);
+            throw ProveedorIAException.desdeErrorDeRed(nombre());
         }
     }
 

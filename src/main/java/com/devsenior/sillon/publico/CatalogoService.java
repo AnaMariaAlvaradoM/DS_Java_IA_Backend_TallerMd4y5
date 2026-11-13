@@ -21,9 +21,11 @@ import com.devsenior.sillon.servicio.dto.ServicioResponse;
 import com.devsenior.sillon.usuario.model.Rol;
 import com.devsenior.sillon.usuario.model.Usuario;
 import com.devsenior.sillon.usuario.repository.UsuarioRepository;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -40,14 +42,21 @@ public class CatalogoService {
     private final CitaRepository citaRepository;
     private final ReglasAgenda reglasAgenda;
     private final CitaService citaService;
+    private final Clock clock;
 
     public CatalogoService(SalonRepository salonRepository, UsuarioRepository usuarioRepository, ServicioRepository servicioRepository, CitaRepository citaRepository, ReglasAgenda reglasAgenda, CitaService citaService) {
+        this(salonRepository, usuarioRepository, servicioRepository, citaRepository, reglasAgenda, citaService, Clock.systemDefaultZone());
+    }
+
+    @Autowired
+    public CatalogoService(SalonRepository salonRepository, UsuarioRepository usuarioRepository, ServicioRepository servicioRepository, CitaRepository citaRepository, ReglasAgenda reglasAgenda, CitaService citaService, Clock clock) {
         this.salonRepository = salonRepository;
         this.usuarioRepository = usuarioRepository;
         this.servicioRepository = servicioRepository;
         this.citaRepository = citaRepository;
         this.reglasAgenda = reglasAgenda;
         this.citaService = citaService;
+        this.clock = clock;
     }
     @Transactional(readOnly = true)
     public CatalogoResponse obtenerCatalogo(String slug) {
@@ -135,7 +144,7 @@ public class CatalogoService {
                 salon.getConfiguracion().getHoraCierre(),
                 salon.getConfiguracion().isAbreDomingos(),
                 citasOcupadas,
-                LocalDateTime.now()
+                LocalDateTime.now(clock)
         );
 
 

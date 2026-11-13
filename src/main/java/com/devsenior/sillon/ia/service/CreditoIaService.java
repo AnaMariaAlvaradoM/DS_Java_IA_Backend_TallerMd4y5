@@ -27,6 +27,6 @@ public class CreditoIaService {
         if (filasActualizadas == 0) {
             throw new SinCreditosException("No hay créditos disponibles para el salón con ID: " + idSalon);
         }
-        return salonRepository.consumirUnCredito(idSalon);
+        return filasActualizadas;
     }
 }

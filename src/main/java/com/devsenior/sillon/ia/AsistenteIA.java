@@ -30,7 +30,8 @@ public class AsistenteIA {
                 return respuesta;
             } catch (ProveedorIAException ex) {
                 if (ex.isErrorDeConfiguracion()) {
-                    log.error("IA falló por configuración, se intenta el siguiente. {}", ex.getMessage());
+                    log.error("IA falló por configuración. {}", ex.getMessage());
+                    throw ex;
                 } else {
                     log.warn("IA falló temporalmente, se intenta el siguiente. {}", ex.getMessage());
                 }

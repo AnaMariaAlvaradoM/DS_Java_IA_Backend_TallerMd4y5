@@ -1,8 +1,10 @@
 package com.devsenior.sillon.cita;
 
 import com.devsenior.sillon.compartido.ReglaNegocioException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,6 +14,17 @@ import java.util.List;
 
 @Component
 public class ReglasAgenda {
+    private final Clock clock;
+
+    public ReglasAgenda() {
+        this(Clock.systemDefaultZone());
+    }
+
+    @Autowired
+    public ReglasAgenda(Clock clock) {
+        this.clock = clock;
+    }
+
     public void validarHorario(LocalDateTime fechaHoraCita, int duracionMinutos,
                                LocalTime apertura, LocalTime cierre, boolean abreDomingo) {
         LocalDate fecha = fechaHoraCita.toLocalDate();
@@ -57,7 +70,7 @@ public class ReglasAgenda {
         }
 
         if (referenciaActual == null) {
-            referenciaActual = LocalDateTime.now();
+            referenciaActual = LocalDateTime.now(clock);
         }
         if (fecha.getDayOfWeek() == DayOfWeek.SUNDAY && !abreDomingo) {
             return new ArrayList<>();
@@ -101,4 +114,3 @@ public class ReglasAgenda {
      */
     public record IntervaloOcupado(LocalDateTime inicio, LocalDateTime fin) {}
 }
-
