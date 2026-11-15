@@ -59,6 +59,7 @@ public class ConfiguracionSeguridad {
                 // Gestión exclusiva del dueño
                 .requestMatchers(
                         "/api/estilistas/**",
+                        "/api/clientes",
                         "/api/clientes/**",
                         "/api/solicitudes/**",
                         "/api/pagos/**"

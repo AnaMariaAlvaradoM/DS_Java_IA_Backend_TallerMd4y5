@@ -15,6 +15,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+
+import java.util.HashSet;
+import java.util.Set;
+
+import com.devsenior.sillon.servicio.Servicio;
+
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+
+
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
@@ -42,6 +52,16 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "salon_id", nullable = false)
     private Salon salon;
+
+
+    @ManyToMany
+    @JoinTable(
+        name = "estilista_servicios",
+        joinColumns = @JoinColumn(name = "estilista_id"),
+        inverseJoinColumns = @JoinColumn(name = "servicio_id")
+    )
+    private Set<Servicio> servicios = new HashSet<>();
+
 
     public Usuario() {
     }
@@ -101,4 +121,27 @@ public class Usuario {
     public void setSalon(Salon salon) {
         this.salon = salon;
     }
+
+
+    public Set<Servicio> getServicios() {
+        return servicios;
+    }
+
+    public void setServicios(Set<Servicio> servicios) {
+        this.servicios = servicios;
+    }
+
+
+    public boolean ofreceServicio(Long servicioId) {
+        if (servicioId == null || servicios == null) {
+            return false;
+    }
+
+        return servicios.stream()
+                .anyMatch(servicio ->
+                        servicioId.equals(servicio.getId()));
+    }
+
+
 }
+

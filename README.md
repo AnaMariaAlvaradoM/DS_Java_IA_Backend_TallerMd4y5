@@ -260,3 +260,61 @@ git config --global user.email "tu-correo@ejemplo.com"
 ---
 
 <small>© 2026 Ana Alvarado · Educadora Tech & Desarrolladora Full Stack · Todos los derechos reservados · linkedin.com/in/ana-alvarado-instructora-full-stack</small>
+
+
+---
+
+## Avance del proyecto Sillón
+
+### Fases desarrolladas
+
+- Fase 0: configuración inicial.
+- Fase 1: entidades y estructura base.
+- Fase 2: autenticación y seguridad.
+- Fase 3: servicios, estilistas y clientes.
+
+### Pruebas realizadas — Fase 3
+
+Se ejecutaron 24 solicitudes en Postman para
+comprobar el funcionamiento de los módulos
+de servicios, estilistas y clientes.
+
+Se verificaron:
+
+- Creación, consulta y actualización de servicios.
+- Validaciones de duración y precio.
+- Registro de estilistas y límite del plan GRATIS.
+- Rechazo de correos duplicados.
+- Aislamiento de información entre salones.
+- Restricciones de acceso según el rol.
+- Consulta de clientes y protección del endpoint.
+
+### Pruebas unitarias
+
+- TelefonoUtilsTest: 4 pruebas aprobadas.
+- ClienteServiceTest: 2 pruebas aprobadas.
+
+Comando de verificación:
+
+    ./mvnw test
+
+Resultado: BUILD SUCCESS.
+
+### Base de datos
+
+Se verificó en MySQL la tabla `clientes`
+dentro de la base de datos `sillon_db`.
+
+Se confirmó la existencia del índice único
+`uk_cliente_salon_telefono`, compuesto por
+las columnas `salon_id` y `telefono`.
+
+No se realizó una inserción duplicada real
+para comprobar el rechazo de MySQL.
+
+### Pendientes
+
+- Integrar la creación de clientes con las reservas.
+- Implementar y probar la gestión de citas.
+- Completar las siguientes fases del proyecto.
+- Exportar la colección de Postman.

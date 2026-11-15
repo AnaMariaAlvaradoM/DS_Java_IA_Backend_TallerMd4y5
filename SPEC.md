@@ -181,6 +181,18 @@ No se agregan esas restricciones o funcionalidades.
 - Intentar crear un tercer estilista en plan GRATIS devuelve 402.
 - El plan PRO no limita la cantidad de estilistas.
 
+### Orden de validaciones al registrar un estilista
+
+Al registrar un estilista, se realizarán las validaciones en el siguiente orden:
+
+1. **Límite del plan (HTTP 402):** primero se comprobará si el salón tiene capacidad para registrar otro estilista según su plan. Esto permite evitar consultas y procesamientos innecesarios cuando ya se alcanzó el límite permitido.
+
+2. **Correo duplicado (HTTP 409):** después se verificará que el correo electrónico no esté registrado por otro usuario. Cada usuario debe tener un correo único en toda la plataforma, aunque un estilista pueda tener varios servicios asociados.
+
+3. **Servicios asociados (HTTP 404):** finalmente se comprobará que los servicios seleccionados existan y pertenezcan al mismo salón. Esto garantiza que no se asignen servicios de otros establecimientos.
+
+Este orden busca optimizar las validaciones, mantener la integridad de los datos y respetar las reglas de negocio del sistema.
+
 ## 12. Inteligencia artificial
 
 ### Consumo de créditos
