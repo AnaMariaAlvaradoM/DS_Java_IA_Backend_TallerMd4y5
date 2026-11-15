@@ -19,7 +19,12 @@ public class SalonService {
 
         this.salonRepository = salonRepository;
     }
-
+    public List<SalonResponse> obtenerTodosLosSalones() {
+        List<Salon> salones = salonRepository.findAll();
+        return salones.stream()
+                .map(SalonMapper::toResponse)
+                .toList();
+    }
     public SalonResponse obtenerSalonPorId(Long salonId) {
         if (salonId == null) {
             throw new NoEncontradoException("El usuario autenticado no tiene un salón asociado");

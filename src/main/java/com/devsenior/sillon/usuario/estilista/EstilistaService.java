@@ -14,9 +14,10 @@ import com.devsenior.sillon.usuario.estilista.mapper.EstilistaMapper;
 import com.devsenior.sillon.usuario.model.Rol;
 import com.devsenior.sillon.usuario.model.Usuario;
 import com.devsenior.sillon.usuario.repository.UsuarioRepository;
-import jakarta.transaction.Transactional;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -73,6 +74,7 @@ public class EstilistaService {
         usuarioRepository.save(estilista);
         return EstilistaMapper.estilistaToEstilistaResponse(estilista);
     }
+    @Transactional(readOnly = true)
     public List<EstilistaResponse> obtenerEstilistasPorSalon(Long salonId) {
         List<Usuario> estilistas = usuarioRepository.findBySalonIdAndRol(salonId, Rol.ESTILISTA);
         return estilistas.stream()

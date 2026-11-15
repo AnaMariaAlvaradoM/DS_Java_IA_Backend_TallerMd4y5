@@ -3,6 +3,8 @@ package com.devsenior.sillon.cliente;
 import com.devsenior.sillon.cliente.dto.ClienteRequest;
 import com.devsenior.sillon.cliente.dto.ClienteResponse;
 import com.devsenior.sillon.security.UsuarioPrincipal;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +18,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/clientes")
+@Tag(name = "5 Clientes")
+@SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasRole('DUENO')")
 public class ClienteController {
     private final ClienteService clienteService;

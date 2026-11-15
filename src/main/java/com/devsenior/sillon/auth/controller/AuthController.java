@@ -6,6 +6,7 @@ import com.devsenior.sillon.auth.dto.RegistroRequest;
 import com.devsenior.sillon.auth.dto.RegistroResponse;
 import com.devsenior.sillon.auth.service.AuthService;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "1 Autenticación")
 public class AuthController {
 
     private final AuthService authService;

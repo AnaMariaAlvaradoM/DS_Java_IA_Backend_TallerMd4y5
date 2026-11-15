@@ -7,6 +7,8 @@ import com.devsenior.sillon.cita.dto.RecordatorioResponse;
 import com.devsenior.sillon.cita.service.CitaService;
 import com.devsenior.sillon.cita.service.RecordatorioService;
 import com.devsenior.sillon.security.UsuarioPrincipal;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/citas")
+@Tag(name = "6 Agenda")
+@SecurityRequirement(name = "bearerAuth")
 public class CitaController {
     private final CitaService citaService;
     private final RecordatorioService recordatorioService;

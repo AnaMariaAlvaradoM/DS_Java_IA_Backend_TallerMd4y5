@@ -3,6 +3,8 @@ package com.devsenior.sillon.chatbot.contacto.controller;
 import com.devsenior.sillon.chatbot.contacto.dto.SolicitudContactoResponse;
 import com.devsenior.sillon.chatbot.contacto.service.SolicitudContactoService;
 import com.devsenior.sillon.security.UsuarioPrincipal;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,6 +14,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/solicitudes")
+@Tag(name = "8 Solicitudes")
+@SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasRole('DUENO')")
 public class SolicitudContactoController {
 

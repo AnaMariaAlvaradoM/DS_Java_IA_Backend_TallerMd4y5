@@ -4,6 +4,9 @@ import com.devsenior.sillon.pago.dto.PagoResponse;
 import com.devsenior.sillon.pago.service.PagoService;
 import com.devsenior.sillon.pago.service.PagoWebhookService;
 import com.devsenior.sillon.security.UsuarioPrincipal;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +16,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pagos")
+@Tag(name = "7 Pagos")
+@SecurityRequirement(name = "bearerAuth")
 public class PagoController {
 
     private final PagoService pagoService;
@@ -54,6 +59,7 @@ public class PagoController {
 
     // 3. POST /api/pagos/webhook [Stripe]
     @PostMapping("/webhook")
+    @SecurityRequirements
     public ResponseEntity<Map<String, Boolean>> procesarWebhook(
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String signature) {

@@ -53,7 +53,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/error"
+                                "/error", "/v3/api-docs"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/publico/salones/**").permitAll()
                         .requestMatchers("/api/pagos/webhook").permitAll()

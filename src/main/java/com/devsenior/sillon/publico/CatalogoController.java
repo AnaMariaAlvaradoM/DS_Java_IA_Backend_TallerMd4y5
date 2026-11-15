@@ -8,6 +8,7 @@ import com.devsenior.sillon.cita.dto.CitaResponse;
 import com.devsenior.sillon.cita.dto.CitaResquest;
 import com.devsenior.sillon.publico.dto.CatalogoResponse;
 import com.devsenior.sillon.publico.dto.DisponibilidadResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/publico/salones/{slug}")
+@Tag(name = "0 Público")
 public class CatalogoController {
 
     private final CatalogoService catalogoService;
