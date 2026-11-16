@@ -154,6 +154,31 @@ La actividad no establece un plazo mínimo de anticipación
 para cancelar ni un endpoint público de cancelación para clientes.
 No se agregan esas restricciones o funcionalidades.
 
+### Tabla de transiciones y casos de negocio
+
+| Estado actual | Estado siguiente | Caso real de negocio |
+|---|---|---|
+| PENDIENTE | CONFIRMADA | El cliente realizó una reserva en línea y el dueño de la barbería confirma que será atendido. |
+| PENDIENTE | CANCELADA | El cliente informa que no podrá asistir y el dueño cancela la reserva antes de confirmarla. |
+| CONFIRMADA | COMPLETADA | El cliente asistió a la barbería, recibió el servicio y el estilista finalizó la atención. |
+| CONFIRMADA | CANCELADA | Una cita confirmada debe cancelarse porque el cliente no podrá asistir o el salón necesita suspender la atención. |
+| CONFIRMADA | NO_ASISTIO | El cliente tenía una cita confirmada, pero no llegó a la barbería en el horario acordado. |
+| CONFIRMADA | PENDIENTE | No permitido. Una cita confirmada no puede regresar al estado pendiente. |
+| COMPLETADA | Cualquier otro estado | No permitido. El servicio ya fue realizado y la cita está finalizada. |
+| CANCELADA | Cualquier otro estado | No permitido. La cita fue cancelada y no puede reactivarse cambiando su estado. |
+| NO_ASISTIO | Cualquier otro estado | No permitido. La ausencia quedó registrada y la cita está finalizada. |
+
+### Reglas adicionales
+
+- Las citas PENDIENTE y CONFIRMADA ocupan espacio en la agenda.
+- Las citas COMPLETADA, CANCELADA y NO_ASISTIO no bloquean nuevos horarios.
+- Toda transición no permitida devuelve HTTP 409 Conflict.
+- El dueño puede realizar las transiciones válidas de las citas de su salón.
+- El estilista solo puede cambiar sus propias citas a COMPLETADA o NO_ASISTIO.
+- Si un estilista intenta cambiar una cita de otro estilista, recibe HTTP 404.
+- Si intenta establecer un estado no autorizado para su rol, recibe HTTP 403.
+
+
 ## 10. Registro y configuración del salón
 
 - El registro crea el salón y su dueño en una misma operación.
