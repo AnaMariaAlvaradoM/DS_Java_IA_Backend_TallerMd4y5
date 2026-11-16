@@ -355,5 +355,39 @@ Uso permitido de IA: chat como **entrevistador** para descubrir casos de negocio
 - [ ] El proyecto compila (`./mvnw clean compile`).
 - [ ] `STRIPE_URL_API` y `sillon.ia.openai.url` existen y son configurables.
 - [ ] Ninguna llave real en el repositorio.
-
 **Commit:** "Proyecto base de Sillón, SPEC y reglas del agente". Tras este primer push, abrir **un solo** Pull Request hacia el repositorio oficial (título: nombre completo). Cada push posterior recalifica.
+
+
+## FASE 1 · Persistencia y modelo
+**Objetivo:** implementar fielmente el modelo anterior.
+**Fuera de alcance:** endpoints.
+**Reglas:** nombres exactos de tablas, campos y enums; esquema por migraciones (Flyway) **[DECISIÓN]**; `ddl-auto=validate`.
+**Criterios de aceptación**
+- [ ] Existen las 7 tablas más `estilista_servicios`.
+- [ ] Dos salones con el mismo `slug` fallan; dos clientes con el mismo teléfono en el mismo salón fallan; en salones distintos, no.
+- [ ] `configuracion` está en columnas de `salones`, sin tabla propia.
+- [ ] Test de repositorio por cada restricción única.
+
+## FASE 2 · Usuarios, acceso y permisos
+**Objetivo:** registro, login y protección por rol.
+**Fuera de alcance:** recuperar contraseña, OAuth.
+**Reglas**
+1. El registro crea Salon y su primer Usuario con rol DUENO.
+2. El DUENO crea estilistas de su salón. ADMIN es rol de plataforma.
+3. JWT, expiración 8 horas **[DECISIÓN]**; el token lleva `usuarioId`, `salonId` y `rol`.
+4. Un usuario con `activo=false` no puede iniciar sesión (403).
+5. Contraseña mínimo 8 caracteres; solo se guarda el hash BCrypt.
+   **Endpoints**
+   | Método | Ruta | Rol | Respuestas |
+   |---|---|---|---|
+   | POST | /api/auth/registro | público | 201 · 400 · 409 email o slug repetido |
+   | POST | /api/auth/login | público | 200 token · 401 · 403 inactivo |
+   | GET | /api/usuarios/yo | cualquiera | 200 |
+   | POST | /api/usuarios | DUENO | 201 · 400 · 409 |
+   | GET | /api/usuarios | DUENO | 200 solo de su salón |
+   | PATCH | /api/usuarios/{id}/activo | DUENO | 200 · 404 |
+   **Criterios de aceptación**
+- [ ] La respuesta nunca incluye `password`.
+- [ ] Sin token, 401; ESTILISTA creando usuarios, 403.
+- [ ] Email repetido devuelve 409.
+- [ ] El password en base de datos empieza por `$2`.

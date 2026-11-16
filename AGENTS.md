@@ -286,3 +286,85 @@ Fase 0 — Preparación (SPEC §7, bloque FASE 0 de AGENTS.md).
 Entrega un PLAN para revisar pom.xml, application.properties, secrets.example.properties, .gitignore y .cursorignore.
 No escribas lógica de negocio, no leas secrets.properties, no agregues dependencias sin mi confirmación.
 ```
+
+---
+
+## FASE 1 — Persistencia y modelo base
+
+**SPEC:** §8 · **Reglas:** R1, R4, R15
+
+**Alcance**
+- Hace: formato de error y manejador global, `Clock`, `Salon` con `ConfiguracionSalon` embebida, generación de slug, `Usuario` y `Rol`.
+- No hace: seguridad, JWT ni endpoints de negocio.
+
+**Pasos para el agente**
+1. `compartido`: objeto de error (`codigo`, `error`, `mensaje`, `fecha`); una excepción por código (400 firma, 401, 402, 403, 404, 409, 502, 503); `@RestControllerAdvice` que además maneja validación (campos y mensajes separados por `;`), JSON mal formado, parámetro faltante y tipo inválido.
+2. Bean `Clock` con `America/Bogota`, recibido por constructor.
+3. Enum `Plan`; entidad `Salon` con todos sus atributos; `ConfiguracionSalon` `@Embeddable` con método de configuración por defecto (08:00–19:00, sin domingos, 30 min).
+4. Repositorio de salón: por `slug`, existencia de `slug`, por id de suscripción de Stripe.
+5. Generador de slug: sin tildes → minúsculas → no alfanumérico a `-` → sin guiones en los extremos → `-2`, `-3`… si existe.
+6. Enum `Rol` y entidad `Usuario` con N–1 hacia `Salon` (todavía sin servicios).
+
+**Prohibido en esta fase**
+- Spring Security, JWT, controladores de negocio.
+- Tabla propia para `ConfiguracionSalon`.
+- `now()` sin `Clock`; enums con tildes.
+
+**Verificación**
+- Hibernate crea `salones` (con la configuración embebida como columnas) y `usuarios`.
+- Tests: slug (tildes, símbolos, repetido), `slug` único, `email` único.
+- Un error forzado devuelve el formato de 4 campos.
+
+**Cierre:** nombres de tablas, campos y enums idénticos al SPEC §4.
+**Commit:** "Base SaaS: salones, usuarios y errores".
+
+**Prompt de arranque**
+```text
+Contexto: @SPEC.md @AGENTS.md
+Fase 1 — Persistencia y modelo base (SPEC §8; reglas R1, R4, R15).
+Entrega primero un PLAN: excepciones y manejador, Clock, Salon + ConfiguracionSalon embebida, slug y Usuario.
+Sin seguridad ni endpoints. Revisaré el plan contra el modelo de datos antes de que escribas código.
+```
+
+---
+
+## FASE 2 — Usuarios, acceso y permisos
+
+**SPEC:** §9 · **Reglas:** R1, R2, R3, R5, R23
+
+**Alcance**
+- Hace: `UsuarioPrincipal`, JWT y filtro, registro, login, reglas de acceso por rol, `GET /api/salon` y `PUT /api/salon/configuracion`.
+- No hace: recuperar contraseña, OAuth, estilistas, servicios.
+
+**Pasos para el agente**
+1. `UsuarioPrincipal` (implementa `UserDetails`) con `id`, `salonId`, `email`, contraseña, `rol`, `activo`; autoridad `ROLE_` + rol.
+2. Servicio JWT: secreto de configuración, sujeto = correo, claims = rol y salón, expiración 8 horas (`expiraEnMinutos` = 480).
+3. Filtro que lee `Authorization: Bearer`, valida y autentica; token inválido → no autentica.
+4. `POST /api/auth/registro` en **una sola transacción**: normalizar correo (409 si existe) → crear salón (slug, `GRATIS`, 10 créditos, configuración por defecto) → crear dueño `DUENO` con BCrypt → 201 con `token`, `tipo`, `expiraEnMinutos`, `usuarioId`, `nombre`, `rol`, `salonId`, `salonSlug`. Validar longitudes (SPEC §9).
+5. `POST /api/auth/login`: 200 o 401 con mensaje **genérico**.
+6. Reglas de acceso: públicas `/api/auth/**`, `/api/publico/**`, webhook y resultado de pago, Swagger y **`/error`**; por rol según SPEC §3; stateless; CSRF off; 401 y 403 con el formato único (entry point y access denied handler propios).
+7. `GET /api/salon` y `PUT /api/salon/configuracion` (DUENO) usando siempre el `salonId` del principal. Validar intervalo 15–60 (400) y apertura < cierre (409).
+
+**Prohibido en esta fase**
+- Tomar el `salonId` de la URL o del cuerpo.
+- Devolver `password` o un hash.
+- Revelar si falló el correo o la contraseña.
+- Dejar `/error` protegida.
+
+**Verificación**
+- Registro 201; correo repetido 409; datos inválidos 400 nombrando `email` y `password`.
+- Login incorrecto 401; `GET /api/salon` sin token 401 **con formato único**.
+- Plan `GRATIS`, 10 créditos; apertura > cierre 409; hash en base de datos empieza por `$2`.
+
+**Cierre:** matriz de acceso por rol aplicada; ningún endpoint privado sin autenticación.
+**Commit:** "Seguridad con JWT, roles y mi salón".
+
+**Prompt de arranque**
+```text
+Contexto: @SPEC.md @AGENTS.md
+Fase 2 — Usuarios, acceso y permisos (SPEC §9; reglas R1, R2, R3, R5).
+Entrega un PLAN: UsuarioPrincipal, JWT + filtro, registro transaccional, login genérico, reglas de acceso (incluye /error pública) y mi salón.
+El salonId sale siempre del usuario autenticado. Sin código hasta que apruebe el plan.
+```
+
+---
