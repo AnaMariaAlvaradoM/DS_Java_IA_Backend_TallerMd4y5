@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
+import java.nio.charset.StandardCharsets;
 import io.jsonwebtoken.security.Keys;
 
 @Service
@@ -30,7 +30,7 @@ public class ServicioJwt {
             Clock reloj) {
 
         this.clave = Keys.hmacShaKeyFor(
-                Decoders.BASE64.decode(secreto)
+                secreto.getBytes(StandardCharsets.UTF_8)
         );
 
         if (horas <= 0) {
