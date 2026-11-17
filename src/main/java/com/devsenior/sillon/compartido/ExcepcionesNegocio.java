@@ -1,0 +1,65 @@
+package com.devsenior.sillon.compartido;
+
+public class ExcepcionesNegocio {
+
+    public static class RecursoNoEncontradoException extends RuntimeException {
+        public RecursoNoEncontradoException(String mensaje) {
+            super(mensaje);
+        }
+    }
+
+    public static class ReglaNegocioException extends RuntimeException {
+        public ReglaNegocioException(String mensaje) {
+            super(mensaje);
+        }
+    }
+
+    public static class LimitePlanException extends RuntimeException {
+        public LimitePlanException(String mensaje) {
+            super(mensaje);
+        }
+    }
+
+    public static class AccionNoPermitidaException extends RuntimeException {
+        public AccionNoPermitidaException(String mensaje) {
+            super(mensaje);
+        }
+    }
+
+    public static class CredencialesInvalidasException extends RuntimeException {
+        public CredencialesInvalidasException(String mensaje) {
+            super(mensaje);
+        }
+    }
+
+    public static class FirmaInvalidaException extends RuntimeException {
+        public FirmaInvalidaException(String mensaje) {
+            super(mensaje);
+        }
+    }
+
+    public static class PasarelaException extends RuntimeException {
+        public PasarelaException(String mensaje) {
+            super(mensaje);
+        }
+    }
+    public static class RecursoDuplicadoException extends RuntimeException {
+        public RecursoDuplicadoException(String mensaje) {
+            super(mensaje);
+        }
+    }
+
+    public static class PagoRequeridoException extends RuntimeException {
+        public PagoRequeridoException(String mensaje) {
+            super(mensaje);
+        }
+    }
+
+    public static class PasarelaIaInvalidaException extends RuntimeException {
+        public PasarelaIaInvalidaException(String mensaje) { super(mensaje); }
+    }
+
+    public static class ServicioIaNoDisponibleException extends RuntimeException {
+        public ServicioIaNoDisponibleException(String mensaje) { super(mensaje); }
+    }
+}
