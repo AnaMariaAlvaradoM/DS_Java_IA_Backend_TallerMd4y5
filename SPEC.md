@@ -391,3 +391,34 @@ Uso permitido de IA: chat como **entrevistador** para descubrir casos de negocio
 - [ ] Sin token, 401; ESTILISTA creando usuarios, 403.
 - [ ] Email repetido devuelve 409.
 - [ ] El password en base de datos empieza por `$2`.
+
+
+## FASE 3 · Salones y servicios
+**Objetivo:** configuración comercial y catálogo.
+**Reglas**
+1. Solo DUENO edita salón, configuración y servicios.
+2. `horaCierre` debe ser posterior a `horaApertura`.
+3. Un servicio no se borra: se desactiva (`activo=false`).
+4. Solo se asignan servicios activos a estilistas del mismo salón.
+**Endpoints**
+| Método | Ruta | Respuestas |
+|---|---|---|
+| GET | /api/salon | 200 |
+| PUT | /api/salon | 200 · 400 |
+| PUT | /api/salon/configuracion | 200 · 400 |
+
+" Fase2 {
+  "horaApertura": "08:00",
+  "horaCierre": "19:00",
+  "abreDomingos": false,
+  "intervaloMinutos": 30
+}"
+
+| POST | /api/servicios | 201 · 400 |
+| GET | /api/servicios?activo= | 200 |
+| PUT | /api/servicios/{id} | 200 · 400 · 404 |
+| PUT | /api/usuarios/{id}/servicios | 200 · 400 · 404 (lista de ids de servicio) |
+**Criterios de aceptación**
+- [ ] Apertura 20:00 y cierre 09:00 devuelve 400 indicando el campo.
+- [ ] Pedir un servicio de otro salón devuelve 404.
+- [ ] Asignar un servicio inactivo devuelve 400.

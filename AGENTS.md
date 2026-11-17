@@ -368,3 +368,40 @@ El salonId sale siempre del usuario autenticado. Sin código hasta que apruebe e
 ```
 
 ---
+
+
+## FASE 3 — Salones, servicios y estilistas
+
+**SPEC:** §10 · **Reglas:** R1, R3, R6, R7, R12
+
+**Alcance**
+- Hace: servicios (CRUD sin borrado), estilistas con relación N–N, clientes (solo lectura), límite del plan.
+- No hace: citas, disponibilidad, IA.
+
+**Pasos para el agente**
+1. Servicios: entidad, DTOs `record`, mapper propio, servicio y controlador. Validar `nombre` ≤ 80, `descripcion` ≤ 300, `duracionMinutos` 15–480, `precio` entero > 0, `activo` por defecto `true` (400). Búsquedas por **id y salón** (404). No se borra: se desactiva.
+2. `Usuario` ↔ `Servicio` N–N con `estilista_servicios` y método "¿ofrece este servicio?".
+3. `POST /api/estilistas` con el orden **límite del plan (402) → correo único (409) → servicios del salón (404)**. Respuesta: `id`, `nombre`, `email`, `activo`, `servicios` (nombres). Nunca la contraseña.
+4. `GET /api/estilistas` (DUENO).
+5. Clientes: entidad con restricción única (`salon_id`, `telefono`); método **buscar o crear** con teléfono normalizado (dígitos y `+`); `GET /api/clientes` (DUENO) de solo lectura.
+6. Permisos: `POST/PUT /api/servicios` solo DUENO; `GET /api/servicios` DUENO y ESTILISTA.
+
+**Prohibido en esta fase**
+- Crear clientes por endpoint (nacen al agendar).
+- Cambiar el orden de validación de estilistas.
+- Aceptar servicios de otro salón.
+
+**Verificación**
+- Corte clásico (45 min, 35000) y Arreglo de barba (30 min, 20000) → 201; 5 min o precio negativo → 400.
+- Mateo (corte y barba) y Sara (solo corte) → 201; tercer estilista en `GRATIS` → 402; correo repetido 409; servicio ajeno 404.
+- Tests del plan: 3.er estilista `GRATIS` 402; en `PRO` se crea.
+
+**Cierre:** aislamiento por salón verificado en cada consulta nueva.
+**Commit:** "Catálogo de servicios y equipo de estilistas".
+
+**Prompt de arranque**
+```text
+Contexto: @SPEC.md @AGENTS.md
+Fase 3 — Salones, servicios y estilistas (SPEC §10; reglas R1, R3, R6, R7, R12).
+Entrega un PLAN con el orden de validación de estilistas (402 → 409 → 404) y cómo se filtra cada consulta por salón.
+No construyas citas ni disponibilidad.
