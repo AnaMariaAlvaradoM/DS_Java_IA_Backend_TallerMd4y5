@@ -8,6 +8,7 @@ import com.devSenior.sillon.compartido.excepcion.NoEncontradoException;
 import com.devSenior.sillon.salon.dto.ConfiguracionRespuesta;
 import com.devSenior.sillon.salon.dto.SalonRespuesta;
 import com.devSenior.sillon.salon.dto.SolicitudConfiguracion;
+import com.devSenior.sillon.salon.dto.SolicitudSalon;
 import com.devSenior.sillon.salon.entidad.ConfiguracionSalon;
 import com.devSenior.sillon.salon.entidad.Salon;
 import com.devSenior.sillon.salon.repositorio.SalonRepositorio;
@@ -40,6 +41,16 @@ public class SalonServicio {
 		configuracion.setAbreDomingos(solicitud.abreDomingos());
 		configuracion.setIntervaloMinutos(solicitud.intervaloMinutos());
 		salon.setConfiguracion(configuracion);
+		return aRespuesta(salonRepositorio.save(salon));
+	}
+
+	@Transactional
+	public SalonRespuesta actualizarDatos(Long salonId, SolicitudSalon solicitud) {
+		Salon salon = buscar(salonId);
+		salon.setNombre(solicitud.nombre().trim());
+		salon.setCiudad(solicitud.ciudad().trim());
+		salon.setDireccion(solicitud.direccion().trim());
+		salon.setTelefono(solicitud.telefono().trim());
 		return aRespuesta(salonRepositorio.save(salon));
 	}
 

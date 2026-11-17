@@ -89,7 +89,7 @@ public class AuthServicio {
 		return responder(usuario);
 	}
 
-	static String normalizarCorreo(String email) {
+	public static String normalizarCorreo(String email) {
 		return email.replace(" ", "").toLowerCase(Locale.ROOT);
 	}
 

@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.devSenior.sillon.salon.dto.SalonRespuesta;
 import com.devSenior.sillon.salon.dto.SolicitudConfiguracion;
+import com.devSenior.sillon.salon.dto.SolicitudSalon;
 import com.devSenior.sillon.salon.servicio.SalonServicio;
 import com.devSenior.sillon.seguridad.UsuarioPrincipal;
 
@@ -52,6 +53,13 @@ public class SalonControlador {
 				salonId,
 				solicitud
 		);
+	}
+
+	@PutMapping
+	public SalonRespuesta actualizarDatos(
+			@AuthenticationPrincipal UsuarioPrincipal principal,
+			@Valid @RequestBody SolicitudSalon solicitud) {
+		return salonServicio.actualizarDatos(obtenerSalonId(principal), solicitud);
 	}
 
 	/**

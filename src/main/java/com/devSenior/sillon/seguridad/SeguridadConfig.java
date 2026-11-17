@@ -29,6 +29,8 @@ public class SeguridadConfig {
 						.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**")
 								.permitAll()
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.GET, "/api/usuarios/yo").authenticated()
+						.requestMatchers("/api/usuarios", "/api/usuarios/**").hasRole("DUENO")
 						.requestMatchers(HttpMethod.GET, "/api/servicios").hasAnyRole("DUENO", "ESTILISTA")
 						.requestMatchers(HttpMethod.POST, "/api/servicios").hasRole("DUENO")
 						.requestMatchers(HttpMethod.PUT, "/api/servicios/**").hasRole("DUENO")
