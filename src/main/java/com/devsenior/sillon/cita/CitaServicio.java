@@ -55,6 +55,11 @@ public class CitaServicio {
         return agendar(salonId, solicitud, OrigenCita.SALON, EstadoCita.CONFIRMADA);
     }
 
+    @Transactional
+    public CitaRespuesta reservarEnLinea(Long salonId, CitaSolicitud solicitud) {
+        return agendar(salonId, solicitud, OrigenCita.EN_LINEA, EstadoCita.PENDIENTE);
+    }
+
     @Transactional(readOnly = true)
     public List<CitaRespuesta> listar(Long salonId, LocalDate fecha, UsuarioPrincipal principal) {
         LocalDateTime desde = fecha.atStartOfDay();
