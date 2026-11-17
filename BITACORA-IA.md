@@ -53,7 +53,7 @@ Esta bitácora documenta **cómo se usó la IA** en el proyecto: para qué, qué
 | 2 | 1 | | | | |
 | 3 | 2 | Cursor · Agent | Completar usuarios de la fase 2: GET /api/usuarios/yo, GET /api/usuarios y PATCH /api/usuarios/{id}/activo (R1) | Que el salonId salga del principal, que el DTO no tenga password y que un usuario de otro salón responda 404 | No cambié el login inactivo: sigue en 401 genérico, como pide AGENTS. No existe GET /api/usuario, así que no dupliqué esa ruta |
 | 4 | 3 | Cursor · Agent | Catálogo, estilistas, asignación de servicios y clientes de solo lectura (R1, R3, R6, R7, R12) | Orden 402 → 409 → 404, filtro por salón, horario inválido sigue en 409 y `.\mvnw.cmd test` | El primer test de cliente buscaba un teléfono distinto al normalizado: lo alineé. `.\mvnw.cmd clean test` no pudo borrar `target` porque el directorio estaba bloqueado; sin clean, la suite terminó en verde |
-| 5 | 4 | | | | |
+| 5 | 4 | Cursor · Agent | Clientes, citas, reglas de agenda, disponibilidad y reservas públicas (R1, R8–R14). SPEC fase 4: PENDIENTE/SALON, PENDIENTE/EN_LINEA, 90 días e intervalo | Filtro por salón, un solo método `agendar`, domingo y desalineación en 400, solapamiento en 409. `.\mvnw.cmd clean test` falló al borrar `target\classes\com\devSenior\sillon\auth\controlador` (directorio bloqueado). Después, `.\mvnw.cmd test` terminó BUILD SUCCESS: 42 tests, 0 fallos | AGENTS y README aún decían cita de salón CONFIRMADA y horario 409. Se alinearon al SPEC. El inicio 10:45 con intervalo de 30 no es un hueco válido: la cita consecutiva alineada queda en 11:00 |
 | 6 | 5 | | | | |
 | 7 | 6 | | | | |
 | 8 | 7 | | | | |

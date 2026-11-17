@@ -422,3 +422,40 @@ Uso permitido de IA: chat como **entrevistador** para descubrir casos de negocio
 - [ ] Apertura 20:00 y cierre 09:00 devuelve 400 indicando el campo.
 - [ ] Pedir un servicio de otro salón devuelve 404.
 - [ ] Asignar un servicio inactivo devuelve 400.
+
+
+## FASE 4 · Clientes y agenda
+**Objetivo:** clientes y citas sin solapamientos.
+**Fuera de alcance:** recordatorios, pagos de la cita.
+**Reglas**
+1. `fin = inicio + duracionMinutos` del servicio; el cliente no envía `fin`.
+2. La cita cae dentro de apertura y cierre; domingos solo si `abreDomingos`; `inicio` alineado al `intervaloMinutos`.
+3. El estilista debe ofrecer el servicio. Sin solapar otra cita suya activa (PENDIENTE o CONFIRMADA).
+4. No se agenda en el pasado; anticipación máxima 90 días **[DECISIÓN]**.
+5. Nace PENDIENTE; origen SALON si la crea el personal, EN_LINEA si viene de la reserva pública.
+6. `precio` se copia del servicio al crear.
+7. Transiciones de `EstadoCita`:
+
+| Desde | Hacia |
+|---|---|
+| PENDIENTE | CONFIRMADA, CANCELADA |
+| CONFIRMADA | COMPLETADA, CANCELADA, NO_ASISTIO |
+
+COMPLETADA, CANCELADA y NO_ASISTIO son finales. La regla vive en `EstadoCita.puedeCambiarA(destino)`.
+**Endpoints**
+| Método | Ruta | Respuestas |
+|---|---|---|
+| POST | /api/clientes | 201 · 400 · 409 teléfono repetido |
+| GET | /api/clientes?q= | 200 |
+| POST | /api/citas | 201 · 400 · 404 · 409 solapamiento |
+| GET | /api/citas?desde=&hasta=&estado=&estilistaId= | 200, orden por inicio |
+| GET | /api/citas/{id} | 200 · 404 |
+| PATCH | /api/citas/{id}/estado | 200 · 400 · 404 · 409 transición no permitida |
+**Criterios de aceptación**
+- [ ] Crear una cita devuelve 201 con estado PENDIENTE y `fin` calculado.
+- [ ] Dos citas del mismo estilista a la misma hora: la segunda da 409.
+- [ ] Una cita pegada al final de otra (sin solaparse) se acepta.
+- [ ] Cita un domingo con `abreDomingos=false` devuelve 400.
+- [ ] PENDIENTE → COMPLETADA devuelve 409.
+- [ ] Cancelar libera el horario.
+- [ ] Mismo teléfono en dos salones es válido.

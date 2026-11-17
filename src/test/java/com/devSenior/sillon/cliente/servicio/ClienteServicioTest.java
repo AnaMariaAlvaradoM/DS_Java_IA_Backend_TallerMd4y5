@@ -2,6 +2,7 @@ package com.devSenior.sillon.cliente.servicio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,8 +15,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.devSenior.sillon.cliente.dto.SolicitudCliente;
 import com.devSenior.sillon.cliente.entidad.Cliente;
 import com.devSenior.sillon.cliente.repositorio.ClienteRepositorio;
+import com.devSenior.sillon.compartido.excepcion.ConflictoException;
 import com.devSenior.sillon.salon.entidad.Salon;
 import com.devSenior.sillon.salon.repositorio.SalonRepositorio;
 
@@ -68,6 +71,33 @@ class ClienteServicioTest {
 		assertEquals("3001112233", segundo.getTelefono());
 		assertEquals(1L, primero.getSalon().getId());
 		assertEquals(2L, segundo.getSalon().getId());
+	}
+
+	@Test
+	void crearRechazaTelefonoRepetidoEnElMismoSalon() {
+		when(clienteRepositorio.findBySalon_IdAndTelefono(1L, "3001112233")).thenReturn(Optional.of(new Cliente()));
+		assertThrows(ConflictoException.class,
+				() -> clienteServicio.crear(1L, new SolicitudCliente("Ana", "300 111 2233")));
+	}
+
+	@Test
+	void crearPermiteElMismoTelefonoEnSalonesDistintos() {
+		when(clienteRepositorio.findBySalon_IdAndTelefono(1L, "3001112233")).thenReturn(Optional.empty());
+		when(clienteRepositorio.findBySalon_IdAndTelefono(2L, "3001112233")).thenReturn(Optional.empty());
+		Salon uno = new Salon();
+		uno.setId(1L);
+		Salon dos = new Salon();
+		dos.setId(2L);
+		when(salonRepositorio.findById(1L)).thenReturn(Optional.of(uno));
+		when(salonRepositorio.findById(2L)).thenReturn(Optional.of(dos));
+		when(clienteRepositorio.save(org.mockito.ArgumentMatchers.any(Cliente.class))).thenAnswer(invocacion -> {
+			Cliente cliente = invocacion.getArgument(0);
+			cliente.setId(cliente.getSalon().getId());
+			return cliente;
+		});
+
+		assertEquals(1L, clienteServicio.crear(1L, new SolicitudCliente("Ana", "3001112233")).id());
+		assertEquals(2L, clienteServicio.crear(2L, new SolicitudCliente("Ana", "3001112233")).id());
 	}
 
 }

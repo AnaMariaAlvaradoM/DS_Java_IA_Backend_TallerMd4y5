@@ -131,8 +131,9 @@ Capas por dominio: `entidad`, `repositorio`, `servicio`, `controlador`, `dto`.
 - Solo `PENDIENTE` y `CONFIRMADA` ocupan agenda.
 - `EstadoCita` es una máquina de estados con `puedeCambiarA` y `ocupaAgenda`. Transiciones: `PENDIENTE→CONFIRMADA|CANCELADA`; `CONFIRMADA→COMPLETADA|CANCELADA|NO_ASISTIO`; el resto son finales.
 - `ReglasAgenda` es un componente **sin dependencias de base de datos**.
-- **Un único método privado de agendar** (cita del salón y reserva en línea), con este orden: servicio existe y activo → estilista existe, activo y ofrece el servicio → calcular `fin` → no pasado → horario del salón → sin cruce → buscar/crear cliente, copiar precio y guardar.
-- Cita del salón: `CONFIRMADA`/`SALON`. Reserva en línea: `PENDIENTE`/`EN_LINEA`.
+- **Un único método privado de agendar** (cita del salón y reserva en línea), con este orden: servicio existe y activo → estilista existe, activo y ofrece el servicio → calcular `fin` → no pasado → anticipación máxima 90 días → horario del salón, domingo e intervalo → sin cruce → buscar/crear cliente, copiar precio y guardar.
+- Cita del personal: `PENDIENTE`/`SALON`. Reserva en línea: `PENDIENTE`/`EN_LINEA`.
+- Horario, domingo cerrado, inicio no alineado al intervalo, pasado y más de 90 días → 400. Solapamiento y transición inválida → 409.
 - Cambiar estado: buscar por id y salón (404) → si es estilista, cita suya (404) y destino `COMPLETADA`/`NO_ASISTIO` (403) → transición válida (409).
 - Si devuelves la cita tras cambiar el estado, guarda con `saveAndFlush`.
 - La disponibilidad la calcula **Java**, nunca la IA.
@@ -405,3 +406,45 @@ Contexto: @SPEC.md @AGENTS.md
 Fase 3 — Salones, servicios y estilistas (SPEC §10; reglas R1, R3, R6, R7, R12).
 Entrega un PLAN con el orden de validación de estilistas (402 → 409 → 404) y cómo se filtra cada consulta por salón.
 No construyas citas ni disponibilidad.
+---
+
+## FASE 4 — Clientes, agenda, disponibilidad y reservas
+
+**SPEC:** §11 · **Reglas:** R1, R8–R15
+
+**Alcance**
+- Hace: `EstadoCita`, `Cita`, `ReglasAgenda`, agendar, listar, cambiar estado, catálogo público, disponibilidad y reserva en línea.
+- No hace: recordatorio, chatbot ni pagos.
+
+**Pasos para el agente**
+1. `EstadoCita` (`puedeCambiarA`, `ocupaAgenda`) y `OrigenCita`. Tabla de transiciones antes del enum.
+2. Entidad `Cita` con cuatro N–1, precio copiado del servicio, fechas automáticas.
+3. `ReglasAgenda` **sin dependencias de base de datos**: horario, domingo, alineación al `intervaloMinutos`, pasado y anticipación máxima de 90 días responden 400. Calcula horarios libres con `Clock`, sin pasado y sin cruces; día cerrado → lista vacía. Cruce: `inicioA < finB && finA > inicioB` (409).
+4. **Método privado único de agendar**: servicio activo (404) → estilista activo que lo ofrece (404/409) → `fin` → reglas de agenda (400) → sin cruce (409) → buscar/crear cliente, copiar precio y guardar. Personal: `PENDIENTE`/`SALON`; en línea: `PENDIENTE`/`EN_LINEA`.
+5. `POST /api/citas` (DUENO), `GET /api/citas?desde=&hasta=&estado=&estilistaId=` (orden por inicio; el estilista solo las suyas), `GET /api/citas/{id}`, `PATCH /api/citas/{id}/estado` (id y salón 404 → estilista: cita suya 404 y destino `COMPLETADA`/`NO_ASISTIO` 403 → transición válida 409). Usar `saveAndFlush` al devolver.
+6. Público: `GET /api/publico/salones/{slug}` (servicios y estilistas activos, `horario` en texto, **sin correos**), `…/disponibilidad` (`servicioId`, `estilistaId`, `fecha` obligatorios) y `POST …/reservas` (mismo método de agendar).
+
+**Prohibido en esta fase**
+- Calcular disponibilidad fuera de Java o con IA.
+- Aceptar `fin` o `precio` del cliente.
+- Dos métodos de agendar distintos.
+
+**Verificación**
+- Cita del personal → 201 `PENDIENTE`/`SALON`; solapamiento 409; domingo cerrado, inicio no alineado, pasado y más de 90 días → 400.
+- Reserva pública → 201 `PENDIENTE`/`EN_LINEA`, con `fin` y precio copiados del servicio.
+- Confirmar `PENDIENTE` → `fechaActualizacion` posterior; `CONFIRMADA`→`PENDIENTE` 409.
+- Mateo: solo sus citas, ajena 404, cancelar 403, completar 200.
+- Tests de estados (5 permitidas y ≥ 6 bloqueadas) y de `ReglasAgenda`.
+
+**Cierre:** toda consulta filtra por salón; el catálogo público no contiene `@`.
+**Commits:** "Agenda: citas, reglas de horario, cruces y estados" y "Catálogo público, disponibilidad y reservas en línea".
+
+**Prompt de arranque**
+```text
+Contexto: @SPEC.md @AGENTS.md
+Fase 4 — Agenda, disponibilidad y reservas (SPEC §11; reglas R8–R15).
+Entrega un PLAN con: tabla de transiciones, ReglasAgenda (sin BD), el método único de agendar en el orden del SPEC y las consultas derivadas.
+Confirma que cada consulta filtra por salón y que el cruce usa solo PENDIENTE y CONFIRMADA.
+```
+
+

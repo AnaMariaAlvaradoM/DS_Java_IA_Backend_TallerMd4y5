@@ -39,6 +39,7 @@ public class SeguridadConfig {
 						.requestMatchers(HttpMethod.POST, "/api/citas/*/recordatorio").hasRole("DUENO")
 						.requestMatchers(HttpMethod.POST, "/api/citas").hasRole("DUENO")
 						.requestMatchers(HttpMethod.GET, "/api/citas").hasAnyRole("DUENO", "ESTILISTA")
+						.requestMatchers(HttpMethod.GET, "/api/citas/*").hasAnyRole("DUENO", "ESTILISTA")
 						.requestMatchers(HttpMethod.PATCH, "/api/citas/*/estado").hasAnyRole("DUENO", "ESTILISTA")
 						.requestMatchers("/api/solicitudes", "/api/solicitudes/**").hasRole("DUENO")
 						.requestMatchers(HttpMethod.POST, "/api/pagos/suscripcion", "/api/pagos/creditos").hasRole("DUENO")

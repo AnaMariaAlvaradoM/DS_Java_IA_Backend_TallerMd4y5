@@ -261,13 +261,13 @@ Plan `GRATIS`: el 3.er estilista responde 402. Orden de validación: límite del
 Los servicios inactivos no se ofrecen para nuevas reservas.
 Clientes
 Pertenecen a un salón; el teléfono es único dentro de él y se guarda solo con dígitos y `+`.
-Nacen al agendar (se busca por teléfono; si no existe, se crea). El listado es de solo lectura.
+Nacen al agendar o con `POST /api/clientes`. El teléfono repetido en el mismo salón responde 409. `GET /api/clientes?q=` busca por nombre o teléfono.
 Citas
 La cita dura exactamente lo que dura su servicio; Java calcula el fin.
 Conserva el precio del servicio al momento de agendar.
-No se agenda en el pasado, fuera de horario, en domingo si el salón no abre, ni con un estilista que no ofrece el servicio (409).
+No se agenda en el pasado, con más de 90 días de anticipación, fuera de horario, en domingo si el salón no abre, ni con un inicio que no cae en el intervalo (400). El estilista que no ofrece el servicio y el solapamiento responden 409.
 Cruce: dos citas se cruzan si `inicioA < finB` y `finA > inicioB`. Una cita que termina a las 10:45 no se cruza con otra que empieza a las 10:45. Solo cuentan `PENDIENTE` y `CONFIRMADA`.
-Cita del salón: `CONFIRMADA` / `SALON`. Reserva en línea: `PENDIENTE` / `EN_LINEA`.
+Cita del personal: `PENDIENTE` / `SALON`. Reserva en línea: `PENDIENTE` / `EN_LINEA`.
 Disponibilidad: la calcula Java, nunca la IA.
 Zona horaria: "hoy" y "ahora" usan `America/Bogota` mediante un bean `Clock`, aunque el servidor esté en UTC.
 Un estilista solo cambia sus citas (ajena → 404) y solo a `COMPLETADA` o `NO_ASISTIO` (otro destino → 403).
