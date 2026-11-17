@@ -1,19 +1,26 @@
+
 # Bitácora de uso de IA — Sillón
 
 Registro del apoyo de inteligencia artificial utilizado durante el desarrollo del proyecto.
 
 | N.º | Fase | Herramienta y modo | Para qué se utilizó | Qué se revisó | Qué se rechazó o corrigió |
 |---|---|---|---|---|---|
-| 1 | Fase 0 | ChatGPT — chat del navegador | Apoyo para redactar SPEC.md y AGENTS.md a partir del enunciado. | Reglas de negocio, planes, horarios, estados de citas, permisos y alcance del proyecto. | Se corrigió FREE por GRATIS, se aclaró que el horario pertenece al salón y que solo PENDIENTE y CONFIRMADA bloquean la agenda. Se descartó inventar un plazo de cancelación. |
-| 2 | Fase 0 | ChatGPT — chat del navegador | Análisis de los errores del calificador de GitHub y revisión de variables de entorno. | Cambios en application.properties, BUILD SUCCESS, revisión del diff y commit e75ff06c. | Se corrigió la configuración de MySQL para admitir las variables SPRING_DATASOURCE_* y la URL de Gemini para admitir SILLON_IA_OPENAI_URL. |
-| 3 | Fase 1 | ChatGPT — chat del navegador | Apoyo paso a paso para desarrollar el manejo de errores, el reloj del sistema y las entidades Salon y Usuario. | Se verificó BUILD SUCCESS, el arranque de Spring Boot y las tablas salones y usuarios en MySQL, incluida su relación. También se ejecutaron las pruebas JUnit existentes. | Se mantuvieron el registro, JWT y BCrypt para la Fase 2, según el enunciado. Quedan pendientes las pruebas específicas de errores y slugs. |
-| 4 | Fase 1 | ChatGPT - chat del navegador | Apoyo para implementar pruebas unitarias con JUnit y Mockito para GeneradorSlug y ManejadorGlobalExcepciones. | Se seleccionaron los casos de prueba: nombre "Barbería La Navaja", slug duplicado con sufijo -2 y conflicto HTTP 409 por correo registrado. | Se ejecutaron las 2 pruebas de GeneradorSlug y la prueba del error 409. También se ejecutó ./mvnw test. Todos los comandos finalizaron con BUILD SUCCESS. |
-
+| 1 | Fase 0 | ChatGPT — chat del navegador | Apoyo para redactar SPEC.md y AGENTS.md a partir del enunciado. | Reglas de negocio, planes, horarios, estados de citas, permisos y alcance. | Se corrigió FREE por GRATIS, se aclaró que el horario pertenece al salón y que solo PENDIENTE y CONFIRMADA bloquean la agenda. Se descartó inventar un plazo de cancelación. |
+| 2 | Fase 0 | ChatGPT — chat del navegador | Análisis de errores del calificador de GitHub y revisión de variables de entorno. | application.properties, BUILD SUCCESS, diferencias del código y commit e75ff06c. | Se ajustó la configuración de MySQL para admitir variables SPRING_DATASOURCE_* y la URL de Gemini para admitir SILLON_IA_OPENAI_URL. |
+| 3 | Fase 1 | ChatGPT — chat del navegador | Apoyo para desarrollar el manejo de errores, el reloj del sistema y las entidades Salon y Usuario. | Compilación, inicio de Spring Boot y tablas de MySQL. | Se mantuvieron el registro, JWT y BCrypt para la siguiente fase, respetando el orden del enunciado. |
+| 4 | Fase 2 | ChatGPT — chat del navegador | Apoyo durante la implementación y validación del registro, login y configuración del salón. | Respuestas HTTP 200, 201, 400 y 409 mediante Postman. | Se corrigieron problemas de autenticación y respuestas de validación que no coincidían con el contrato. |
+| 5 | Fase 3 | ChatGPT — chat del navegador | Apoyo para implementar el catálogo, los estilistas y los clientes. | Validaciones de servicios, relaciones entre estilistas y servicios, aislamiento entre salones y pruebas Postman. | Se revisó la validación de correos duplicados y la asignación de servicios, evitando aceptar datos de otros salones. |
+| 6 | Fase 4 | ChatGPT — chat del navegador | Apoyo para implementar la agenda, sus reglas de negocio y las pruebas de concurrencia. | Cruces de citas, estados, permisos, formato de errores, pruebas JUnit y Postman. | Se corrigió el manejo de errores de permisos y se agregó bloqueo pesimista para impedir reservas simultáneas. También se corrigió la interpretación del secreto JWT que impedía iniciar el evaluador. |
 
 
 ## Observaciones
 
-- Las reglas se documentaron en SPEC.md y AGENTS.md.
-- Los cambios de configuración fueron aplicados y comprobados mediante comandos ejecutados en VS Code.
-- La calificación automática sigue siendo 0,3/5,0 porque faltan funcionalidades de las fases posteriores.
-- Las funcionalidades y pruebas de negocio continúan pendientes de implementación.
+- Las reglas funcionales se mantienen documentadas en SPEC.md.
+- Se reutilizaron las clases existentes para evitar duplicar la lógica de agenda.
+- Las pruebas de Postman permitieron comprobar los endpoints públicos sin JWT.
+- La prueba inicial de concurrencia pública falló porque permitió registrar dos reservas en el mismo horario.
+- Después de corregir la transacción, una nueva prueba devolvió HTTP 201 y HTTP 409.
+- Se eliminaron los dos registros duplicados de prueba y se verificó la información en MySQL.
+- La última evaluación automática documentada antes de la Fase 5 fue de 2.3/5.0, con 67 de 145 pruebas aprobadas.
+- La Fase 5 todavía debe evaluarse en GitHub Actions después del próximo push.
+- Las fases posteriores de pagos, inteligencia artificial y despliegue siguen pendientes.

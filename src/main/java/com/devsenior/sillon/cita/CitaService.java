@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Isolation;
+
 
 import com.devsenior.sillon.cliente.ClienteService;
 import com.devsenior.sillon.salon.SalonRepository;
@@ -160,8 +162,44 @@ public class CitaService {
     }
 
 
-    @Transactional
-    public CitaResponse crear(Long salonId, CitaRequest request) {
+
+        @Transactional
+        public CitaResponse crear(Long salonId, CitaRequest request) {
+            return crearReserva(
+                    salonId,
+                    request,
+                    EstadoCita.CONFIRMADA,
+                    OrigenCita.SALON
+            );
+        }
+
+
+        @Transactional(isolation = Isolation.READ_COMMITTED)
+        public CitaResponse crearPublica(
+                String slug,
+                CitaRequest request
+        ) {
+            Long salonId = salonRepository.findBySlug(slug)
+                    .orElseThrow(() ->
+                            new RecursoNoEncontradoException(
+                                    "Salón no encontrado"
+                            )
+                    ).getId();
+
+            return crearReserva(
+                    salonId,
+                    request,
+                    EstadoCita.PENDIENTE,
+                    OrigenCita.EN_LINEA
+            );
+        }
+
+        private CitaResponse crearReserva(
+                Long salonId,
+                CitaRequest request,
+                EstadoCita estado,
+                OrigenCita origen
+        ) {
 
         // 1. Verificar el salón
 
@@ -226,8 +264,8 @@ public class CitaService {
         cita.setEstilista(estilista);
         cita.setInicio(inicio);
         cita.setFin(fin);
-        cita.setEstado(EstadoCita.CONFIRMADA);
-        cita.setOrigen(OrigenCita.SALON);
+        cita.setEstado(estado);
+        cita.setOrigen(origen);
         cita.setPrecio(servicio.getPrecio());
         cita.setNota(request.nota());
 
