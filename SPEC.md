@@ -79,10 +79,13 @@ El primer ADMIN se crea registrando una cuenta normal y cambiando el rol a `ADMI
 4. **Sin cruces:** un estilista no puede tener dos citas que se crucen. Solo ocupan agenda las citas **PENDIENTE** y **CONFIRMADA** → **409**. Dos intervalos se cruzan si `inicioA < finB && finA > inicioB`; una cita que termina a las 10:45 **no** choca con otra que empieza a las 10:45.
 5. Origen/estado inicial: cita del salón → **CONFIRMADA / SALON**; reserva en línea → **PENDIENTE / EN_LINEA**.
 6. Al agendar, el cliente se busca por teléfono **dentro del salón**; si no existe, se crea. El teléfono se guarda solo con dígitos y `+`.
-7. **Transiciones permitidas:**
-   - PENDIENTE → CONFIRMADA | CANCELADA
-   - CONFIRMADA → COMPLETADA | CANCELADA | NO_ASISTIO
-   - COMPLETADA, CANCELADA, NO_ASISTIO = **finales**
+7. **Transiciones permitidas** (con su caso de negocio real):
+   - PENDIENTE → CONFIRMADA — *el dueño acepta la reserva en línea*
+   - PENDIENTE → CANCELADA — *el salón no puede con esa reserva*
+   - CONFIRMADA → COMPLETADA — *el cliente asistió y se atendió*
+   - CONFIRMADA → CANCELADA — *cancelación anticipada (salón o cliente)*
+   - CONFIRMADA → NO_ASISTIO — *el cliente nunca llegó*
+   - COMPLETADA, CANCELADA, NO_ASISTIO = **finales** (no salen de ahí)
    - Cualquier otra → **409**
 8. Un estilista solo cambia **sus** citas (de otro estilista → **404**) y solo a **COMPLETADA** o **NO_ASISTIO** (otro destino → **403**).
 9. **Disponibilidad** (la calcula Java, nunca la IA): horas de inicio, cada intervalo desde la apertura, en las que el servicio cabe completo antes del cierre, sin cruzar citas ocupadas del estilista y nunca en el pasado. Si hay cita 10:00–10:45 y el servicio dura 45 min, **tampoco se ofrece 9:30** (terminaría a las 10:15 encima).
