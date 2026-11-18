@@ -68,7 +68,7 @@ class PagoWebhookServiceTest {
 
         assertEquals(Plan.PRO, salon.getPlan());
         assertEquals(310, salon.getCreditosIa());
-        assertEquals("sub-prueba", salon.getSuscripcionStripeId());
+        assertEquals("sub-prueba", salon.getStripeSubscriptionId());
         verify(salonRepository).save(salon);
         verify(eventoStripeRepository).save(any(EventoStripe.class));
     }
@@ -113,7 +113,7 @@ class PagoWebhookServiceTest {
     @Test
     void cancelacionDeSuscripcionDevuelveSalonAPlanGratis() throws Exception {
         Salon salon = salonConPlanYCreditos(Plan.PRO, 300);
-        salon.setSuscripcionStripeId("sub-cancelada");
+        salon.setStripeSubscriptionId("sub-cancelada");
         Subscription subscription = mock(Subscription.class);
         when(subscription.getId()).thenReturn("sub-cancelada");
         Event evento = mock(Event.class);
@@ -123,7 +123,7 @@ class PagoWebhookServiceTest {
         when(evento.getDataObjectDeserializer()).thenReturn(deserializador);
         when(deserializador.getObject()).thenReturn(Optional.of(subscription));
         when(eventoStripeRepository.existsById("evt-cancelacion")).thenReturn(false);
-        when(salonRepository.findBySuscripcionStripeId("sub-cancelada")).thenReturn(Optional.of(salon));
+        when(salonRepository.findByStripeSubscriptionId("sub-cancelada")).thenReturn(Optional.of(salon));
 
         try (MockedStatic<Webhook> webhook = mockStatic(Webhook.class)) {
             webhook.when(() -> Webhook.constructEvent(PAYLOAD, FIRMA, SECRETO)).thenReturn(evento);
@@ -133,7 +133,7 @@ class PagoWebhookServiceTest {
 
         assertEquals(Plan.GRATIS, salon.getPlan());
         assertEquals(300, salon.getCreditosIa());
-        assertEquals(null, salon.getSuscripcionStripeId());
+        assertEquals(null, salon.getStripeSubscriptionId());
         verify(salonRepository).save(salon);
         verify(eventoStripeRepository).save(any(EventoStripe.class));
     }
