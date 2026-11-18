@@ -14,7 +14,6 @@ public interface SalonRepository extends JpaRepository<Salon, Long> {
     boolean existsBySlug(String slug);
 
     Optional<Salon> findByStripeSubscriptionId(String stripeSubscriptionId);
-    Optional<Salon> findBySuscripcionStripeId(String suscripcionStripeId);
     @Query("SELECT s.creditosIa FROM Salon s WHERE s.id = :salonId")
     Integer obtenerCreditos(@Param("salonId") Long salonId);
 

@@ -116,7 +116,7 @@ public class PagoWebhookService {
         if ("SUSCRIPCION_PRO".equals(tipo)) {
             salon.setPro(true);
             // Guardamos el id de la suscripción de Stripe en el salón para poder buscarlo si se cancela
-            salon.setSuscripcionStripeId(session.getSubscription());
+            salon.setStripeSubscriptionId(session.getSubscription());
             salon.setCreditosIa(salon.getCreditosIa() + 300);
         } else if ("PAQUETE_CREDITOS".equals(tipo)) {
             // Sumar los créditos al saldo actual del salón
@@ -128,10 +128,10 @@ public class PagoWebhookService {
 
     private void cancelarSuscripcion(String suscripcionStripeId) {
         // Busca el salón por el ID de la suscripción y lo devuelve a GRATIS
-        salonRepository.findBySuscripcionStripeId(suscripcionStripeId)
+        salonRepository.findByStripeSubscriptionId(suscripcionStripeId)
                 .ifPresent(salon -> {
                     salon.setPro(false);
-                    salon.setSuscripcionStripeId(null);
+                    salon.setStripeSubscriptionId(null);
                     salonRepository.save(salon);
                     log.info("El salón {} ha vuelto al plan GRATIS", salon.getId());
                 });
