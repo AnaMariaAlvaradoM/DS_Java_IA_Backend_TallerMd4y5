@@ -420,9 +420,10 @@ Orden de cada funcionalidad con IA
 Validar lo que no depende de la IA (que exista la cita o el salón).
 Verificar créditos (402 si no hay; la IA no se llama).
 Cargar el prompt y llamar a la IA.
-Consumir el crédito (una sola actualización atómica; nunca queda negativo).
-Leer y validar el JSON.
-Aplicar reglas de negocio y responder.
+Leer y validar el JSON (inválido → 502, sin descontar).
+Aplicar reglas de negocio.
+Consumir el crédito (una sola actualización atómica; nunca queda negativo). Ningún proveedor → 503, sin descontar.
+Responder.
 Ninguna llamada a la IA va dentro de una transacción de base de datos.
 Recordatorio de cita
 `POST /api/citas/{id}/recordatorio` — solo citas `PENDIENTE` o `CONFIRMADA` (otra → 409, sin gastar créditos). Java arma los datos verificados (servicio y duración, estilista, fecha en español, hora tipo `10:30 a. m.`, valor `$35.000`, dirección). La IA redacta un borrador para WhatsApp en JSON con la clave `mensaje` (máximo 700 caracteres). Una persona lo aprueba: Sillón no envía mensajes.

@@ -459,3 +459,34 @@ COMPLETADA, CANCELADA y NO_ASISTIO son finales. La regla vive en `EstadoCita.pue
 - [ ] PENDIENTE → COMPLETADA devuelve 409.
 - [ ] Cancelar libera el horario.
 - [ ] Mismo teléfono en dos salones es válido.
+
+
+## FASE 5 · Asistente IA y solicitudes de contacto
+**Objetivo:** un asistente en la reserva pública que responde, agenda citas y escala a una persona.
+**Fuera de alcance:** guardar conversaciones completas, voz.
+**Reglas**
+1. Los prompts viven en `src/main/resources/prompts/` como `.txt` con variables `{{nombre}}`; no en clases Java.
+2. El texto del cliente va como mensaje aparte, nunca mezclado con las instrucciones.
+3. Toda respuesta JSON de la IA se valida; si es inválida: 502.
+4. Cada respuesta del asistente descuenta 1 crédito del salón. Con 0 créditos: 402 y se crea una solicitud.
+5. Si el proveedor falla, no se descuenta crédito **[DECISIÓN]**. Todos fallan: 503.
+6. Disponibilidad, precios y duraciones los calcula Java; la IA solo los comunica.
+7. El asistente nunca promete descuentos, reembolsos ni servicios fuera del catálogo. Si lo hace, el cliente recibe un mensaje seguro y se crea una solicitud con motivo REGLA_DE_SEGURIDAD.
+8. Si el cliente pide hablar con una persona, o la IA no puede ayudar, se crea una solicitud con motivo PEDIDO_POR_IA, estado PENDIENTE.
+9. Sin memoria: el historial llega completo en cada petición (máx. 20 turnos de 500 caracteres).
+10. Los logs nunca escriben el mensaje del cliente ni llaves.
+**Endpoints**
+| Método | Ruta | Rol | Respuestas |
+|---|---|---|---|
+| POST | /api/publico/{slug}/chat | público | 200 · 400 · 402 · 404 · 502 · 503 |
+| GET | /api/solicitudes?estado= | DUENO, ESTILISTA | 200, más recientes primero |
+| PATCH | /api/solicitudes/{id}/estado | DUENO, ESTILISTA | 200 · 404 · 409 |
+Transición de solicitud: PENDIENTE → ATENDIDA (final).
+**Criterios de aceptación**
+- [ ] Preguntar horarios o precios responde sin crear solicitud y descuenta 1 crédito.
+- [ ] Pedir hablar con una persona devuelve `escalado: true` y el id de una solicitud PENDIENTE.
+- [ ] Respuesta de la IA fuera del formato devuelve 502 sin descontar crédito.
+- [ ] Con `creditosIa=0` devuelve 402.
+- [ ] Si la IA promete un descuento, se crea la solicitud con REGLA_DE_SEGURIDAD.
+- [ ] Un slug inexistente devuelve 404.
+

@@ -158,7 +158,7 @@ Capas por dominio: `entidad`, `repositorio`, `servicio`, `controlador`, `dto`.
 - **Java calcula y verifica; la IA solo redacta.** Precios, horarios, disponibilidad y datos de la cita nunca los decide la IA.
 - Prompts en `src/main/resources/prompts/` (`recordatorio.txt`, `chatbot.txt`); jamás incrustados en el código.
 - Claves JSON exactas: `mensaje` (recordatorio); `respuesta` y `escalar` (chatbot). Valida siempre la salida: inválida → 502; sin proveedor → 503.
-- Orden obligatorio: **validar lo no-IA → verificar créditos (402) → cargar prompt y llamar → consumir crédito → leer y validar JSON → reglas de negocio → responder**.
+- Orden obligatorio: **validar lo no-IA → verificar créditos (402) → cargar prompt y llamar → leer y validar JSON → reglas de negocio → consumir crédito → responder**. Un 502 o un 503 no descuentan.
 - **Nunca** una llamada a la IA dentro de una transacción de base de datos.
 - El crédito se consume con **una sola actualización atómica** (resta 1 solo si quedan).
 - El texto del cliente **nunca** va dentro de las instrucciones del prompt; el historial se envía como mensaje, una línea por turno (`Cliente:` / `Asistente:`).
@@ -446,5 +446,50 @@ Fase 4 — Agenda, disponibilidad y reservas (SPEC §11; reglas R8–R15).
 Entrega un PLAN con: tabla de transiciones, ReglasAgenda (sin BD), el método único de agendar en el orden del SPEC y las consultas derivadas.
 Confirma que cada consulta filtra por salón y que el cruce usa solo PENDIENTE y CONFIRMADA.
 ```
+
+---
+
+## FASE 5 — Asistente IA, recordatorio y solicitudes
+
+**SPEC:** §12 · **Reglas:** R14, R19–R22, R24
+
+**Alcance**
+- Hace: motor de IA (`ia`), créditos, recordatorio, chatbot, solicitudes de contacto.
+- No hace: envío real de mensajes, guardar conversaciones, voz, pagos.
+
+**Pasos para el agente**
+1. Traer el paquete `ia` de Atiende a `com.devsenior.sillon.ia` (proveedor OpenAI/Gemini, respaldo formato Claude, fallback, configuración tipada, fábrica HTTP con tiempo máximo, biblioteca de prompts, lector de JSON, factura). Prefijo `sillon.ia`; URL de `sillon.ia.openai.url`. Eliminar todo import de `com.devsenior.atiende`.
+2. Servicio de créditos: **verificar** (0 → 402) y **consumir** con una sola actualización atómica que resta 1 solo si quedan.
+3. Orden de toda función con IA: validar no-IA → verificar créditos → cargar prompt y llamar → leer y validar JSON → reglas → consumir crédito → responder. Un 502 o un 503 no descuentan. **Sin transacción alrededor de la llamada.**
+4. Recordatorio `POST /api/citas/{id}/recordatorio` (DUENO): datos verificados por Java (servicio y duración, estilista, fecha en español, hora `10:30 a. m.` con espacio normal, valor `$35.000`, dirección); solo `PENDIENTE`/`CONFIRMADA` (409 sin gastar créditos); prompt `recordatorio.txt` con variables `salón`, `cliente`, `datos` que pida JSON con la clave **`mensaje`**; validar existencia, no vacío y ≤ 700 caracteres (502). Responder `citaId`, `telefonoCliente`, `mensaje`, `creditosRestantes`, `factura`.
+5. Chatbot `POST /api/publico/salones/{slug}/chat`: catálogo real desde la BD; prompt `chatbot.txt` con variables `salón`, `dirección`, `horario`, `catálogo`, `cliente` que pida JSON con **`respuesta`** y **`escalar`**; historial (1–20 turnos, ≤ 500) convertido en un solo mensaje por turnos; escalar → `SolicitudContacto` (≤ 2000) con `PEDIDO_POR_IA`; **anti-promesas en Java** → mensaje seguro y `REGLA_DE_SEGURIDAD`. Respuesta: `respuesta`, `escalado`, `solicitudId`, `factura`.
+6. Solicitudes (DUENO): `GET /api/solicitudes` (recientes primero) y `PATCH /api/solicitudes/{id}/atendida` (409 si ya estaba).
+
+**Prohibido en esta fase**
+- Spring AI o SDKs de IA; URL del proveedor fija.
+- Prompts incrustados en código; texto del cliente dentro de las instrucciones.
+- Llamar a la IA dentro de una transacción.
+- Dejar la regla anti-promesas solo en el prompt.
+- Que la IA calcule disponibilidad, precios o fechas.
+- Registrar mensajes del cliente o llaves en logs.
+
+**Verificación**
+- Recordatorio de Sara: menciona "Sara" y "10:30", trae factura y deja **9 créditos**; de cita `COMPLETADA` → 409 sin gastar créditos; JSON sin `mensaje` → 502.
+- Con llave dañada: 503 y en el log un `ERROR` del primer proveedor y otro del respaldo.
+- Chatbot: precio → no escala y consume 1; "quiero reservar" → escala con `solicitudId`; cupón SILLA50 → respuesta sin cupón, descuento, gratis ni SILLA50 y solicitud `REGLA_DE_SEGURIDAD`; historial vacío 400; salón inexistente 404; 0 créditos 402 sin llamar a la IA.
+- Tests: fallback, lector de JSON, prompts, sin créditos, escalamiento, anti-promesas, recordatorio válido y 502.
+
+**Cierre:** ninguna referencia a Atiende; la IA fuera de transacciones; claves JSON exactas.
+**Commits:** "Motor de IA reutilizado y créditos por respuesta" · "Recordatorio con IA y datos verificados" · "Chatbot del salón con escalamiento y regla anti-promesas".
+
+**Prompt de arranque**
+```text
+Contexto: @SPEC.md @AGENTS.md
+Fase 5 — Asistente IA (SPEC §12; reglas R14, R19–R22, R24). Trabaja por subpasos: 5.1 motor, 5.2 créditos, 5.4 recordatorio, 5.5 chatbot, 5.6 solicitudes.
+Entrega un PLAN del subpaso que te indique, con el orden: validar no-IA → créditos → llamar → consumir → validar JSON → reglas.
+El prompt lo escribo yo; tú solo cargas el archivo. Sin llamadas a la IA dentro de transacciones.
+```
+
+
 
 

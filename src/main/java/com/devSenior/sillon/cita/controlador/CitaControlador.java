@@ -16,10 +16,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.devSenior.sillon.cita.dto.CitaRespuesta;
+import com.devSenior.sillon.cita.dto.RecordatorioRespuesta;
 import com.devSenior.sillon.cita.dto.SolicitudCita;
 import com.devSenior.sillon.cita.dto.SolicitudEstado;
 import com.devSenior.sillon.cita.entidad.EstadoCita;
 import com.devSenior.sillon.cita.servicio.CitaServicio;
+import com.devSenior.sillon.cita.servicio.RecordatorioServicio;
 import com.devSenior.sillon.seguridad.UsuarioPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,9 +37,11 @@ import jakarta.validation.Valid;
 public class CitaControlador {
 
 	private final CitaServicio citaServicio;
+	private final RecordatorioServicio recordatorioServicio;
 
-	public CitaControlador(CitaServicio citaServicio) {
+	public CitaControlador(CitaServicio citaServicio, RecordatorioServicio recordatorioServicio) {
 		this.citaServicio = citaServicio;
+		this.recordatorioServicio = recordatorioServicio;
 	}
 
 	@PostMapping
@@ -80,6 +84,19 @@ public class CitaControlador {
 	public CitaRespuesta cambiarEstado(@AuthenticationPrincipal UsuarioPrincipal principal, @PathVariable Long id,
 			@Valid @RequestBody SolicitudEstado solicitud) {
 		return citaServicio.cambiarEstado(principal, id, solicitud.estado());
+	}
+
+	@PostMapping("/{id}/recordatorio")
+	@Operation(summary = "Redacta un recordatorio con IA. No envía el mensaje. Rol DUENO.")
+	@ApiResponse(responseCode = "200", description = "Borrador y factura")
+	@ApiResponse(responseCode = "402", description = "Sin créditos")
+	@ApiResponse(responseCode = "404", description = "La cita no existe en el salón")
+	@ApiResponse(responseCode = "409", description = "La cita no está pendiente ni confirmada")
+	@ApiResponse(responseCode = "502", description = "JSON de la IA inválido")
+	@ApiResponse(responseCode = "503", description = "Ningún proveedor disponible")
+	public RecordatorioRespuesta recordatorio(@AuthenticationPrincipal UsuarioPrincipal principal,
+			@PathVariable Long id) {
+		return recordatorioServicio.generar(principal.getSalonId(), id);
 	}
 
 }
