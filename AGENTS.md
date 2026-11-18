@@ -70,4 +70,3 @@ Estas son las reglas que todo agente de IA (Cursor u otro) debe respetar al trab
 - Todo diff se revisa y se prueba antes de aceptarse; nada se acepta sin entenderlo.
 
 
-| 3 | Fase 0 | GitHub Copilot — Agent | Incorporar las dependencias de Springdoc, Stripe y JJWT al pom.xml | Se revisaron las versiones, el alcance de los cambios y los resultados de clean compile y dependency:tree | Se descartaron versiones preliminares de Stripe y se conservaron las dependencias existentes |
