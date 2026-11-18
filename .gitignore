@@ -11,3 +11,19 @@ target/
 
 # Material privado de la profe (guía, solución y scripts): NO se sube al repo
 _docente/
+
+# Archivos generados
+target/
+
+# Credenciales y configuración privada
+secrets.properties
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+
+# Archivos locales del editor
+.vscode/
+.idea/
