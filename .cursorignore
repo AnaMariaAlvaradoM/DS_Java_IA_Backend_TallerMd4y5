@@ -1,0 +1,14 @@
+# Credenciales y configuracion privada
+secrets.properties
+**/secrets.properties
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Material exclusivo de la docente
+_docente/
