@@ -17,6 +17,7 @@ import com.devsenior.sillon.compartido.excepcion.AccionNoPermitidaException;
 import com.devsenior.sillon.compartido.excepcion.RecursoNoEncontradoException;
 import com.devsenior.sillon.compartido.excepcion.ReglaDeNegocioException;
 import com.devsenior.sillon.salon.Salon;
+import com.devsenior.sillon.salon.SalonRepository;
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 import com.devsenior.sillon.servicio.Servicio;
 import com.devsenior.sillon.servicio.ServicioRepository;
@@ -32,6 +33,7 @@ public class CitaService {
             .toList();
 
     private final CitaRepository citas;
+    private final SalonRepository salones;
     private final ServicioRepository servicios;
     private final UsuarioRepository usuarios;
     private final ClienteService clientes;
@@ -39,8 +41,9 @@ public class CitaService {
     private final Clock clock;
 
     public CitaService(CitaRepository citas, ServicioRepository servicios, UsuarioRepository usuarios,
-            ClienteService clientes, ReglasAgenda reglas, Clock clock) {
+            ClienteService clientes, ReglasAgenda reglas, Clock clock, SalonRepository salones) {
         this.citas = citas;
+        this.salones = salones;
         this.servicios = servicios;
         this.usuarios = usuarios;
         this.clientes = clientes;
@@ -51,6 +54,13 @@ public class CitaService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public CitaResponse agendarEnSalon(Long salonId, CitaRequest peticion) {
         return aRespuesta(agendar(salonId, peticion, EstadoCita.CONFIRMADA, OrigenCita.SALON));
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public CitaResponse reservarEnLinea(String slug, CitaRequest peticion) {
+        Long salonId = salones.findBySlug(slug).map(Salon::getId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Salón no encontrado"));
+        return aRespuesta(agendar(salonId, peticion, EstadoCita.PENDIENTE, OrigenCita.EN_LINEA));
     }
 
     @Transactional(readOnly = true)

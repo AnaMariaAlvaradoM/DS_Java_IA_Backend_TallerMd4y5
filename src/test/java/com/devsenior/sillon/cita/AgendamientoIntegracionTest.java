@@ -1,6 +1,7 @@
 package com.devsenior.sillon.cita;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -187,6 +188,95 @@ class AgendamientoIntegracionTest {
         }
     }
 
+    @Test
+    void reservaSinTokenQuedaPendienteYOcupaAgenda() throws Exception {
+        reservar(propios.slug, propios.servicioId, propios.estilistaId, lunes + "T10:00:00", "300-123-4567", "")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.length()").value(15))
+                .andExpect(jsonPath("$.estado").value("PENDIENTE"))
+                .andExpect(jsonPath("$.origen").value("EN_LINEA"))
+                .andExpect(jsonPath("$.inicio").value(lunes + "T10:00:00"))
+                .andExpect(jsonPath("$.fin").value(lunes + "T10:45:00"))
+                .andExpect(jsonPath("$.precio").value(35000))
+                .andExpect(jsonPath("$.clienteTelefono").value("3001234567"));
+
+        mockMvc.perform(get("/api/publico/salones/{slug}/disponibilidad", propios.slug)
+                .param("servicioId", Long.toString(propios.servicioId))
+                .param("estilistaId", Long.toString(propios.estilistaId))
+                .param("fecha", lunes.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.horariosLibres").value(Matchers.not(Matchers.hasItem("09:30:00"))))
+                .andExpect(jsonPath("$.horariosLibres").value(Matchers.not(Matchers.hasItem("10:00:00"))))
+                .andExpect(jsonPath("$.horariosLibres").value(Matchers.not(Matchers.hasItem("10:30:00"))))
+                .andExpect(jsonPath("$.horariosLibres").value(Matchers.hasItem("11:00:00")));
+        agendar(propios, "10:30:00").andExpect(status().isConflict());
+    }
+
+    @Test
+    void reservaRechazaDatosInvalidosYSoloUsaElSalonDelSlug() throws Exception {
+        Datos ajenos = crearDatos();
+        String inicio = lunes + "T10:00:00";
+        reservar(propios.slug, propios.servicioId, propios.estilistaId, inicio, "123", "")
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.codigo").value(400));
+        reservar("inexistente-" + UUID.randomUUID(), propios.servicioId, propios.estilistaId, inicio, "3001234567", "")
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.codigo").value(404));
+        reservar(propios.slug, ajenos.servicioId, propios.estilistaId, inicio, "3001234567",
+                ",\"salonId\":" + ajenos.salonId).andExpect(status().isNotFound());
+        reservar(propios.slug, propios.servicioId, ajenos.estilistaId, inicio, "3001234567", "")
+                .andExpect(status().isNotFound());
+        assertThat(contar("citas", propios)).isZero();
+        assertThat(contar("citas", ajenos)).isZero();
+    }
+
+    @Test
+    void reservaReutilizaLasValidacionesDeHorarioFechaYServicio() throws Exception {
+        reservar(propios.slug, propios.servicioId, propios.estilistaId, lunes + "T18:45:00", "3001234567", "")
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.mensaje", Matchers.containsString("19:00")));
+        reservar(propios.slug, propios.servicioId, propios.estilistaId,
+                LocalDate.now(clock).minusDays(1) + "T10:00:00", "3001234567", "")
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.mensaje", Matchers.containsString("pasado")));
+        jdbc.update("update servicios set activo = false where id = ?", propios.servicioId);
+        reservar(propios.slug, propios.servicioId, propios.estilistaId, lunes + "T10:00:00", "3001234567", "")
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.mensaje", Matchers.containsString("inactivo")));
+        assertThat(contar("clientes", propios)).isZero();
+    }
+
+    @Test
+    void reservaPublicaYCitaInternaSimultaneasSoloGuardanUnaCitaEnMySql() throws Exception {
+        var executor = Executors.newFixedThreadPool(2);
+        var barrera = new CyclicBarrier(2);
+        try {
+            var publica = executor.submit(() -> {
+                barrera.await(10, TimeUnit.SECONDS);
+                return reservar(propios.slug, propios.servicioId, propios.estilistaId,
+                        lunes + "T10:00:00", "3001234568", "").andReturn().getResponse().getStatus();
+            });
+            var interna = executor.submit(() -> {
+                barrera.await(10, TimeUnit.SECONDS);
+                return agendar(propios, "10:00:00").andReturn().getResponse().getStatus();
+            });
+
+            int estadoPublica = publica.get(20, TimeUnit.SECONDS);
+            assertThat(List.of(estadoPublica, interna.get(20, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(201, 409);
+            assertThat(contar("citas", propios)).isEqualTo(1);
+            assertThat(contar("clientes", propios)).isEqualTo(1);
+            assertThat(jdbc.queryForMap("select estado, origen from citas where salon_id = ?", propios.salonId))
+                    .containsEntry("estado", estadoPublica == 201 ? "PENDIENTE" : "CONFIRMADA")
+                    .containsEntry("origen", estadoPublica == 201 ? "EN_LINEA" : "SALON");
+        } finally {
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(25, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    private ResultActions reservar(String slug, long servicioId, long estilistaId, String inicio, String telefono,
+            String camposExtra) throws Exception {
+        return mockMvc.perform(post("/api/publico/salones/{slug}/reservas", slug)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoReserva(servicioId, estilistaId, inicio, telefono, camposExtra)));
+    }
+
     private int contar(String tabla, Datos datos) {
         return jdbc.queryForObject("select count(*) from " + tabla + " where salon_id = ?", Integer.class, datos.salonId);
     }
@@ -198,10 +288,16 @@ class AgendamientoIntegracionTest {
     private ResultActions agendar(Datos datos, long servicioId, long estilistaId, String inicio, String telefono,
             String camposExtra) throws Exception {
         return mockMvc.perform(post("/api/citas").header("Authorization", "Bearer " + datos.token)
-                .contentType(MediaType.APPLICATION_JSON).content("""
-                        {"clienteNombre":"Sara","clienteTelefono":"%s","servicioId":%d,
-                         "estilistaId":%d,"inicio":"%s"%s}
-                        """.formatted(telefono, servicioId, estilistaId, inicio, camposExtra)));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoReserva(servicioId, estilistaId, inicio, telefono, camposExtra)));
+    }
+
+    private static String cuerpoReserva(long servicioId, long estilistaId, String inicio, String telefono,
+            String camposExtra) {
+        return """
+                {"clienteNombre":"Sara","clienteTelefono":"%s","servicioId":%d,
+                 "estilistaId":%d,"inicio":"%s"%s}
+                """.formatted(telefono, servicioId, estilistaId, inicio, camposExtra);
     }
 
     private Datos crearDatos() {
@@ -225,7 +321,7 @@ class AgendamientoIntegracionTest {
             Usuario dueno = crearUsuario(salon, "Dueno", Rol.DUENO);
             Usuario estilista = crearUsuario(salon, "Mateo", Rol.ESTILISTA);
             estilista.setServicios(Set.of(servicio));
-            return new Datos(salon.getId(), servicio.getId(), estilista.getId(),
+            return new Datos(salon.getId(), salon.getSlug(), servicio.getId(), estilista.getId(),
                     jwt.generarToken(dueno.getEmail(), Rol.DUENO.name(), salon.getId()),
                     jwt.generarToken(estilista.getEmail(), Rol.ESTILISTA.name(), salon.getId()));
         });
@@ -245,6 +341,6 @@ class AgendamientoIntegracionTest {
         return usuario;
     }
 
-    private record Datos(long salonId, long servicioId, long estilistaId, String token, String tokenEstilista) {
+    private record Datos(long salonId, String slug, long servicioId, long estilistaId, String token, String tokenEstilista) {
     }
 }
