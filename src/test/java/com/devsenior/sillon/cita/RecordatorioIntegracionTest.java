@@ -116,6 +116,31 @@ class RecordatorioIntegracionTest {
     }
 
     @Test
+    void respuestaOficialSinNombreDelClienteDevuelve200SinModificarElMensaje() throws Exception {
+        jdbc.update("update clientes set nombre = ?, telefono = ? where salon_id = ?",
+                "Andrés Gómez", "3102223344", propios.salonId());
+        jdbc.update("update usuarios set nombre = ? where salon_id = ? and rol = 'ESTILISTA'",
+                "Sara Mejía", propios.salonId());
+        String mensaje = "Hola. Le recordamos su cita. Servicio: Corte (45 minutos). "
+                + "Estilista: Sara Mejía. Fecha: martes 20 de octubre. Hora: 10:30 a. m.. "
+                + "Valor: $35.000. Dirección: Calle 10 # 43-20, Medellín. "
+                + "¿Nos confirma su asistencia respondiendo SÍ?";
+        simular("{\"mensaje\":\"" + mensaje + "\"}");
+
+        recordar(propios, propios.citaId()).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(5))
+                .andExpect(jsonPath("$.citaId").value(propios.citaId()))
+                .andExpect(jsonPath("$.telefonoCliente").value("3102223344"))
+                .andExpect(jsonPath("$.mensaje").value(mensaje))
+                .andExpect(jsonPath("$.creditosRestantes").value(9))
+                .andExpect(jsonPath("$.factura.length()").value(6));
+
+        assertThat(mensaje).doesNotContain("Andrés Gómez");
+        assertThat(creditos(propios)).isEqualTo(9);
+        verifyNoInteractions(claude);
+    }
+
+    @Test
     void sinCreditosDevuelve402SinLlamarAProveedores() throws Exception {
         jdbc.update("update salones set creditos_ia = 0 where id = ?", propios.salonId());
         recordar(propios, propios.citaId()).andExpect(status().isPaymentRequired())
@@ -145,7 +170,7 @@ class RecordatorioIntegracionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"no-json", "{}", "{\"mensaje\":\"\"}", "{\"mensaje\":123}",
-            "{\"mensaje\":\"Hola Sara\"}", "{\"mensaje\":\"Cita a las 10:30\"}"})
+            "{\"mensaje\":\"Hola Sara\"}", "{\"mensaje\":\"   \"}"})
     void respuestaRecibidaPeroInvalidaDevuelve502YConsumeSegunElPdf(String respuesta) throws Exception {
         simular(respuesta);
         recordar(propios, propios.citaId()).andExpect(status().isBadGateway())

@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -102,8 +101,7 @@ class AgendaIntegracionTest {
                 LocalDateTime.class, cita.getId());
         assertThat(actualizacion).isAfter(hoy.minusDays(1).atStartOfDay());
         String fechaEnRespuesta = JsonPath.read(respuesta, "$.fechaActualizacion");
-        assertThat(fechaEnRespuesta)
-                .isEqualTo(actualizacion.format(DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss")));
+        assertThat(LocalDateTime.parse(fechaEnRespuesta)).isEqualTo(actualizacion);
     }
 
     @ParameterizedTest

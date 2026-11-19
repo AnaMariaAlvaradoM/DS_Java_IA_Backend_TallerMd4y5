@@ -1,7 +1,5 @@
 package com.devsenior.sillon.cita;
 
-import java.util.Locale;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,8 +45,7 @@ public class RecordatorioService {
         }
         int restantes = creditos.consumir(salonId);
         String mensaje = json.mensaje(respuesta.texto());
-        if (!mensaje.toLowerCase(Locale.ROOT).contains(datos.cliente().toLowerCase(Locale.ROOT))
-                || !mensaje.contains(datos.hora())) {
+        if (!mensaje.contains(datos.hora())) {
             throw new RespuestaIaInvalidaException();
         }
         return new RecordatorioResponse(datos.citaId(), datos.telefonoCliente(), mensaje, restantes, respuesta.factura());

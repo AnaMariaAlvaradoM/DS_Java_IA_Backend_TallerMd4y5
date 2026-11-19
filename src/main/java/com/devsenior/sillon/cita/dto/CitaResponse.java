@@ -22,6 +22,6 @@ public record CitaResponse(
         String clienteNombre,
         String clienteTelefono,
         String nota,
-        @JsonFormat(pattern = FORMATO_FECHA_HORA) LocalDateTime fechaCreacion,
-        @JsonFormat(pattern = FORMATO_FECHA_HORA) LocalDateTime fechaActualizacion) {
+        LocalDateTime fechaCreacion,
+        LocalDateTime fechaActualizacion) {
 }
