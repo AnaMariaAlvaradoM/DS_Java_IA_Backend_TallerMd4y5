@@ -1,0 +1,2 @@
+Hola {{cliente}}, bienvenido a {{salon}}.
+Responde solo un objeto JSON con la clave "saludo".
