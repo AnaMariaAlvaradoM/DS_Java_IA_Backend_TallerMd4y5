@@ -1,5 +1,8 @@
 package com.devsenior.sillon.publico.controller;
 
+import com.devsenior.sillon.chat.dto.ChatRequest;
+import com.devsenior.sillon.chat.dto.ChatResponse;
+import com.devsenior.sillon.chat.service.ChatbotService;
 import com.devsenior.sillon.cita.dto.CitaRequest;
 import com.devsenior.sillon.cita.dto.CitaResponse;
 import com.devsenior.sillon.cita.dto.DisponibilidadResponse;
@@ -28,11 +31,20 @@ public class PublicoController {
     private final CatalogoService catalogoService;
     private final CitaService citaService;
     private final SalonService salonService;
+    private final ChatbotService chatbotService;
 
-    public PublicoController(CatalogoService catalogoService, CitaService citaService, SalonService salonService) {
+    public PublicoController(CatalogoService catalogoService, CitaService citaService, SalonService salonService,
+                             ChatbotService chatbotService) {
         this.catalogoService = catalogoService;
         this.citaService = citaService;
         this.salonService = salonService;
+        this.chatbotService = chatbotService;
+    }
+
+    /** Asistente virtual del salón. Gasta un crédito del salón por respuesta. */
+    @PostMapping("/chat")
+    public ChatResponse chat(@PathVariable String slug, @Valid @RequestBody ChatRequest request) {
+        return chatbotService.conversar(slug, request);
     }
 
     @GetMapping

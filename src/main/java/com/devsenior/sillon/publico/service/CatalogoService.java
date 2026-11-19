@@ -11,7 +11,9 @@ import com.devsenior.sillon.servicio.repository.ServicioRepository;
 import com.devsenior.sillon.usuario.model.Rol;
 import com.devsenior.sillon.usuario.model.Usuario;
 import com.devsenior.sillon.usuario.repository.UsuarioRepository;
+import com.devsenior.sillon.compartido.util.FormatoColombia;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,25 @@ public class CatalogoService {
 
         return new CatalogoResponse(salon.getNombre(), salon.getSlug(), salon.getCiudad(), salon.getDireccion(),
                 salon.getTelefono(), salon.getConfiguracion().descripcion(), servicios, estilistas);
+    }
+
+    /**
+     * Base de conocimiento del chatbot, sacada de la base de datos (no escrita a mano en el prompt):
+     * una línea por servicio activo con su duración y precio.
+     */
+    @Transactional(readOnly = true)
+    public String textoCatalogo(Long salonId) {
+        List<Servicio> servicios = serviciosActivos(salonId);
+        if (servicios.isEmpty()) {
+            return "- El salón todavía no tiene servicios publicados.";
+        }
+        return servicios.stream()
+                .map(servicio -> "- " + servicio.getNombre()
+                        + (servicio.getDescripcion() == null || servicio.getDescripcion().isBlank()
+                                ? "" : " (" + servicio.getDescripcion() + ")")
+                        + ": " + servicio.getDuracionMinutos() + " minutos, "
+                        + FormatoColombia.pesos(servicio.getPrecio()))
+                .collect(Collectors.joining("\n"));
     }
 
     @Transactional(readOnly = true)
