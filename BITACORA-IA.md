@@ -11,6 +11,9 @@ Registro del apoyo de inteligencia artificial utilizado durante el desarrollo de
 | 4 | Fase 2 | ChatGPT — chat del navegador | Apoyo durante la implementación y validación del registro, login y configuración del salón. | Respuestas HTTP 200, 201, 400 y 409 mediante Postman. | Se corrigieron problemas de autenticación y respuestas de validación que no coincidían con el contrato. |
 | 5 | Fase 3 | ChatGPT — chat del navegador | Apoyo para implementar el catálogo, los estilistas y los clientes. | Validaciones de servicios, relaciones entre estilistas y servicios, aislamiento entre salones y pruebas Postman. | Se revisó la validación de correos duplicados y la asignación de servicios, evitando aceptar datos de otros salones. |
 | 6 | Fase 4 | ChatGPT — chat del navegador | Apoyo para implementar la agenda, sus reglas de negocio y las pruebas de concurrencia. | Cruces de citas, estados, permisos, formato de errores, pruebas JUnit y Postman. | Se corrigió el manejo de errores de permisos y se agregó bloqueo pesimista para impedir reservas simultáneas. También se corrigió la interpretación del secreto JWT que impedía iniciar el evaluador. |
+| 7 | Fase 5 | ChatGPT — chat del navegador | Apoyo para implementar el catálogo público, la disponibilidad y las reservas en línea. | Respuestas de Postman, conflictos de horarios, permisos y pruebas de concurrencia. |
+| 8 | Fase 6 | ChatGPT — chat del navegador | Apoyo para integrar Stripe Checkout, los pagos de prueba y el procesamiento de webhooks. | Sesiones de pago, respuestas HTTP, firma del webhook, cambios de plan, créditos y eventos duplicados. |
+
 
 
 ## Observaciones
@@ -21,6 +24,8 @@ Registro del apoyo de inteligencia artificial utilizado durante el desarrollo de
 - La prueba inicial de concurrencia pública falló porque permitió registrar dos reservas en el mismo horario.
 - Después de corregir la transacción, una nueva prueba devolvió HTTP 201 y HTTP 409.
 - Se eliminaron los dos registros duplicados de prueba y se verificó la información en MySQL.
-- La última evaluación automática documentada antes de la Fase 5 fue de 2.3/5.0, con 67 de 145 pruebas aprobadas.
-- La Fase 5 todavía debe evaluarse en GitHub Actions después del próximo push.
-- Las fases posteriores de pagos, inteligencia artificial y despliegue siguen pendientes.
+- La última evaluación automática de GitHub Actions fue de 3.0/5.0, con 87 de 145 pruebas aprobadas, después de implementar la Fase 5.
+- La Fase 6 se completó y verificó localmente: suscripción PRO, compra de créditos, firma del webhook, permisos, idempotencia y cancelación.
+- Las pruebas automáticas locales finalizaron con BUILD SUCCESS. La Fase 6 está pendiente de evaluación en GitHub Actions.
+- Las siguientes fases del proyecto incluyen la integración de inteligencia artificial y el despliegue en producción.
+

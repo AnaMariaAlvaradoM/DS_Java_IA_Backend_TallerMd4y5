@@ -1,0 +1,155 @@
+{
+  "info": {
+    "_postman_id": "42db8994-be15-40b1-ad00-3755f805b463",
+    "name": "Fase 6 - Pagos con Stripe",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "45707915",
+    "_collection_link": "https://go.postman.co/collection/45707915-42db8994-be15-40b1-ad00-3755f805b463?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01 - Crear suscripción PRO",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0f00}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/pagos/suscripcion",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "pagos",
+            "suscripcion"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Comprar 200 créditos de IA",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0f00}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/pagos/creditos",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "pagos",
+            "creditos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Webhook sin firma",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"id\": \"evt_prueba_sin_firma\",\n  \"type\": \"checkout.session.completed\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/pagos/webhook",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "pagos",
+            "webhook"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Estilista no puede comprar créditos",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0mpn}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/pagos/creditos",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "pagos",
+            "creditos"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_15zr",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0f00",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0x73",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0mpn",
+      "secret": true
+    }
+  ]
+}
