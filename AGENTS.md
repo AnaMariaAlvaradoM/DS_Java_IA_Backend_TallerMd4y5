@@ -16,9 +16,13 @@ Herramientas del equipo: IntelliJ IDEA, Antigravity y Claude Code.
 ## Arquitectura
 
 - Paquete base `com.devsenior.sillon`, organizado por dominio: `compartido/`, `seguridad/`, `auth/`, `salon/`, `usuario/`, `servicio/`, `cliente/`, `cita/`, `publico/`, `pago/`, `chat/`, `ia/`.
+- Dentro de cada dominio, una subcarpeta por capa (solo las que el dominio necesite):
+  `controller/` · `dto/` · `mapper/` · `model/` (entidades JPA, enums y @Embeddable) · `repository/` · `service/`.
+- `compartido/` usa `config/`, `dto/` y `excepcion/`; `seguridad/` usa `config/`, `filtro/`, `handler/`, `model/` y `service/`.
+- Los tests van en el mismo paquete que la clase que prueban (por ejemplo `salon/service/GeneradorSlugTest`).
 - Capas: Controller → Service → Repository. El Controller no tiene lógica de negocio.
 - DTOs como `record` en `<dominio>/dto`. Nunca expongas entidades JPA en la API.
-- Un mapper propio por dominio (`@Component`), sin librerías de mapeo.
+- Un mapper propio por dominio (`@Component`) en `<dominio>/mapper`, sin librerías de mapeo.
 - Inyección por constructor. Nunca `@Autowired` sobre atributos.
 - Enums persistidos con `@Enumerated(EnumType.STRING)`.
 - Errores con excepciones propias y un único `@RestControllerAdvice` en `compartido/`, con el formato de 4 campos: `codigo`, `error`, `mensaje`, `fecha`.
