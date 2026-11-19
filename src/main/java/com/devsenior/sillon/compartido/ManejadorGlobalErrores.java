@@ -20,6 +20,7 @@ import com.devsenior.sillon.compartido.excepcion.FirmaInvalidaException;
 import com.devsenior.sillon.compartido.excepcion.PagoRequeridoException;
 import com.devsenior.sillon.compartido.excepcion.RecursoNoEncontradoException;
 import com.devsenior.sillon.compartido.excepcion.ReglaDeNegocioException;
+import com.devsenior.sillon.ia.IaNoDisponibleException;
 
 /**
  * Manejador global: convierte toda excepción en el formato único de error
@@ -67,6 +68,11 @@ public class ManejadorGlobalErrores {
     @ExceptionHandler(ErrorDePasarelaException.class)
     public ResponseEntity<RespuestaError> manejarErrorDePasarela(ErrorDePasarelaException ex) {
         return construir(HttpStatus.BAD_GATEWAY, ex.getMessage());
+    }
+
+    @ExceptionHandler(IaNoDisponibleException.class)
+    public ResponseEntity<RespuestaError> manejarIaNoDisponible(IaNoDisponibleException ex) {
+        return construir(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

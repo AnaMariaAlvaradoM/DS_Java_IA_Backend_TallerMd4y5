@@ -1,9 +1,12 @@
 package com.devsenior.sillon.publico;
 
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,13 +71,29 @@ public class PublicoService {
                                 .toList()))
                 .toList();
 
-        var conf = salon.getConfiguracion();
-        String horario = conf.getHoraApertura() + " a " + conf.getHoraCierre()
-                + (conf.isAbreDomingos() ? " (domingos abierto)" : " (domingos cerrado)");
-
         return new CatalogoPublicoResponse(
                 salon.getNombre(), salon.getSlug(), salon.getCiudad(),
-                salon.getDireccion(), salon.getTelefono(), horario, catalogo, estilistas);
+                salon.getDireccion(), salon.getTelefono(), horario(salon), catalogo, estilistas);
+    }
+
+    @Transactional(readOnly = true)
+    public ConocimientoChat conocimientoChat(String slug) {
+        Salon salon = buscarSalon(slug);
+        var formato = NumberFormat.getIntegerInstance(Locale.forLanguageTag("es-CO"));
+        String catalogo = servicios.findAllBySalonId(salon.getId()).stream()
+                .filter(Servicio::isActivo)
+                .sorted(Comparator.comparing(Servicio::getId))
+                .map(servicio -> "%s (%d minutos): $%s".formatted(servicio.getNombre(),
+                        servicio.getDuracionMinutos(), formato.format(servicio.getPrecio())))
+                .collect(Collectors.joining("\n"));
+        return new ConocimientoChat(salon.getId(), salon.getNombre(), salon.getDireccion() + ", " + salon.getCiudad(),
+                horario(salon), catalogo);
+    }
+
+    private static String horario(Salon salon) {
+        var conf = salon.getConfiguracion();
+        return conf.getHoraApertura() + " a " + conf.getHoraCierre()
+                + (conf.isAbreDomingos() ? " (domingos abierto)" : " (domingos cerrado)");
     }
 
     @Transactional(readOnly = true)

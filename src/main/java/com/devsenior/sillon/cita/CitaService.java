@@ -1,10 +1,14 @@
 package com.devsenior.sillon.cita;
 
+import java.text.NumberFormat;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -12,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.devsenior.sillon.cita.dto.CitaRequest;
 import com.devsenior.sillon.cita.dto.CitaResponse;
+import com.devsenior.sillon.cita.dto.DatosRecordatorio;
 import com.devsenior.sillon.cliente.ClienteService;
 import com.devsenior.sillon.compartido.excepcion.AccionNoPermitidaException;
 import com.devsenior.sillon.compartido.excepcion.RecursoNoEncontradoException;
@@ -97,6 +102,32 @@ public class CitaService {
         }
         cita.setEstado(destino);
         return aRespuesta(citas.saveAndFlush(cita));
+    }
+
+    @Transactional(readOnly = true)
+    public DatosRecordatorio datosParaRecordatorio(Long salonId, Long id) {
+        Cita cita = citas.findByIdAndSalonId(id, salonId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada"));
+        if (cita.getEstado() != EstadoCita.PENDIENTE && cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new ReglaDeNegocioException("Solo las citas PENDIENTE o CONFIRMADA permiten recordatorio");
+        }
+        Locale colombia = Locale.forLanguageTag("es-CO");
+        String fecha = cita.getInicio().format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", colombia));
+        String hora = cita.getInicio().format(DateTimeFormatter.ofPattern("h:mm a", colombia))
+                .replace('\u00a0', ' ').replace('\u202f', ' ');
+        String valor = "$" + NumberFormat.getIntegerInstance(colombia).format(cita.getPrecio());
+        Salon salon = cita.getSalon();
+        String datos = """
+                Servicio: %s (%d minutos)
+                Estilista: %s
+                Fecha: %s
+                Hora: %s
+                Valor: %s
+                Dirección: %s, %s
+                """.formatted(cita.getServicio().getNombre(), Duration.between(cita.getInicio(), cita.getFin()).toMinutes(),
+                        cita.getEstilista().getNombre(), fecha, hora, valor, salon.getDireccion(), salon.getCiudad());
+        return new DatosRecordatorio(cita.getId(), salon.getNombre(), cita.getCliente().getNombre(),
+                cita.getCliente().getTelefono(), datos, cita.getInicio().format(DateTimeFormatter.ofPattern("h:mm")));
     }
 
     private static CitaResponse aRespuesta(Cita cita) {
