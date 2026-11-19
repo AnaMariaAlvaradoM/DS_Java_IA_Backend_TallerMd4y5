@@ -11,3 +11,6 @@ target/
 
 # Material privado de la profe (guía, solución y scripts): NO se sube al repo
 _docente/
+
+secrets.properties
+.env
