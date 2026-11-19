@@ -222,6 +222,34 @@ class CitaServiceTest {
                 () -> citaService.disponibilidad(SALON_ID, barba.getId(), sara.getId(), MARTES));
     }
 
+    @Test
+    void datosRecordatorio_citaConfirmada_escribeUnaLineaPorDatoEnEspanolDeColombia() {
+        salon.setNombre("Barbería La Navaja");
+        salon.setDireccion("Calle 10 # 43-20");
+        salon.setCiudad("Medellín");
+        Cita cita = cita(sara, EstadoCita.CONFIRMADA);
+        cita.setSalon(salon);
+        cita.setPrecio(35000);
+        when(citaRepository.findByIdAndSalonId(50L, SALON_ID)).thenReturn(Optional.of(cita));
+
+        String datos = citaService.datosRecordatorio(SALON_ID, 50L).datos();
+
+        assertEquals(String.join("\n",
+                "- Servicio: Corte clásico (45 minutos)",
+                "- Estilista: Sara Mejía",
+                "- Fecha: martes 20 de octubre",
+                "- Hora: 10:30 a. m.",
+                "- Valor: $35.000",
+                "- Dirección: Calle 10 # 43-20, Medellín"), datos);
+    }
+
+    @Test
+    void datosRecordatorio_citaCompletada_lanza409() {
+        when(citaRepository.findByIdAndSalonId(50L, SALON_ID)).thenReturn(Optional.of(cita(mateo, EstadoCita.COMPLETADA)));
+
+        assertThrows(ReglaNegocioException.class, () -> citaService.datosRecordatorio(SALON_ID, 50L));
+    }
+
     private void prepararAgendaLibre(Servicio servicio, Usuario estilista) {
         when(servicioService.obtenerEntidad(SALON_ID, servicio.getId())).thenReturn(servicio);
         when(estilistaService.obtenerActivo(SALON_ID, estilista.getId())).thenReturn(estilista);

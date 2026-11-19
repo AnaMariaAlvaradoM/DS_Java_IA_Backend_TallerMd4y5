@@ -13,3 +13,4 @@ Uso de IA ampliado con autorización de la instructora: la IA genera código y d
 | 7 | 5 | Claude (chat) | Catálogo público, disponibilidad y reserva en línea | Que el catálogo no tenga "@"; horarios como texto "HH:mm:ss"; la reserva reutiliza el mismo agendar | (completar) |
 | 8 | 6 | Claude (chat) | Stripe: sesiones de pago, webhook firmado e idempotente | Firma sobre el cuerpo crudo; evento leído con Jackson por el api_version; StripeClient con STRIPE_URL_API | (completar) |
 | 9 | 7 | Claude (chat) | Motor de IA desde cero: proveedores, fallback, prompts, lector JSON y créditos atómicos | Que la URL salga de sillon.ia.openai.url; bloque "text" por tipo en Claude; UPDATE atómico de créditos | (completar) |
+| 10 | 8 | Claude (chat) | Prompt y servicio del recordatorio con datos verificados en Java | Que el prompt pida la clave mensaje sin la palabra escalar; datos con etiquetas, una por línea; 409 sin gastar crédito | (completar) |

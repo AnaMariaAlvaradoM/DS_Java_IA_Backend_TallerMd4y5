@@ -2,6 +2,7 @@ package com.devsenior.sillon.cita.service;
 
 import com.devsenior.sillon.cita.dto.CitaRequest;
 import com.devsenior.sillon.cita.dto.CitaResponse;
+import com.devsenior.sillon.cita.dto.DatosRecordatorio;
 import com.devsenior.sillon.cita.dto.DisponibilidadResponse;
 import com.devsenior.sillon.cita.mapper.CitaMapper;
 import com.devsenior.sillon.cita.model.Cita;
@@ -13,6 +14,7 @@ import com.devsenior.sillon.cliente.service.ClienteService;
 import com.devsenior.sillon.compartido.excepcion.AccionNoPermitidaException;
 import com.devsenior.sillon.compartido.excepcion.RecursoNoEncontradoException;
 import com.devsenior.sillon.compartido.excepcion.ReglaNegocioException;
+import com.devsenior.sillon.compartido.util.FormatoColombia;
 import com.devsenior.sillon.salon.model.Salon;
 import com.devsenior.sillon.salon.service.SalonService;
 import com.devsenior.sillon.servicio.model.Servicio;
@@ -181,6 +183,29 @@ public class CitaService {
         cita.setEstado(destino);
         // saveAndFlush: el UPDATE (y @PreUpdate) ocurre antes de armar la respuesta, así fechaActualizacion sale nueva
         return citaMapper.toResponse(citaRepository.saveAndFlush(cita));
+    }
+
+    /**
+     * Datos verificados para el recordatorio (solo lectura). Solo citas PENDIENTE o CONFIRMADA (otra: 409).
+     * Java calcula y escribe cada dato; la IA solo los usa para redactar.
+     */
+    @Transactional(readOnly = true)
+    public DatosRecordatorio datosRecordatorio(Long salonId, Long citaId) {
+        Cita cita = obtenerEntidad(salonId, citaId);
+        if (!cita.getEstado().ocupaAgenda()) {
+            throw new ReglaNegocioException("Solo se envían recordatorios de citas PENDIENTE o CONFIRMADA; esta está "
+                    + cita.getEstado());
+        }
+        Salon salon = cita.getSalon();
+        String datos = String.join("\n",
+                "- Servicio: " + cita.getServicio().getNombre() + " (" + cita.getServicio().getDuracionMinutos() + " minutos)",
+                "- Estilista: " + cita.getEstilista().getNombre(),
+                "- Fecha: " + FormatoColombia.fecha(cita.getInicio().toLocalDate()),
+                "- Hora: " + FormatoColombia.hora(cita.getInicio().toLocalTime()),
+                "- Valor: " + FormatoColombia.pesos(cita.getPrecio()),
+                "- Dirección: " + salon.getDireccion() + ", " + salon.getCiudad());
+        return new DatosRecordatorio(cita.getId(), salon.getId(), salon.getNombre(),
+                cita.getCliente().getNombre(), cita.getCliente().getTelefono(), datos);
     }
 
     @Transactional(readOnly = true)

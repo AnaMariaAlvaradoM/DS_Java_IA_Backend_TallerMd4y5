@@ -3,7 +3,9 @@ package com.devsenior.sillon.cita.controller;
 import com.devsenior.sillon.cita.dto.CambioEstadoRequest;
 import com.devsenior.sillon.cita.dto.CitaRequest;
 import com.devsenior.sillon.cita.dto.CitaResponse;
+import com.devsenior.sillon.cita.dto.RecordatorioResponse;
 import com.devsenior.sillon.cita.service.CitaService;
+import com.devsenior.sillon.cita.service.RecordatorioService;
 import com.devsenior.sillon.seguridad.model.UsuarioPrincipal;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -26,9 +28,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class CitaController {
 
     private final CitaService citaService;
+    private final RecordatorioService recordatorioService;
 
-    public CitaController(CitaService citaService) {
+    public CitaController(CitaService citaService, RecordatorioService recordatorioService) {
         this.citaService = citaService;
+        this.recordatorioService = recordatorioService;
+    }
+
+    /** Borrador de recordatorio con IA. Gasta un crédito. Una persona lo aprueba y lo envía. */
+    @PostMapping("/{id}/recordatorio")
+    public RecordatorioResponse recordatorio(@AuthenticationPrincipal UsuarioPrincipal usuario, @PathVariable Long id) {
+        return recordatorioService.generar(usuario.getSalonId(), id);
     }
 
     @PostMapping
