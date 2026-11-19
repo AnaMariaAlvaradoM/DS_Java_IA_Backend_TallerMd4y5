@@ -17,4 +17,7 @@ public interface SalonRepository extends JpaRepository<Salon, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Salon> findOneById(Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Salon> findOneByStripeSuscripcionId(String stripeSuscripcionId);
 }
