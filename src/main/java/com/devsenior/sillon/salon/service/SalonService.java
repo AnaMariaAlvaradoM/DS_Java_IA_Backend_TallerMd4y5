@@ -46,6 +46,13 @@ public class SalonService {
         return salonRepository.findAll().stream().map(salonMapper::toResponse).toList();
     }
 
+    /** Para las rutas públicas: el salón se identifica por su slug (404 si no existe). */
+    @Transactional(readOnly = true)
+    public Salon obtenerPorSlug(String slug) {
+        return salonRepository.findBySlug(slug)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el salón " + slug));
+    }
+
     @Transactional(readOnly = true)
     public Salon obtenerEntidad(Long salonId) {
         return salonRepository.findById(salonId)

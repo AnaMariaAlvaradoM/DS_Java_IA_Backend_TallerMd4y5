@@ -10,3 +10,4 @@ Uso de IA ampliado con autorización de la instructora: la IA genera código y d
 | 4 | 2 | Claude (chat) | Seguridad JWT, registro, login y mi salón | Que sin token responda 401 y no 403, y que el login no diga qué falló | (completar) |
 | 5 | 3 | Claude (chat) | Servicios, estilistas con ManyToMany, clientes y sus tests | Orden 402→409→404 al crear estilista; que la respuesta no traiga la contraseña; ids enviados como texto | (completar) |
 | 6 | 4 | Claude (chat) | Agenda: EstadoCita, ReglasAgenda, CitaService y 41 tests | Orden de las 7 validaciones al agendar; cruce solo con PENDIENTE y CONFIRMADA; 404→403→409 al cambiar estado | (completar) |
+| 7 | 5 | Claude (chat) | Catálogo público, disponibilidad y reserva en línea | Que el catálogo no tenga "@"; horarios como texto "HH:mm:ss"; la reserva reutiliza el mismo agendar | (completar) |

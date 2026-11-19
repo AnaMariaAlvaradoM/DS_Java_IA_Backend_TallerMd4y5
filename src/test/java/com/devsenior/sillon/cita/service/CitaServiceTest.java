@@ -194,6 +194,34 @@ class CitaServiceTest {
                 () -> citaService.cambiarEstado(2L, 7L, false, 50L, EstadoCita.CANCELADA));
     }
 
+    @Test
+    void disponibilidad_despuesDeLaReservaDeValentina_noOfreceLosCrucesComoTexto() {
+        when(servicioService.obtenerEntidad(SALON_ID, corte.getId())).thenReturn(corte);
+        when(estilistaService.obtenerActivo(SALON_ID, mateo.getId())).thenReturn(mateo);
+        when(salonService.obtenerEntidad(SALON_ID)).thenReturn(salon);
+        Cita valentina = cita(mateo, EstadoCita.PENDIENTE);
+        valentina.setInicio(MARTES.atTime(10, 0));
+        valentina.setFin(MARTES.atTime(10, 45));
+        when(citaRepository.findByEstilistaIdAndEstadoInAndInicioLessThanAndFinGreaterThan(
+                anyLong(), anyCollection(), any(), any())).thenReturn(java.util.List.of(valentina));
+
+        var libres = citaService.disponibilidad(SALON_ID, corte.getId(), mateo.getId(), MARTES).horariosLibres();
+
+        assertEquals(false, libres.contains("09:30:00"));
+        assertEquals(false, libres.contains("10:00:00"));
+        assertEquals(false, libres.contains("10:30:00"));
+        assertEquals(true, libres.contains("11:00:00"));
+    }
+
+    @Test
+    void disponibilidad_estilistaQueNoOfreceElServicio_lanza409() {
+        when(servicioService.obtenerEntidad(SALON_ID, barba.getId())).thenReturn(barba);
+        when(estilistaService.obtenerActivo(SALON_ID, sara.getId())).thenReturn(sara);
+
+        assertThrows(ReglaNegocioException.class,
+                () -> citaService.disponibilidad(SALON_ID, barba.getId(), sara.getId(), MARTES));
+    }
+
     private void prepararAgendaLibre(Servicio servicio, Usuario estilista) {
         when(servicioService.obtenerEntidad(SALON_ID, servicio.getId())).thenReturn(servicio);
         when(estilistaService.obtenerActivo(SALON_ID, estilista.getId())).thenReturn(estilista);

@@ -2,6 +2,7 @@ package com.devsenior.sillon.cita.service;
 
 import com.devsenior.sillon.cita.dto.CitaRequest;
 import com.devsenior.sillon.cita.dto.CitaResponse;
+import com.devsenior.sillon.cita.dto.DisponibilidadResponse;
 import com.devsenior.sillon.cita.mapper.CitaMapper;
 import com.devsenior.sillon.cita.model.Cita;
 import com.devsenior.sillon.cita.model.EstadoCita;
@@ -20,6 +21,7 @@ import com.devsenior.sillon.usuario.model.Usuario;
 import com.devsenior.sillon.usuario.service.EstilistaService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,8 @@ public class CitaService {
 
     /** Lo único que un estilista puede hacer con sus citas. */
     private static final Set<EstadoCita> DESTINOS_DEL_ESTILISTA = Set.of(EstadoCita.COMPLETADA, EstadoCita.NO_ASISTIO);
+
+    private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final CitaRepository citaRepository;
     private final SalonService salonService;
@@ -108,6 +112,38 @@ public class CitaService {
         cita.setOrigen(origen);
         cita.setNota(request.nota() == null || request.nota().isBlank() ? null : request.nota().trim());
         return citaRepository.save(cita);
+    }
+
+    /**
+     * Horas de inicio libres de un estilista para un servicio en una fecha. La calcula Java, nunca la IA.
+     * 404 si el servicio o el estilista no existen en el salón; 409 si el estilista no ofrece el servicio.
+     */
+    @Transactional(readOnly = true)
+    public DisponibilidadResponse disponibilidad(Long salonId, Long servicioId, Long estilistaId, LocalDate fecha) {
+        Servicio servicio = servicioService.obtenerEntidad(salonId, servicioId);
+        if (!servicio.isActivo()) {
+            throw new RecursoNoEncontradoException("No existe un servicio activo con id " + servicioId);
+        }
+        Usuario estilista = estilistaService.obtenerActivo(salonId, estilistaId);
+        if (!estilista.ofrece(servicio.getId())) {
+            throw new ReglaNegocioException(estilista.getNombre() + " no ofrece el servicio " + servicio.getNombre());
+        }
+        Salon salon = salonService.obtenerEntidad(salonId);
+
+        List<ReglasAgenda.Intervalo> ocupados = citaRepository
+                .findByEstilistaIdAndEstadoInAndInicioLessThanAndFinGreaterThan(
+                        estilista.getId(), EstadoCita.OCUPAN_AGENDA, fecha.plusDays(1).atStartOfDay(), fecha.atStartOfDay())
+                .stream()
+                .map(cita -> new ReglasAgenda.Intervalo(cita.getInicio(), cita.getFin()))
+                .toList();
+
+        List<String> libres = reglasAgenda
+                .horariosLibres(salon.getConfiguracion(), fecha, servicio.getDuracionMinutos(), ocupados)
+                .stream()
+                .map(FORMATO_HORA::format)
+                .toList();
+        return new DisponibilidadResponse(fecha, servicio.getNombre(), estilista.getNombre(),
+                servicio.getDuracionMinutos(), libres);
     }
 
     /** Agenda de un día (hoy si no llega fecha). El dueño ve todas; el estilista solo las suyas. */
