@@ -118,11 +118,20 @@ public class ServicioWebhookStripe {
             return;
         }
 
+        
         Map<String, String> metadata = sesion.getMetadata();
+
+        String tipoEnEvento = metadata == null
+                ? null
+                : metadata.getOrDefault(
+                        "tipo",
+                        metadata.get("tipoCompra")
+                );
 
         if (metadata == null
                 || !metadata.containsKey("salonId")
-                || !metadata.containsKey("tipoCompra")) {
+                || tipoEnEvento == null
+                || tipoEnEvento.isBlank()) {
             throw new IllegalStateException(
                     "Faltan metadatos de la compra"
             );
@@ -130,9 +139,8 @@ public class ServicioWebhookStripe {
 
         Long salonId = Long.valueOf(metadata.get("salonId"));
 
-        TipoCompra tipo = TipoCompra.valueOf(
-                metadata.get("tipoCompra")
-        );
+        TipoCompra tipo = TipoCompra.valueOf(tipoEnEvento);
+
 
         Salon salon = salonRepository.findByIdParaAgendar(salonId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
