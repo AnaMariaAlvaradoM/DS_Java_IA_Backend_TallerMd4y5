@@ -1,5 +1,6 @@
 package com.devsenior.sillon.auth.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.devsenior.sillon.auth.dto.AuthResponse;
 import com.devsenior.sillon.auth.dto.LoginRequest;
 import com.devsenior.sillon.auth.dto.RegistroRequest;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "1 Autenticación", description = "Registro del salón con su dueño e inicio de sesión")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

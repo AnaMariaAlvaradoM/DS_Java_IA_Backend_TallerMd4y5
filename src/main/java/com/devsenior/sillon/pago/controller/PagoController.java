@@ -1,5 +1,7 @@
 package com.devsenior.sillon.pago.controller;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.devsenior.sillon.pago.dto.PagoResponse;
 import com.devsenior.sillon.pago.dto.ResultadoPagoResponse;
 import com.devsenior.sillon.pago.dto.WebhookResponse;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "7 Pagos", description = "Plan PRO y paquete de créditos con Stripe (modo prueba)")
 @RestController
 @RequestMapping("/api/pagos")
 public class PagoController {
@@ -28,11 +31,13 @@ public class PagoController {
         this.webhookService = webhookService;
     }
 
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/suscripcion")
     public PagoResponse suscripcion(@AuthenticationPrincipal UsuarioPrincipal usuario) {
         return pagoService.crearSesion(usuario.getSalonId(), usuario.getUsername(), TipoCompra.SUSCRIPCION_PRO);
     }
 
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/creditos")
     public PagoResponse creditos(@AuthenticationPrincipal UsuarioPrincipal usuario) {
         return pagoService.crearSesion(usuario.getSalonId(), usuario.getUsername(), TipoCompra.PAQUETE_CREDITOS);

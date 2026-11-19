@@ -1,5 +1,7 @@
 package com.devsenior.sillon.servicio.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import com.devsenior.sillon.seguridad.model.UsuarioPrincipal;
 import com.devsenior.sillon.servicio.dto.ServicioRequest;
 import com.devsenior.sillon.servicio.dto.ServicioResponse;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "3 Servicios", description = "Catálogo de servicios del salón")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/servicios")
 public class ServicioController {

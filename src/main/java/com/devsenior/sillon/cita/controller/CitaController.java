@@ -1,5 +1,7 @@
 package com.devsenior.sillon.cita.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import com.devsenior.sillon.cita.dto.CambioEstadoRequest;
 import com.devsenior.sillon.cita.dto.CitaRequest;
 import com.devsenior.sillon.cita.dto.CitaResponse;
@@ -23,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "6 Agenda", description = "Citas, estados y recordatorio con IA")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/citas")
 public class CitaController {

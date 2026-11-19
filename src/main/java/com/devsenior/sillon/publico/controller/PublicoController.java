@@ -1,5 +1,6 @@
 package com.devsenior.sillon.publico.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.devsenior.sillon.chat.dto.ChatRequest;
 import com.devsenior.sillon.chat.dto.ChatResponse;
 import com.devsenior.sillon.chat.service.ChatbotService;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Lo que ve el cliente final sin iniciar sesión. El salón se identifica por su slug. */
+@Tag(name = "0 Público", description = "Catálogo, disponibilidad, reservas y chatbot del salón, sin iniciar sesión")
 @RestController
 @RequestMapping("/api/publico/salones/{slug}")
 public class PublicoController {
