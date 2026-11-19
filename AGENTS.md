@@ -490,6 +490,47 @@ Entrega un PLAN del subpaso que te indique, con el orden: validar no-IA → cré
 El prompt lo escribo yo; tú solo cargas el archivo. Sin llamadas a la IA dentro de transacciones.
 ```
 
+---
+
+## FASE 6 — Stripe, plan y créditos
+
+**SPEC:** §13 · **Reglas:** R16, R17, R18, R23
+
+**Alcance**
+- Hace: sesiones de pago (suscripción y paquete), webhook idempotente, página de resultado.
+- No hace: facturación, impuestos, reembolsos, cobros reales.
+
+**Pasos para el agente**
+1. `StripeClient` con la clave y la base de `STRIPE_URL_API`; configuración de Stripe tipada (clave, secreto del webhook, ids de precio PRO y paquete).
+2. `POST /api/pagos/suscripcion` y `POST /api/pagos/creditos` (DUENO): el backend recibe el `TipoCompra` y **elige el precio** (suscripción para PRO, pago para el paquete). Sesión con correo del dueño, URLs de éxito y cancelación (`/api/pagos/resultado` sobre la URL pública), id del salón como referencia y metadata (salón y tipo; en suscripción, también en los datos de la suscripción). Salón ya `PRO` → 409 **antes** de llamar a Stripe. Error de Stripe → 502.
+3. `POST /api/pagos/webhook`: cuerpo texto plano + `Stripe-Signature` (falta o inválida → 400) → si el id del evento ya existe, `procesado: false` → `checkout.session.completed` con pago `paid` (PRO: plan `PRO`, guarda suscripción, +300; paquete: +200) o `customer.subscription.deleted` (busca por id de suscripción y vuelve a `GRATIS`) → guardar `EventoStripe`. **Todo en una sola transacción.** Otro tipo: 200 y se ignora.
+4. `GET /api/pagos/resultado?estado=exito|cancelado` (público).
+
+**Prohibido en esta fase**
+- Aceptar precios, importes o ids de precio del cliente.
+- Dejar `STRIPE_URL_API` fija o ignorarla al construir el cliente.
+- Procesar un evento dos veces o dejar el evento guardado si el cambio falló.
+- Modo producción de Stripe; llaves en código o logs.
+
+**Verificación (local con Stripe CLI)**
+- `stripe listen --forward-to localhost:8080/api/pagos/webhook`; `whsec_` en `secrets.properties`.
+- Pago con `4242 4242 4242 4242`: salón `PRO` +300 y tercer estilista permitido; paquete +200.
+- Segunda suscripción 409; reenvío del mismo evento → `procesado: false` y créditos sin cambio.
+- Webhook sin firma 400; estilista que paga 403; cancelación → `GRATIS` conservando créditos.
+- Tests del webhook: PRO activa y suma, paquete suma, evento repetido, cancelación, firma falsa.
+
+**Cierre:** idempotencia y transacción verificadas; si la deserialización del evento vino vacía, registrado en `BITACORA-IA.md`.
+**Commit:** "Pagos con Stripe: plan PRO, paquete de créditos y webhook idempotente".
+
+**Prompt de arranque**
+```text
+Contexto: @SPEC.md @AGENTS.md
+Fase 6 — Stripe (SPEC §13; reglas R16–R18).
+Entrega un PLAN: StripeClient con STRIPE_URL_API, selección de precio en backend, orden del webhook (firma → idempotencia → efecto → guardar evento) en una sola transacción.
+No pidas ni uses llaves reales; usa los valores de relleno de application.properties.
+```
+
+---
 
 
 

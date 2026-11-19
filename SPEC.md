@@ -490,3 +490,30 @@ Transición de solicitud: PENDIENTE → ATENDIDA (final).
 - [ ] Si la IA promete un descuento, se crea la solicitud con REGLA_DE_SEGURIDAD.
 - [ ] Un slug inexistente devuelve 404.
 
+
+## FASE 6 · Stripe, plan y créditos
+**Objetivo:** suscripción PRO y paquetes de créditos con procesamiento idempotente.
+**Fuera de alcance:** facturación, impuestos, reembolsos.
+**Reglas**
+1. Checkout crea la sesión en Stripe; el plan y los créditos solo cambian por webhook verificado con firma.
+2. Cada evento se registra en `eventos_stripe` con su id; si ya existe, se responde 200 y no se reprocesa.
+3. Efectos **[DECISIÓN]**:
+
+| TipoCompra | Efecto |
+|---|---|
+| SUSCRIPCION_PRO | plan = PRO, guarda `stripeSuscripcionId`, +100 créditos por periodo |
+| PAQUETE_CREDITOS | +50 créditos |
+
+4. Suscripción cancelada: plan = GRATIS (los créditos restantes se conservan).
+5. Firma inválida: 400. Evento de tipo desconocido: 200 y se ignora.
+6. Llaves de Stripe solo en `secrets.properties`.
+**Endpoints**
+| Método | Ruta | Respuestas |
+|---|---|---|
+| POST | /api/pagos/checkout | 200 URL · 400 · 403 (solo DUENO) |
+| POST | /api/stripe/webhook | 200 · 400 firma inválida |
+**Criterios de aceptación**
+- [ ] El mismo evento enviado dos veces suma créditos una sola vez.
+- [ ] Firma inválida devuelve 400 y no cambia nada.
+- [ ] Compra de PAQUETE_CREDITOS suma 50 créditos.
+- [ ] Cancelación vuelve el plan a GRATIS.

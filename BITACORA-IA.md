@@ -55,7 +55,7 @@ Esta bitácora documenta **cómo se usó la IA** en el proyecto: para qué, qué
 | 4 | 3 | Cursor · Agent | Catálogo, estilistas, asignación de servicios y clientes de solo lectura (R1, R3, R6, R7, R12) | Orden 402 → 409 → 404, filtro por salón, horario inválido sigue en 409 y `.\mvnw.cmd test` | El primer test de cliente buscaba un teléfono distinto al normalizado: lo alineé. `.\mvnw.cmd clean test` no pudo borrar `target` porque el directorio estaba bloqueado; sin clean, la suite terminó en verde |
 | 5 | 4 | Cursor · Agent | Clientes, citas, reglas de agenda, disponibilidad y reservas públicas (R1, R8–R14). SPEC fase 4: PENDIENTE/SALON, PENDIENTE/EN_LINEA, 90 días e intervalo | Filtro por salón, un solo método `agendar`, domingo y desalineación en 400, solapamiento en 409. `.\mvnw.cmd clean test` falló al borrar `target\classes\com\devSenior\sillon\auth\controlador` (directorio bloqueado). Después, `.\mvnw.cmd test` terminó BUILD SUCCESS: 42 tests, 0 fallos | AGENTS y README aún decían cita de salón CONFIRMADA y horario 409. Se alinearon al SPEC. El inicio 10:45 con intervalo de 30 no es un hueco válido: la cita consecutiva alineada queda en 11:00 |
 | 6 | 5 | Cursor · Agent | Motor de IA, créditos atómicos, recordatorio, chatbot y solicitudes (R19–R22). Ruta `POST /api/publico/salones/{slug}/chat` | El crédito se descuenta después de un JSON válido. 502 y 503 no descuentan. La llamada HTTP queda fuera de la transacción. `.\mvnw.cmd test` terminó con código 0 y el contexto cargó 6 repositorios, incluida `solicitudes_contacto` | No había código de Atiende para copiar: el motor se escribió para Sillón. El descuento quedó después de validar el JSON, porque descontarlo antes haría fallar el 502. `GET /api/solicitudes` acepta `estado` opcional; sin ese parámetro devuelve todas, como pide el SPEC |
-| 7 | 6 | | | | |
+| 7 | 6 | Cursor · Agent | Pagos Stripe en modo prueba: Checkout PRO y paquete, webhook firmado e idempotente, resultado público (R16–R18) | Rutas de SPEC §6.2, créditos `sillon.creditos.pro=300` y `paquete=200`, firma 400, evento repetido sin sumar, cancelación a GRATIS. `.\mvnw.cmd "-Dtest=AplicadorWebhookTest,PagoServicioTest,VerificadorFirmaStripeTest" test` terminó BUILD SUCCESS: 12 tests, 0 fallos | El bloque final del SPEC pedía +100/+50 y las rutas `/api/pagos/checkout` y `/api/stripe/webhook`. No se usaron: el contrato §6.2, R18 y la seguridad ya existente usan +300/+200 y `/api/pagos/*`. Un evento sin `api_version` hacía fallar `getObject()`; se deserializa sin verificar la versión y queda el ERROR en el log |
 | 8 | 7 | | | | |
 | 9 | 8 | | | | |
 | 10 | 9 | | | | |
@@ -80,7 +80,7 @@ Decisiones que no están en el SPEC o que lo precisan (nunca contradicen reglas 
 
 | Fecha | Fase | Decisión | Motivo | ¿Actualicé el SPEC? |
 |---|---|---|---|---|
-| | 6 | _Ej.: usar deserialización sin verificación de versión del evento de Stripe si el objeto viene vacío_ | _Versión de API de la cuenta distinta a la de la librería_ | |
+| 2026-11-18 | 6 | Webhook: si el objeto del evento viene vacío o la versión de API no se puede comparar, se deserializa sin verificar la versión y se registra un ERROR | La librería de Stripe lanza un error cuando `api_version` no coincide o falta; el efecto del pago no puede depender de esa versión | No |
 | | | | | |
 
 ## 7. Fallos del calificador

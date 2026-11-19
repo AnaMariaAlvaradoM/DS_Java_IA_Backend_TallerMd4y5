@@ -1,13 +1,224 @@
-node_modules/
-resultado.json
-notas.csv
 
-# Java
-target/
-*.class
+acteu@IngBarthelemy MINGW64 ~/OneDrive/Documents/Sillon_ProyectoIntegrador_Módulos_4y5_Java_AI_Engineer/DS_Java_IA_Backend_TallerMd4y5 (main)
+$ git init
+Reinitialized existing Git repository in C:/Users/acteu/OneDrive/Documents/Sillon_ProyectoIntegrador_Módulos_4y5_Java_AI_Engineer/DS_Java_IA_Backend_TallerMd4y5/.git/
 
-# Secretos: nunca se suben
-/secrets.properties
+acteu@IngBarthelemy MINGW64 ~/OneDrive/Documents/Sillon_ProyectoIntegrador_Módulos_4y5_Java_AI_Engineer/DS_Java_IA_Backend_TallerMd4y5 (main)
+$ git add .
+warning: in the working copy of 'src/main/resources/application.properties', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/classes/application.properties', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.SillonApplicationTests.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.auth.controlador.AuthSalonIntegracionTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.auth.servicio.AuthServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.chat.servicio.ChatServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.chat.servicio.SolicitudContactoServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.entidad.EstadoCitaTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.reglas.ReglasAgendaTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.servicio.CitaServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.servicio.FormatoRecordatorioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.servicio.RecordatorioServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.cliente.servicio.ClienteServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.compartido.manejador.ManejadorErroresTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.json.LectorJsonTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.prompt.BibliotecaPromptsTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.proveedor.ProveedorClaudeTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.servicio.AsistenteIaTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.servicio.CreditoIaServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.pago.servicio.AplicadorWebhookTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.pago.servicio.PagoServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.pago.servicio.VerificadorFirmaStripeTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.publico.controlador.AgendaPublicaIntegracionTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.salon.repositorio.UnicidadSalonUsuarioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.salon.servicio.GeneradorSlugTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.salon.servicio.SalonServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.servicio.controlador.CatalogoHttpTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.usuario.servicio.EstilistaServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'target_backup/surefire-reports/TEST-com.devSenior.sillon.usuario.servicio.UsuarioServicioTest.xml', LF will be replaced by CRLF the next time Git touches it
 
-# Material privado de la profe (guía, solución y scripts): NO se sube al repo
-_docente/
+acteu@IngBarthelemy MINGW64 ~/OneDrive/Documents/Sillon_ProyectoIntegrador_Módulos_4y5_Java_AI_Engineer/DS_Java_IA_Backend_TallerMd4y5 (main)
+$ git commit -m "Pagos con Stripe: plan PRO, paquete de créditos y webhook idempotente"
+[main 0850b7e] Pagos con Stripe: plan PRO, paquete de créditos y webhook idempotente
+ 84 files changed, 8202 insertions(+), 11 deletions(-)
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/config/PagoConfig.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/config/StripePropiedades.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/controlador/PagoControlador.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/dto/EventoPago.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/dto/ResultadoPago.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/dto/SesionPagoRespuesta.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/dto/WebhookRespuesta.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/entidad/EventoStripe.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/entidad/TipoCompra.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/repositorio/EventoStripeRepositorio.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/servicio/AplicadorWebhook.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/servicio/ClienteStripe.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/servicio/ClienteStripeSdk.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/servicio/PagoServicio.java
+ create mode 100644 src/main/java/com/devSenior/sillon/pago/servicio/VerificadorFirmaStripe.java
+ create mode 100644 src/test/java/com/devSenior/sillon/pago/servicio/AplicadorWebhookTest.java
+ create mode 100644 src/test/java/com/devSenior/sillon/pago/servicio/PagoServicioTest.java
+ create mode 100644 src/test/java/com/devSenior/sillon/pago/servicio/VerificadorFirmaStripeTest.java
+ create mode 100644 target_backup/classes/application.properties
+ create mode 100644 target_backup/classes/prompts/chatbot.txt
+ create mode 100644 target_backup/classes/prompts/recordatorio.txt
+ create mode 100644 target_backup/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
+ create mode 100644 target_backup/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+ create mode 100644 target_backup/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst
+ create mode 100644 target_backup/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.SillonApplicationTests.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.auth.controlador.AuthSalonIntegracionTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.auth.servicio.AuthServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.chat.servicio.ChatServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.chat.servicio.SolicitudContactoServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.entidad.EstadoCitaTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.reglas.ReglasAgendaTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.servicio.CitaServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.servicio.FormatoRecordatorioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.cita.servicio.RecordatorioServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.cliente.servicio.ClienteServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.compartido.manejador.ManejadorErroresTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.json.LectorJsonTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.prompt.BibliotecaPromptsTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.proveedor.ProveedorClaudeTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.servicio.AsistenteIaTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.ia.servicio.CreditoIaServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.pago.servicio.AplicadorWebhookTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.pago.servicio.PagoServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.pago.servicio.VerificadorFirmaStripeTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.publico.controlador.AgendaPublicaIntegracionTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.salon.repositorio.UnicidadSalonUsuarioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.salon.servicio.GeneradorSlugTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.salon.servicio.SalonServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.servicio.controlador.CatalogoHttpTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.usuario.servicio.EstilistaServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/TEST-com.devSenior.sillon.usuario.servicio.UsuarioServicioTest.xml
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.SillonApplicationTests.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.auth.controlador.AuthSalonIntegracionTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.auth.servicio.AuthServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.chat.servicio.ChatServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.chat.servicio.SolicitudContactoServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.cita.entidad.EstadoCitaTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.cita.reglas.ReglasAgendaTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.cita.servicio.CitaServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.cita.servicio.FormatoRecordatorioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.cita.servicio.RecordatorioServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.cliente.servicio.ClienteServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.compartido.manejador.ManejadorErroresTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.ia.json.LectorJsonTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.ia.prompt.BibliotecaPromptsTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.ia.proveedor.ProveedorClaudeTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.ia.servicio.AsistenteIaTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.ia.servicio.CreditoIaServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.pago.servicio.AplicadorWebhookTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.pago.servicio.PagoServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.pago.servicio.VerificadorFirmaStripeTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.publico.controlador.AgendaPublicaIntegracionTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.salon.repositorio.UnicidadSalonUsuarioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.salon.servicio.GeneradorSlugTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.salon.servicio.SalonServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.servicio.controlador.CatalogoHttpTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.usuario.servicio.EstilistaServicioTest.txt
+ create mode 100644 target_backup/surefire-reports/com.devSenior.sillon.usuario.servicio.UsuarioServicioTest.txt
+
+acteu@IngBarthelemy MINGW64 ~/OneDrive/Documents/Sillon_ProyectoIntegrador_Módulos_4y5_Java_AI_Engineer/DS_Java_IA_Backend_TallerMd4y5 (main)
+$ git push origin main
+Enumerating objects: 130, done.
+Counting objects: 100% (130/130), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (102/102), done.
+Writing objects: 100% (114/114), 59.07 KiB | 746.00 KiB/s, done.
+Total 114 (delta 62), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (62/62), completed with 7 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote:
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote:
+remote:     - Push cannot contain secrets
+remote:
+remote:
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:
+remote:
+remote:       —— Stripe Test API Secret Key ————————————————————————
+remote:        locations:
+remote:          - commit: 0850b7e309802e2c1dfe8685489deec84e5abd0e
+remote:            path: src/main/resources/application.properties:28
+remote:          - commit: 0850b7e309802e2c1dfe8685489deec84e5abd0e
+remote:            path: target_backup/classes/application.properties:28
+remote:
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/IngBarthelemy/DS_Java_IA_Backend_TallerMd4y5/security/secret-scanning/unblock-secret/3MLPkSAxjlPSl8ptvI2vsMCsTvs
+remote:
+remote:
+remote:       —— GCP API Key Bound to a Service Account ————————————
+remote:        locations:
+remote:          - commit: 0850b7e309802e2c1dfe8685489deec84e5abd0e
+remote:            path: src/main/resources/application.properties:34
+remote:
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/IngBarthelemy/DS_Java_IA_Backend_TallerMd4y5/security/secret-scanning/unblock-secret/3MLPkYyDHtMTRIQRF3YfVHpv40p
+remote:
+remote:
+remote:       —— OpenAI API Key ————————————————————————————————————
+remote:        locations:
+remote:          - commit: 0850b7e309802e2c1dfe8685489deec84e5abd0e
+remote:            path: src/main/resources/application.properties:40
+remote:
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/IngBarthelemy/DS_Java_IA_Backend_TallerMd4y5/security/secret-scanning/unblock-secret/3MLPkTjhKPoKefkFECYnaPcojhB
+remote:
+remote:
+remote:
+To https://github.com/IngBarthelemy/DS_Java_IA_Backend_TallerMd4y5.git
+ ! [remote rejected] main -> main (error: GH013: Repository rule violations found for refs/heads/main.
+
+- GITHUB PUSH PROTECTION
+  —————————————————————————————————————————
+    Resolve the following violations before pushing again
+
+    - Push cannot contain secrets
+
+
+     (?) Learn how to resolve a blocked push
+     https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+
+
+      —— Stripe Test API Secret Key ————————————————————————
+       locations:
+         - commit: 0850b7e309802e2c1dfe8685489deec84e5abd0e
+           path: src/main/resources/application.properties:28
+         - commit: 0850b7e309802e2c1dfe8685489deec84e5abd0e
+           path: target_backup/classes/application.properties:28
+
+       (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+       https://github.com/IngBarthelemy/DS_Java_IA_Backend_TallerMd4y5/security/secret-scanning/unblock-secret/3MLPkSAxjlPSl8ptvI2vsMCsTvs
+
+
+      —— GCP API Key Bound to a Service Account ————————————
+       locations:
+         - commit: 0850b7e309802e2c1dfe8685489deec84e5abd0e
+           path: src/main/resources/application.properties:34
+
+       (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+       https://github.com/IngBarthelemy/DS_Java_IA_Backend_TallerMd4y5/security/secret-scanning/unblock-secret/3MLPkYyDHtMTRIQRF3YfVHpv40p
+
+
+      —— OpenAI API Key ————————————————————————————————————
+       locations:
+         - commit: 0850b7e309802e2c1dfe8685489deec84e5abd0e
+           path: src/main/resources/application.properties:40
+
+       (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+       https://github.com/IngBarthelemy/DS_Java_IA_Backend_TallerMd4y5/security/secret-scanning/unblock-secret/3MLPkTjhKPoKefkFECYnaPcojhB
+
+
+
+)
+error: failed to push some refs to 'https://github.com/IngBarthelemy/DS_Java_IA_Backend_TallerMd4y5.git'
+
+acteu@IngBarthelemy MINGW64 ~/OneDrive/Documents/Sillon_ProyectoIntegrador_Módulos_4y5_Java_AI_Engineer/DS_Java_IA_Backend_TallerMd4y5 (main)
+$
