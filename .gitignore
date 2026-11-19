@@ -11,3 +11,14 @@ target/
 
 # Material privado de la profe (guía, solución y scripts): NO se sube al repo
 _docente/
+
+# Desarrollo de Nicolás Bernal
+CLAUDE.md
+cursorignore
+
+### Secretos de Sillón ###
+secrets.properties
+.env
+.env.*
+*.pem
+*.key
