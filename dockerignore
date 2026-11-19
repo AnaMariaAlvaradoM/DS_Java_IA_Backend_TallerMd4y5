@@ -1,0 +1,13 @@
+target
+.git
+.github
+.idea
+.vscode
+.claude
+.DS_Store
+postman
+secrets.properties
+.env
+.env.*
+*.pem
+*.key
