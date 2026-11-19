@@ -1,5 +1,6 @@
 package com.devsenior.sillon.salon.model;
 
+import com.devsenior.sillon.compartido.util.FormatoColombia;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.time.LocalTime;
@@ -33,6 +34,12 @@ public class ConfiguracionSalon {
     /** Horario por defecto del registro: 8:00 a 19:00, sin domingos, intervalo de 30 minutos. */
     public static ConfiguracionSalon porDefecto() {
         return new ConfiguracionSalon(LocalTime.of(8, 0), LocalTime.of(19, 0), false, 30);
+    }
+
+    /** "Lunes a sábado (domingos cerrado), de 8:00 a. m. a 7:00 p. m." */
+    public String descripcion() {
+        String dias = abreDomingos ? "Lunes a domingo" : "Lunes a sábado (domingos cerrado)";
+        return dias + ", de " + FormatoColombia.hora(horaApertura) + " a " + FormatoColombia.hora(horaCierre);
     }
 
     public LocalTime getHoraApertura() {
