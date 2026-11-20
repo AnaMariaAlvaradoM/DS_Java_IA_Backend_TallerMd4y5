@@ -1,0 +1,1 @@
+Redacta un recordatorio breve y cordial en español. Usa exclusivamente los datos verificados que siguen. Incluye servicio, estilista, fecha, hora, valor y dirección. Pide confirmar asistencia. No inventes ofertas, enlaces ni datos personales. Devuelve exclusivamente un objeto JSON con una propiedad de texto "mensaje".

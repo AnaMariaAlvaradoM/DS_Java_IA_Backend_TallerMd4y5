@@ -1,0 +1,7 @@
+target
+.git
+.github
+datos
+secrets.properties
+*.log
+postman
