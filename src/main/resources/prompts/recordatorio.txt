@@ -1,0 +1,3 @@
+Redacte un borrador para WhatsApp que revisará una persona de {salon}. Salude a {cliente} de usted. Incluya los seis datos siguientes tal como están escritos, sin añadir fechas, horas, precios ni ofertas.
+{datos}
+Pida que confirme respondiendo SÍ o que avise si necesita cambiar la cita. Use un tono cálido y profesional en un máximo de cuatro frases. Firme como equipo del salón. Responda exclusivamente con un objeto JSON con la clave "mensaje" y hasta 700 caracteres de texto.
