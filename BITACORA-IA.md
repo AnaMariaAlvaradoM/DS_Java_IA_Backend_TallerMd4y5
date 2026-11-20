@@ -13,6 +13,8 @@ Registro del apoyo de inteligencia artificial utilizado durante el desarrollo de
 | 6 | Fase 4 | ChatGPT — chat del navegador | Apoyo para implementar la agenda, sus reglas de negocio y las pruebas de concurrencia. | Cruces de citas, estados, permisos, formato de errores, pruebas JUnit y Postman. | Se corrigió el manejo de errores de permisos y se agregó bloqueo pesimista para impedir reservas simultáneas. También se corrigió la interpretación del secreto JWT que impedía iniciar el evaluador. |
 | 7 | Fase 5 | ChatGPT — chat del navegador | Apoyo para implementar el catálogo público, la disponibilidad y las reservas en línea. | Respuestas de Postman, conflictos de horarios, permisos y pruebas de concurrencia. |
 | 8 | Fase 6 | ChatGPT — chat del navegador | Apoyo para integrar Stripe Checkout, los pagos de prueba y el procesamiento de webhooks. | Sesiones de pago, respuestas HTTP, firma del webhook, cambios de plan, créditos y eventos duplicados. |
+| 9 | Fase 7 | ChatGPT — chat del navegador | Compilación Maven, pruebas JUnit con Mockito, manejo de errores de proveedores y descuento condicional de créditos en MySQL. | Se corrigió la ubicación de las pruebas JUnit. Se comprobó el descuento de un crédito y su recuperación mediante ROLLBACK. |
+
 
 
 
@@ -24,8 +26,10 @@ Registro del apoyo de inteligencia artificial utilizado durante el desarrollo de
 - La prueba inicial de concurrencia pública falló porque permitió registrar dos reservas en el mismo horario.
 - Después de corregir la transacción, una nueva prueba devolvió HTTP 201 y HTTP 409.
 - Se eliminaron los dos registros duplicados de prueba y se verificó la información en MySQL.
-- La última evaluación automática de GitHub Actions fue de 3.0/5.0, con 87 de 145 pruebas aprobadas, después de implementar la Fase 5.
-- La Fase 6 se completó y verificó localmente: suscripción PRO, compra de créditos, firma del webhook, permisos, idempotencia y cancelación.
+- La evaluación automática de GitHub Actions después de la Fase 6 alcanzó 3.7/5.0, con 108 de 145 pruebas aprobadas.
+- La Fase 6 superó las 29 pruebas automáticas de Stripe. Se verificaron la suscripción PRO, compra de créditos, firma del webhook, permisos, idempotencia y cancelación.
+- En la Fase 7 se implementó el motor de IA con dos proveedores, fallback, lectura de JSON, biblioteca de prompts, cálculo de costos y servicio de créditos.
+- Las pruebas JUnit de la Fase 7 finalizaron con BUILD SUCCESS. También se comprobó el descuento condicional en MySQL y su reversión mediante ROLLBACK.
+- Quedan pendientes las pruebas de concurrencia real de créditos y la integración con el proveedor de IA simulado.
 - Las pruebas automáticas locales finalizaron con BUILD SUCCESS. La Fase 6 está pendiente de evaluación en GitHub Actions.
 - Las siguientes fases del proyecto incluyen la integración de inteligencia artificial y el despliegue en producción.
-

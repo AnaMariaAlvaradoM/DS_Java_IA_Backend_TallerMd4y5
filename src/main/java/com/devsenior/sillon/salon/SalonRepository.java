@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 
 public interface SalonRepository extends JpaRepository<Salon, Long> {
 
@@ -24,4 +25,18 @@ public interface SalonRepository extends JpaRepository<Salon, Long> {
             @Param("salonId") Long salonId
     );
 
+
+    @Modifying(
+            flushAutomatically = true,
+            clearAutomatically = true
+    )
+    @Query("""
+            UPDATE Salon s
+            SET s.creditosIa = s.creditosIa - 1
+            WHERE s.id = :salonId
+            AND s.creditosIa > 0
+            """)
+    int consumirCreditoIa(
+            @Param("salonId") Long salonId
+    );
 }
