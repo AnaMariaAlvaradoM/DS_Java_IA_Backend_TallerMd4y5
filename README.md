@@ -310,6 +310,7 @@ Clonaste el repo de la profe en vez de tu fork. Vuelve al Paso 2 con la URL de *
 ### "Please tell me who you are"
 Configura Git una sola vez:
 
+
 ```bash
 git config --global user.name "Tu Nombre"
 git config --global user.email "tu-correo@ejemplo.com"
@@ -318,3 +319,13 @@ git config --global user.email "tu-correo@ejemplo.com"
 ---
 
 <small>© 2026 Ana Alvarado · Educadora Tech & Desarrolladora Full Stack · Todos los derechos reservados · linkedin.com/in/ana-alvarado-instructora-full-stack</small>
+
+## Despliegue en Render
+
+URL de producción: https://sillon-saas.onrender.com
+
+Documentación OpenAPI:
+https://sillon-saas.onrender.com/v3/api-docs
+
+Swagger UI:
+https://sillon-saas.onrender.com/swagger-ui/index.html
