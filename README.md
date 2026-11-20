@@ -113,6 +113,47 @@ En el chatbot, a veces "promete" un cupón a propósito: tu regla en Java debe b
 ### Swagger
 El calificador revisa que `/v3/api-docs` responda en tu URL de Render.
 
+### Despliegue de Sillón en Render con Docker
+
+1. Una vez aprobados los cambios, crea en Render un **Web Service** conectado al
+   repositorio y a la rama autorizada. Selecciona **Docker**, usa la raíz del
+   repositorio como contexto (`.`) y el `Dockerfile` de la raíz. No necesitas
+   configurar un comando de arranque: la imagen ejecuta el JAR de Spring Boot
+   como usuario no root. La compilación usa Maven Wrapper con un JDK 17; la
+   imagen final usa un JRE 17.
+2. Usa una base existente, accesible desde Render. Para la **entrega oficial**
+   (fase 12 del PDF), usa **Supabase PostgreSQL**, con la URL JDBC del
+   **Session Pooler** (puerto `5432`) y el TLS indicado por el proveedor.
+   Si se usa **MySQL externo** en otro entorno, las mismas tres variables
+   `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y
+   `SPRING_DATASOURCE_PASSWORD` funcionan con la URL `jdbc:mysql:` y las
+   credenciales del servidor correspondiente. En ambos casos configura el
+   acceso desde Render y usa una base dedicada: la configuración actual
+   (`ddl-auto=update`) requiere permisos para actualizar su esquema.
+   No uses el valor local predeterminado dentro del contenedor.
+3. Configura los valores en **Environment** de Render, no en Git ni al construir
+   la imagen. Además de las variables de base de datos, configura `JWT_SECRETO`
+   (aleatorio, al menos 32 caracteres y distinto del local), `URL_PUBLICA` con
+   la URL real asignada por Render y `GEMINI_LLAVE`. Para Stripe en **modo
+   prueba**, configura `STRIPE_CLAVE_SECRETA`, `STRIPE_PRECIO_PRO`,
+   `STRIPE_PRECIO_CREDITOS` y `STRIPE_SECRETO_WEBHOOK`.
+   No sobrescribas `STRIPE_URL_API` ni `SILLON_IA_OPENAI_URL` en el despliegue
+   oficial: el calificador los configura para sus simuladores.
+4. No fijes el puerto en el comando de Docker: Spring Boot ya lee `PORT`.
+   Render lo proporciona; si no está definido, la aplicación usa `8080`.
+   Tras desplegar, puedes usar `/v3/api-docs` como ruta de verificación HTTP:
+   debe responder `200`. Comprueba también registro y login.
+5. Para verificar pagos, configura en Stripe el destino `/api/pagos/webhook`
+   en la URL real, con los eventos `checkout.session.completed` y
+   `customer.subscription.deleted`. Guarda su secreto en
+   `STRIPE_SECRETO_WEBHOOK` y verifica la activación del plan con un pago de
+   prueba. No se usa Stripe CLI para este destino.
+
+Para verificar la compilación en un equipo con Docker disponible, ejecuta
+`docker build -t sillon .` desde la raíz. No necesita secretos ni una base de
+datos. La URL real de Render se añadirá al README después del despliegue y de
+la verificación.
+
 ---
 
 ## Paso 1 · Fork
@@ -261,7 +302,7 @@ Tu cliente de Stripe no está usando `STRIPE_URL_API`.
 Tu proveedor de IA no lee `SILLON_IA_OPENAI_URL` o `GEMINI_LLAVE`.
 
 ### "No encontré en tu README.md una URL de Render"
-Agrega la URL completa (`https://tu-app.onrender.com`) a tu README.
+Agrega la URL completa que Render asignó a tu servicio una vez verificado el despliegue.
 
 ### Error 403 al hacer push
 Clonaste el repo de la profe en vez de tu fork. Vuelve al Paso 2 con la URL de **tu** fork.

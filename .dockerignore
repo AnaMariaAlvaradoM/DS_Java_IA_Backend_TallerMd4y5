@@ -1,0 +1,29 @@
+# Solo se envían los insumos de compilación del Dockerfile.
+**
+!Dockerfile
+!.dockerignore
+!mvnw
+!pom.xml
+!.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
+!src/
+!src/main/
+!src/main/java/
+!src/main/java/**/
+!src/main/java/**/*.java
+!src/main/resources/
+!src/main/resources/application.properties
+!src/main/resources/prompts/
+!src/main/resources/prompts/*.txt
+
+# Excluir también copias accidentales de secretos entre esos insumos.
+**/secrets.properties
+**/.env
+**/.env.*
+**/*credentials*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.jks
