@@ -1,0 +1,19 @@
+
+# Credenciales privadas
+secrets.properties
+.env
+.env.*
+!.env.example
+
+# Llaves y certificados privados
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Archivos generados
+target/
+
+# Archivos locales
+.vscode/
+.idea/
