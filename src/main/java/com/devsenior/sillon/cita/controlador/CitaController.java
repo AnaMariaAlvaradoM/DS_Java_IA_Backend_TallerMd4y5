@@ -3,7 +3,9 @@ package com.devsenior.sillon.cita.controlador;
 import com.devsenior.sillon.cita.dto.CambiarEstadoCitaRequest;
 import com.devsenior.sillon.cita.dto.CitaRequest;
 import com.devsenior.sillon.cita.dto.CitaResponse;
+import com.devsenior.sillon.cita.dto.RecordatorioResponse;
 import com.devsenior.sillon.cita.servicio.CitaService;
+import com.devsenior.sillon.ia.servicio.RecordatorioIaService;
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,9 +22,11 @@ import java.util.List;
 public class CitaController {
 
     private final CitaService citaService;
+    private final RecordatorioIaService recordatorioIaService;
 
-    public CitaController(CitaService citaService) {
+    public CitaController(CitaService citaService, RecordatorioIaService recordatorioIaService) {
         this.citaService = citaService;
+        this.recordatorioIaService = recordatorioIaService;
     }
 
     @PostMapping
@@ -46,5 +50,13 @@ public class CitaController {
             @PathVariable Long id,
             @Valid @RequestBody CambiarEstadoCitaRequest request) {
         return ResponseEntity.ok(citaService.cambiarEstado(usuario, id, request.estado()));
+    }
+
+    @PostMapping("/{id}/recordatorio")
+    public ResponseEntity<RecordatorioResponse> generarRecordatorio(
+            @AuthenticationPrincipal UsuarioPrincipal usuario,
+            @PathVariable Long id
+    ) {
+       return ResponseEntity.ok(recordatorioIaService.generar(usuario.getSalonId(), id));
     }
 }

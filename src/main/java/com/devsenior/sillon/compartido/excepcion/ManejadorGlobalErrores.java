@@ -77,6 +77,12 @@ public class ManejadorGlobalErrores {
         return ResponseEntity.status(status).body(construirRespuesta(status, ex.getMessage()));
     }
 
+    @ExceptionHandler(ServicioNoDisponibleException.class)
+    public ResponseEntity<ErrorRespuesta> manejarServicioNoDisponible(ServicioNoDisponibleException ex) {
+        HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE; // 503
+        return ResponseEntity.status(status).body(construirRespuesta(status, ex.getMessage()));
+    }
+
     // Validación de DTOs (@Valid): campos fallidos separados por punto y coma
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorRespuesta> manejarValidacion(MethodArgumentNotValidException ex) {

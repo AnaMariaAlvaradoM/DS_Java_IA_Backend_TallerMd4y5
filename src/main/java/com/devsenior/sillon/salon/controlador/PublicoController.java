@@ -3,6 +3,9 @@ package com.devsenior.sillon.salon.controlador;
 import com.devsenior.sillon.cita.dto.CitaRequest;
 import com.devsenior.sillon.cita.dto.CitaResponse;
 import com.devsenior.sillon.cita.servicio.CitaService;
+import com.devsenior.sillon.ia.dto.ChatRequest;
+import com.devsenior.sillon.ia.dto.ChatResponse;
+import com.devsenior.sillon.ia.servicio.ChatbotIaService;
 import com.devsenior.sillon.salon.dto.CatalogoPublicoResponse;
 import com.devsenior.sillon.salon.dto.DisponibilidadResponse;
 import com.devsenior.sillon.salon.servicio.CatalogoService;
@@ -20,10 +23,15 @@ public class PublicoController {
 
     private final CatalogoService catalogoService;
     private final CitaService citaService;
+    private final ChatbotIaService chatbotIaService;
 
-    public PublicoController(CatalogoService catalogoService, CitaService citaService) {
+    public PublicoController(
+            CatalogoService catalogoService,
+            CitaService citaService,
+            ChatbotIaService chatbotIaService) {
         this.catalogoService = catalogoService;
         this.citaService = citaService;
+        this.chatbotIaService = chatbotIaService;
     }
 
     @GetMapping
@@ -47,5 +55,12 @@ public class PublicoController {
         Long salonId = catalogoService.obtenerSalonIdPorSlug(slug);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(citaService.crearReservaEnLinea(salonId, request));
+    }
+
+    @PostMapping("/chat")
+    public ResponseEntity<ChatResponse> chatear(
+            @PathVariable String slug,
+            @Valid @RequestBody ChatRequest request) {
+        return ResponseEntity.ok(chatbotIaService.responder(slug, request));
     }
 }

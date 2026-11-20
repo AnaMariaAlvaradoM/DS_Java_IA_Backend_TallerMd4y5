@@ -175,4 +175,46 @@ public class CitaService {
 
         return CitaResponse.desde(citaRepository.saveAndFlush(cita));
     }
+
+    public record DatosRecordatorio(
+            Long citaId,
+            String nombreSalon,
+            String nombreCliente,
+            String telefonoCliente,
+            String datosTexto
+    ) {}
+
+    @Transactional(readOnly = true)
+    public DatosRecordatorio obtenerDatosRecordatorio(Long salonId, Long citaId) {
+        Cita cita = citaRepository.findByIdAndSalonId(citaId, salonId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada"));
+
+        if (!cita.getEstado().ocupaAgenda()) {
+            throw new ReglaNegocioException("Solo se pueden generar recordatorios para citas PENDIENTE o CONFIRMADA");
+        }
+
+        java.util.Locale locale = java.util.Locale.forLanguageTag("es-CO");
+        String fecha = cita.getInicio().format(java.time.format.DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", locale));
+        String hora = cita.getInicio().format(java.time.format.DateTimeFormatter.ofPattern("h:mm a", locale))
+                .replace('\u00A0', ' ')
+                .replace('\u202F', ' ');
+        String valor = "$" + java.text.NumberFormat.getIntegerInstance(locale).format(cita.getPrecio());
+
+        String datos = String.join("\n",
+                "Servicio: " + cita.getServicio().getNombre() + " (" + cita.getServicio().getDuracionMinutos() + " minutos)",
+                "Estilista: " + cita.getEstilista().getNombre(),
+                "Fecha: " + fecha,
+                "Hora: " + hora,
+                "Valor: " + valor,
+                "Dirección: " + cita.getSalon().getDireccion() + ", " + cita.getSalon().getCiudad()
+        );
+
+        return new DatosRecordatorio(
+                cita.getId(),
+                cita.getSalon().getNombre(),
+                cita.getCliente().getNombre(),
+                cita.getCliente().getTelefono(),
+                datos
+        );
+    }
 }

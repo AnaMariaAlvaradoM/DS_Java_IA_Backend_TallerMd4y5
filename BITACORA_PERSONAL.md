@@ -14,8 +14,9 @@
 5. [Fase 3: Catálogo de Servicios, Estilistas (ManyToMany) y Clientes](#5-fase-3-catálogo-de-servicios-estilistas-manytomany-y-clientes)
 6. [Fase 4: Agenda Inteligente, Disponibilidad y Reservas en Línea](#6-fase-4-agenda-inteligente-disponibilidad-y-reservas-en-línea)
 7. [Fase 5: Pagos e Integración con Stripe (Suscripciones, Créditos y Webhooks)](#7-fase-5-pagos-e-integración-con-stripe-suscripciones-créditos-y-webhooks)
-8. [Bitácora de Incidencias y Soluciones Técnicas](#8-bitácora-de-incidencias-y-soluciones-técnicas)
-9. [Próximos Pasos](#9-próximos-pasos)
+8. [Fase 6: Inteligencia Artificial (Recordatorios WhatsApp y Chatbot)](#8-fase-6-inteligencia-artificial-recordatorios-whatsapp-y-chatbot)
+9. [Bitácora de Incidencias y Soluciones Técnicas](#9-bitácora-de-incidencias-y-soluciones-técnicas)
+10. [Próximos Pasos](#10-próximos-pasos)
 
 ---
 
@@ -526,7 +527,91 @@ Se implementó el componente de cálculo temporal desacoplado del sistema operat
 
 ---
 
-## 8. Bitácora de Incidencias y Soluciones Técnicas
+## 8. Fase 6: Inteligencia Artificial (Recordatorios WhatsApp y Chatbot)
+
+### 📋 Checklist de Entregables (Fase 6)
+* **Bloque A: Motor de IA, Proveedor Primario y Fallback (`ia.proveedor`, `ia.servicio`) (✅ Completado)**
+  - [x] Interfaz `ProveedorIa` para desacoplar modelos y proveedores de IA.
+  - [x] Proveedor primario `ProveedorOpenAi` configurado con `@Order(1)`, `gemini-2.5-flash` y cliente HTTP REST apuntando a `sillon.ia.openai.url` / `sillon.ia.gemini.llave`.
+  - [x] Proveedor secundario `ProveedorClaude` configurado con `@Order(2)` para fallback automático.
+  - [x] DTOs de auditoría y consumo de tokens (`FacturaIa`, `RespuestaIa`).
+  - [x] Servicio orquestador `AsistenteIaService` ejecutando cadena de fallback y lanzando `ServicioNoDisponibleException` (503 Service Unavailable) si todos los proveedores fallan.
+  - [x] Excepción `ServicioNoDisponibleException` y manejador global en `ManejadorGlobalErrores` respondiendo HTTP 503 con formato estándar de 4 campos.
+* **Bloque B: Control de Créditos y Prompts de Sistema (`salon.repositorio`, `resources/prompts`) (✅ Completado)**
+  - [x] Consulta atómica en `SalonRepository.descontarCreditoAtomico` con `@Modifying` y `@Query` para evitar condiciones de carrera en concurrencia (`WHERE creditosIa > 0`).
+  - [x] Lanzamiento de `PagoRequeridoException` (402 Payment Required) si el saldo de créditos es insuficiente.
+  - [x] Creación de `src/main/resources/prompts/recordatorio.txt` con reglas estrictas de 6 datos verificados y contrato JSON `{"mensaje": "..."}`.
+  - [x] Creación de `src/main/resources/prompts/chatbot.txt` con catálogo activo, reglas de escalamiento y contrato JSON `{"respuesta": "...", "escalar": false}`.
+* **Bloque C: Recordatorios Deterministas WhatsApp (`cita.servicio`, `ia.servicio`, `cita.controlador`) (✅ Completado)**
+  - [x] Record `DatosRecordatorio` y método `CitaService.obtenerDatosRecordatorio` con formateo en locale `es-CO` y los 6 datos verificados (servicio, estilista, fecha, hora, valor, dirección).
+  - [x] Validación de regla de negocio: solo citas en estado `PENDIENTE` o `CONFIRMADA`.
+  - [x] Servicio `RecordatorioIaService` que valida créditos, renderiza el prompt con los datos de la cita y delega en el motor de IA.
+  - [x] Endpoint `POST /api/citas/{id}/recordatorio` en `CitaController` protegido para el rol `DUENO`.
+* **Bloque D: Chatbot de Atención al Cliente (`ia.servicio`, `salon.controlador`) (✅ Completado)**
+  - [x] DTOs `ChatRequest` y `ChatResponse` con validaciones `@NotBlank`.
+  - [x] Servicio `ChatbotIaService` que carga la información pública y catálogo activo del salón por `slug`, renderiza el prompt y aplica reglas de escalamiento (`escalar: true`).
+  - [x] Endpoint público `POST /api/publico/salones/{slug}/chat` en `PublicoController` para interacción ciudadana/cliente sin autenticación previa.
+
+---
+
+### 8.1 Bloque A: Motor de IA y Estrategia Multimodelo con Fallback — ✅ COMPLETADO
+Se implementó un subsistema de IA desacoplado, resiliente y compatible con OpenAI API spec y Gemini:
+* **Abstracción del Proveedor (`ProveedorIa`):** Define los métodos `nombre()` y `generar(String sistema, String usuario)`.
+* **Proveedor Primario (`ProveedorOpenAi`):**
+  * Utiliza `RestClient` con timeouts controlados (5s connect, 20s read).
+  * Apunta a `${sillon.ia.openai.url}/chat/completions` consumiendo la API de Google Gemini en modo OpenAI-compatible (`gemini-2.5-flash`).
+  * Realiza el conteo de tokens de entrada/salida y calcula el costo computacional en `FacturaIa`.
+* **Proveedor Fallback (`ProveedorClaude`):**
+  * Marcado con `@Order(2)` para activarse únicamente si el proveedor primario arroja excepción.
+* **Orquestador Resiliente (`AsistenteIaService`):**
+  * Itera ordenadamente sobre los proveedores inyectados (`List<ProveedorIa>`).
+  * Si un proveedor falla por timeout, cuota o red, registra la advertencia y prueba el siguiente.
+  * Si la totalidad de los proveedores falla, arroja `ServicioNoDisponibleException` (mapeada a HTTP 503 en `ManejadorGlobalErrores`).
+
+---
+
+### 8.2 Bloque B: Descuento Atómico de Créditos y Prompts Verificados — ✅ COMPLETADO
+* **Control Atómico de Concurrencia:**
+  * En `SalonRepository`:
+    ```java
+    @Modifying
+    @Query("UPDATE Salon s SET s.creditosIa = s.creditosIa - 1 WHERE s.id = :id AND s.creditosIa > 0")
+    int descontarCreditoAtomico(@Param("id") Long id);
+    ```
+  * Si la consulta retorna `0`, el saldo se agotó y se arroja `PagoRequeridoException` (HTTP 402), impidiendo que transacciones simultáneas dejen el balance en números negativos.
+* **Ingeniería de Prompts Deterministas:**
+  * Almacenados en `src/main/resources/prompts/`.
+  * `recordatorio.txt`: Obliga a saludar por nombre, insertar exactamente los 6 datos verificados de la cita, solicitar confirmación con "SÍ" o aviso de reprogramación, redacción en trato de usted (máximo 4 frases), firma institucional del salón y respuesta en JSON estricto (`{"mensaje": "..."}`).
+  * `chatbot.txt`: Provee dirección, horario y catálogo activo de servicios. Prohíbe inventar datos, agendar o cancelar directamente. Fuerza el escalamiento (`escalar: true`) ante solicitudes de personas, quejas, descuentos, promociones, cancelaciones o cambios de cita. Respuesta en JSON estricto (`{"respuesta": "...", "escalar": false}`).
+
+---
+
+### 8.3 Bloque C: Recordatorios para WhatsApp (`RecordatorioIaService`) — ✅ COMPLETADO
+* **Extracción de Datos Verificados (`CitaService.obtenerDatosRecordatorio`):**
+  * Valida que la cita pertenezca al salón (`404 RecursoNoEncontradoException`).
+  * Valida que la cita esté en estado ocupado (`PENDIENTE` o `CONFIRMADA`), impidiendo recordatorios sobre citas canceladas (`ReglaNegocioException`).
+  * Formatea la fecha y hora usando `Locale.forLanguageTag("es-CO")` (removiendo espacios no separables como `\u00A0` o `\u202F` en formateadores de Java) y valor monetario colombiano (`$XX.XXX`).
+  * Consolida los 6 datos verificados: Servicio con duración, Estilista, Fecha, Hora, Valor y Dirección completa.
+* **Generación y Descuento:**
+  * `RecordatorioIaService.generar`: Descuenta 1 crédito atómicamente, carga `recordatorio.txt`, sustituye `{{salon}}`, `{{cliente}}` y `{{datos}}`, invoca `AsistenteIaService` y deserializa la clave `mensaje`.
+* **Controlador (`CitaController`):**
+  * `POST /api/citas/{id}/recordatorio` (200 OK): Retorna `RecordatorioResponse` con el texto sugerido para revisión humana previa al envío por WhatsApp.
+
+---
+
+### 8.4 Bloque D: Chatbot de Atención al Cliente (`ChatbotIaService`) — ✅ COMPLETADO
+* **Contexto Inyectado:**
+  * Recupera el salón por `slug`, sus horarios y la lista de servicios activos con precio y duración formateados.
+* **Escalamiento y Seguridad de Respuestas:**
+  * Descuenta 1 crédito atómicamente por cada interacción.
+  * Inyecta la plantilla `chatbot.txt` y delega en el motor de IA.
+  * Procesa la respuesta JSON extrayendo `respuesta` y la bandera booleana `escalar`.
+* **Controlador Público (`PublicoController`):**
+  * `POST /api/publico/salones/{slug}/chat` (200 OK): Recibe `ChatRequest` validado (`@NotBlank` en mensaje y nombre del cliente opcional) y responde con `ChatResponse(respuesta, escalar)`.
+
+---
+
+## 9. Bitácora de Incidencias y Soluciones Técnicas
 
 | # | Problema / Incidencia | Causa Raíz | Solución Aplicada |
 |---|---|---|---|
@@ -542,10 +627,11 @@ Se implementó el componente de cálculo temporal desacoplado del sistema operat
 | 10 | Bloqueo de concurrencia en `.m2/repository/.locks` de Maven en entorno sandbox | Maven detecta bloqueos de archivo en el repositorio global fuera del workspace | Se verificó la compilación limpia del proyecto ejecutando el wrapper Maven con éxito total (`BUILD SUCCESS`). |
 | 11 | Control de acceso fino en operaciones de citas según rol | La creación manual de citas y recordatorios debe ser exclusiva del dueño (`DUENO`), mientras que la consulta y cambio de estado debe permitirse tanto a `DUENO` como a `ESTILISTA` | Se configuraron directivas explícitas `HttpMethod.POST /api/citas` con `hasRole('DUENO')`, `HttpMethod.GET` y `HttpMethod.PATCH` con `hasAnyRole('DUENO', 'ESTILISTA')` en `SecurityConfig`. |
 | 12 | Error de compilación en `PagoController.java:[42,26]` | En el método `resultado`, faltaba la declaración del tipo genérico `<Map<String, String>>` en `ResponseEntity` | Se corrigió la firma a `public ResponseEntity<Map<String, String>> resultado(...)`, logrando compilación limpia (`BUILD SUCCESS`). |
+| 13 | Pérdida de tipos genéricos en snippets de IA (`ProveedorOpenAi.java`) | Al copiar/procesar el código del proveedor, los corchetes angulares `<Map<String, Object>>` se truncaron en `List> choices = (List>)` provocando error de sintaxis en el compilador | Se restauraron las firmas genéricas estrictas `List<Map<String, Object>> choices = (List<Map<String, Object>>) respuesta.get("choices");`, logrando compilación limpia (`BUILD SUCCESS`). |
 
 ---
 
-## 9. Próximos Pasos
+## 10. Próximos Pasos
 
 - [x] Desarrollar servicio de negocio (`SalonService` / `AuthService`) para orquestar la transacción atómica de registro y generación de slug único.
 - [x] Implementar capa de seguridad Spring Security 6, hashing de contraseñas con `BCryptPasswordEncoder` y generación/validación de tokens JWT (Fase 2).
@@ -553,12 +639,13 @@ Se implementó el componente de cálculo temporal desacoplado del sistema operat
 - [x] Implementar el Catálogo y Equipo (Fase 3: Entidades `Servicio`, `Estilista`, `Cliente`, reglas de asignación y límite de estilistas para plan GRATIS).
 - [x] Implementar la Fase 4: Módulo de Agenda (Citas, Disponibilidad, cálculo de horarios libres con `Clock`, catálogo público y reservas en línea).
 - [x] Implementar la Fase 5: Pasarela de Pagos Stripe (Suscripciones PRO, compra de paquetes de créditos y Webhooks firmados).
-- [x] Completar las 6 entradas de la bitácora de IA en `BITACORA-IA.md` (superando el umbral de 5 requerido para el Criterio 08).
-- [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS` con 74 fuentes).
-- [ ] Implementar el Módulo de IA (Recordatorios deterministas y Chatbot con Gemini / OpenAI spec y control de créditos IA).
+- [x] Implementar el Módulo de IA (Fase 6: Recordatorios deterministas y Chatbot con Gemini / OpenAI spec y control atómico de créditos IA).
+- [x] Completar las 7 entradas de la bitácora de IA en `BITACORA-IA.md` (superando el umbral de 5 requerido para el Criterio 08).
+- [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS` con 96 fuentes compiladas).
 - [ ] Implementar suite de pruebas unitarias JUnit 5 y Mockito para cumplir con el mínimo de tests requeridos (Criterio 07).
 - [ ] Completar los documentos técnicos `SPEC.md` y `AGENTS.md` requeridos por el calificador automático (Criterio 08).
 - [ ] Diseñar la colección oficial de pruebas en Postman (Criterio 08).
+
 
 
 
