@@ -1,279 +1,57 @@
-# 💈 Sillón · Proyecto integrador Módulos 4 y 5
+# Sillón
 
-**Java AI Engineer · Dev Senior Code**
+Sillón es una API de agenda para barberías y salones de belleza. Cada salón administra su equipo y sus citas. Sus clientes consultan el catálogo, reservan en línea y pueden pedir ayuda a una persona desde el chat.
 
----
+**Dirección del servicio en Render** · [API](https://sillon-dilson-rivera.onrender.com/v3/api-docs) · [Swagger interactivo](https://sillon-dilson-rivera.onrender.com/swagger-ui.html)
 
-## ¿Qué es esto?
+## Ejecutar en local
 
-### El proyecto
-Vas a construir **Sillón**: un SaaS de agenda para barberías y salones de belleza.
-API en Java con Spring Boot, JWT, Stripe, IA, Swagger y despliegue en Render.
+1. Instala Java 17 y arranca MySQL 8. El usuario debe tener acceso a la base `sillon_db`. El valor de conexión de la plantilla permite crearla si tiene ese permiso.
+2. Desde la raíz del repositorio, ejecuta `Copy-Item secrets.example.properties secrets.properties` en PowerShell. Completa el usuario y la contraseña de MySQL. Para conservar las sesiones entre reinicios, configura un secreto JWT aleatorio de al menos 32 bytes.
+3. Ejecuta `.\mvnw.cmd clean verify` para compilar y probar. Ejecuta `.\mvnw.cmd spring-boot:run` para arrancar la API. En macOS y Linux usa `./mvnw`. Los tests usan H2 y proveedores simulados.
+4. Abre [Swagger local](http://localhost:8080/swagger-ui.html). Ejecuta el registro y pega el campo `token` en **Authorize**. Con `GET /api/salon` podrás ver los 10 créditos iniciales.
 
-### Dónde está el enunciado
-El enunciado completo (negocio, reglas, contrato de la API y paso a paso) está en el **PDF que te compartió la profe**.
-Este README solo explica **cómo entregar y cómo se califica**.
+El backend usa Spring Boot 4.1, JPA, Spring Security, JJWT, BCrypt y springdoc 3. Stripe Java crea las sesiones de pago. Las peticiones de IA se hacen con RestClient. El Dockerfile compila con un JDK 17 y ejecuta con un JRE 17.
 
-### La calificación es automática
-Construyes el proyecto en **tu fork** y abres **un solo Pull Request**.
-Cada vez que haces `git push`, un robot califica tu proyecto y te deja la nota en el PR.
-No tienes que esperar a nadie: corriges, subes y la nota se actualiza sola.
+## Verificar con Postman
 
-### ¿Qué es una prueba automática?
-**Técnica:** código que llama a tu API, revisa la respuesta (código HTTP y datos) y dice si cumple o no lo esperado.
+Importa los tres archivos de `postman/`. Elige **local** o **produccion** y ejecuta las carpetas 1 a 6 en orden. Cada ejecución crea dos salones de prueba y calcula sus propias fechas. Para probar IA y Checkout necesitas un proveedor configurado y productos de Stripe de prueba. La carpeta 7 usa el salón y el token de la ejecución previa. Mantén las variables de la colección si usas el Runner.
 
-**En la vida real:** es el inspector de la revisión técnico-mecánica.
-No le importa cómo arreglaste el carro: revisa frenos, luces y emisiones contra una lista, y aprueba o rechaza.
+Para probar el pago manual, crea un precio mensual de 15 USD para Sillón PRO y un precio único de 5 USD para 200 créditos en el entorno de prueba de Stripe. Configura los dos IDs de precio y la clave de prueba. En local ejecuta `stripe listen --forward-to localhost:8080/api/pagos/webhook`, guarda el secreto de firma que muestra la CLI en tu configuración local y reinicia la API. Abre la `urlPago` de la suscripción, usa la tarjeta de prueba `4242 4242 4242 4242`, una fecha futura y un CVC de prueba. Cuando llegue el webhook, ejecuta la carpeta 7. Reenviar el evento debe conservar el mismo saldo.
 
----
+## Variables de Render
 
-## Qué hace el calificador en cada push
-
-### Los pasos
-1. Compila tu proyecto con Maven.
-2. Corre **tus** tests JUnit.
-3. Arranca **tu** API con MySQL, un simulador oficial de Stripe y una **IA simulada** (sin costo y sin llaves).
-4. Corre la **colección oficial** de Postman: más de 100 pruebas contra tu API.
-5. Revisa tu repositorio (SPEC, bitácora, colección, Dockerfile, secretos…).
-6. Prueba tu API desplegada en Render (la URL que pongas en tu README).
-
-### La nota
-`nota = 5 × pruebas aprobadas ÷ pruebas totales`, con un decimal.
-Cada prueba vale lo mismo, así que los criterios con más reglas pesan más.
-
----
-
-## Los 9 criterios
-
-| # | Criterio | Pruebas | Peso aprox. |
-|---|---|---|---|
-| 01 | Registro, login y configuración | 14 | 10 % |
-| 02 | Catálogo y equipo | 9 | 6 % |
-| 03 | Agenda | 34 | 23 % |
-| 04 | Aislamiento y roles | 7 | 5 % |
-| 05 | IA: recordatorio y chatbot | 16 | 11 % |
-| 06 | Pagos con Stripe (incluye webhooks firmados) | 29 | 20 % |
-| 07 | Tests JUnit | 8 | 6 % |
-| 08 | Repositorio y entrega | 12 | 8 % |
-| 09 | Producción en Render | 16 | 11 % |
-
-### Qué revisa el criterio 07
-Que el proyecto compile, que tus tests corran y pasen, que haya al menos 15 y al menos 30, y que haya tests de agenda, del webhook y del chatbot.
-
-### Qué revisa el criterio 08
-SPEC.md, AGENTS.md, BITACORA-IA.md (5 entradas o más), colección propia en `postman/` (50 peticiones o más, 40 con pruebas), dos entornos, Dockerfile, `secrets.example.properties`, que **no** subiste `secrets.properties` ni llaves reales, 2 prompts y la URL de Render en el README.
-
----
-
-## Lo que el calificador necesita de tu proyecto
-
-### El proyecto va en la raíz
-El `pom.xml` debe quedar en la raíz de tu fork, al lado de este README.
-Si lo dejas dentro de una subcarpeta, el calificador no lo encuentra y la nota es 0.0.
-
-### Tu versión de Java
-El calificador lee `<java.version>` de tu `pom.xml` e instala esa misma versión (de 17 a 27).
-Usa la que tienes instalada (`java -version`) y no pongas otra distinta en `<release>`.
-
-### El plugin de Spring Boot
-No borres `spring-boot-maven-plugin` de `<build><plugins>`.
-Sin él, tu `.jar` no arranca solo y Render no puede ejecutar tu API.
-
-### El contrato de la API
-Rutas, nombres de campos y códigos HTTP **exactamente** como dice la sección 4 del enunciado.
-Un campo con otro nombre hace fallar la prueba aunque tu lógica esté bien.
-
-### Variables de entorno
-El calificador (y Render) configuran tu aplicación con estas variables.
-Tu `application.properties` debe leerlas, con un valor de relleno para que arranque sin ellas.
-
-| Variable | Para qué |
+| Grupo | Nombres |
 |---|---|
-| `PORT` | Puerto de la aplicación |
-| `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` | Base de datos |
-| `JWT_SECRETO` | Secreto para firmar los JWT |
-| `URL_PUBLICA` | URL de tu API (para volver de Stripe) |
-| `STRIPE_URL_API` | Dirección de la API de Stripe (por defecto `https://api.stripe.com`) |
-| `STRIPE_CLAVE_SECRETA`, `STRIPE_SECRETO_WEBHOOK` | Llaves de Stripe |
-| `STRIPE_PRECIO_PRO`, `STRIPE_PRECIO_CREDITOS` | Ids de los precios |
-| `GEMINI_LLAVE` | Llave de Gemini |
-| `SILLON_IA_OPENAI_URL` | Dirección del proveedor con formato OpenAI (propiedad `sillon.ia.openai.url`) |
+| Aplicación | `PORT`, `URL_PUBLICA`, `JWT_SECRETO` |
+| PostgreSQL | `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` |
+| Stripe | `STRIPE_CLAVE_SECRETA`, `STRIPE_SECRETO_WEBHOOK`, `STRIPE_PRECIO_PRO`, `STRIPE_PRECIO_CREDITOS` |
+| IA | `GEMINI_LLAVE`, `SILLON_IA_MODELO`, `ANTHROPIC_API_KEY` para el respaldo opcional |
+| Simuladores locales | `STRIPE_URL_API`, `SILLON_IA_OPENAI_URL`, `SILLON_IA_CLAUDE_URL` |
 
-### ¿Por qué STRIPE_URL_API y SILLON_IA_OPENAI_URL?
-Porque el calificador no usa el Stripe real ni el Gemini real: usa simuladores.
-Que la dirección de un servicio externo sea configurable es una práctica profesional: así se prueba sin gastar dinero.
+En Supabase usa el **Session pooler** del proyecto, con puerto 5432 y TLS. Copia el host y el usuario de la sección **Connect** y usa la URL con el prefijo JDBC. En Render selecciona el runtime Docker y la rama `entrega-sillon`. Registra la ruta pública `/api/pagos/webhook` en Stripe para los eventos `checkout.session.completed` y `customer.subscription.deleted`. El secreto de ese destino es distinto del que entrega Stripe CLI. [Despliegue Docker en Render](https://render.com/docs/docker) · [Conexión PostgreSQL en Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres)
 
-### La IA simulada
-No razona: responde según lo que **tu prompt** le pida.
-- Si tu prompt pide un JSON con `respuesta` y `escalar`, responde como chatbot.
-- Si tu prompt pide un JSON con `mensaje`, responde como recordatorio, usando los datos verificados que Java puso en el prompt.
+## Rutas
 
-En el chatbot, a veces "promete" un cupón a propósito: tu regla en Java debe bloquearlo.
+| Acceso | Método y ruta | Uso |
+|---|---|---|
+| Público | `POST /api/auth/registro`, `POST /api/auth/login` | Registrar salón y dueño, obtener JWT |
+| Dueño | `GET /api/salon`, `PUT /api/salon/configuracion` | Consultar el plan, créditos y horario |
+| Dueño o estilista | `GET /api/servicios` | Consultar servicios del propio salón |
+| Dueño | `POST /api/servicios`, `PUT /api/servicios/{id}` | Crear, editar o desactivar un servicio |
+| Dueño | `GET /api/estilistas`, `POST /api/estilistas`, `GET /api/clientes` | Administrar el equipo y consultar clientes |
+| Dueño | `POST /api/citas`, `POST /api/citas/{id}/recordatorio` | Agendar o preparar un borrador para WhatsApp |
+| Dueño o estilista | `GET /api/citas?fecha=AAAA-MM-DD`, `PATCH /api/citas/{id}/estado` | Revisar la agenda o cambiar el estado según el rol |
+| Público | `GET /api/publico/salones/{slug}`, `GET /api/publico/salones/{slug}/disponibilidad` | Consultar catálogo o franjas por fecha, servicio y estilista |
+| Público | `POST /api/publico/salones/{slug}/reservas`, `POST /api/publico/salones/{slug}/chat` | Reservar en línea o consultar al asistente |
+| Dueño | `GET /api/solicitudes`, `PATCH /api/solicitudes/{id}/atendida` | Gestionar consultas derivadas por el chatbot |
+| Dueño | `POST /api/pagos/suscripcion`, `POST /api/pagos/creditos` | Crear una sesión de Stripe Checkout |
+| Stripe | `POST /api/pagos/webhook` | Recibir el evento con su firma |
+| Público | `GET /api/pagos/resultado?estado=exito` | Mostrar el regreso desde Checkout |
+| Administrador | `GET /api/admin/salones` | Listar todos los salones |
 
-### Swagger
-El calificador revisa que `/v3/api-docs` responda en tu URL de Render.
+## Si Sillón atendiera 500 salones
 
----
-
-## Paso 1 · Fork
-
-### ¿Qué es?
-**Técnica:** una copia de este repositorio en tu cuenta de GitHub, conectada con el original.
-
-**En la vida real:** una fotocopia del cuaderno de la profe: escribes en la tuya sin dañar el de ella.
-
-### Cómo
-1. Arriba a la derecha de esta página: **Fork**.
-2. Deja el nombre como está y clic en **Create fork**.
-
-### Cómo saber que quedó bien
-Arriba a la izquierda dice **tu-usuario/este-repo** y, debajo, "forked from" el repo de la profe.
-
----
-
-## Paso 2 · Clone
-
-### Cómo
-1. En **tu** fork: botón verde **Code** → copia la URL.
-2. En la terminal de Cursor, en la carpeta donde guardas tus proyectos:
-
-```bash
-git clone URL-DE-TU-FORK
-```
-
-3. Abre la carpeta del repo en Cursor (**File → Open Folder**).
-
----
-
-## Paso 3 · Construir el proyecto
-
-### Dónde
-Genera el proyecto en Spring Initializr y **copia su contenido** (pom.xml, src, mvnw…) en la raíz de tu fork.
-
-### Las reglas de oro
-- No toques la carpeta `.github/`.
-- Nunca subas `secrets.properties` (va en tu `.gitignore`).
-- Un commit por cada paso del enunciado que quede en verde.
-
-### Tu propio README
-Cuando escribas el README de tu proyecto, reemplaza este archivo. Esta guía sigue en el repo de la profe.
-
----
-
-## Paso 4 · Probar en local
-
-### Tus pruebas
-- Tus tests: `./mvnw test` (en Windows PowerShell: `.\mvnw test`).
-- Tu colección de Postman: **Run collection** con el entorno local.
-
-### La nota oficial
-La nota oficial solo se calcula en GitHub, porque necesita los simuladores.
-Si tus tests y tu colección pasan, lo normal es que la nota oficial también.
-
----
-
-## Paso 5 · Subir
-
-```bash
-git add .
-git commit -m "Fase 4: agenda con reglas de horario y cruces"
-git push
-```
-
-### Qué hace cada uno
-- `git add .` mete los cambios en la caja.
-- `git commit -m` cierra la caja y le pone etiqueta.
-- `git push` envía la caja a tu fork en GitHub.
-
----
-
-## Paso 6 · Pull Request (solo UNO)
-
-### ¿Qué es?
-**Técnica:** una solicitud para que los cambios de tu fork se revisen contra el repo de la profe.
-
-**En la vida real:** radicar un documento en una ventanilla: queda con número y se puede consultar su estado.
-
-### Cómo
-1. En tu fork: **Contribute → Open pull request**.
-2. Título: **tu nombre completo**.
-3. **Create pull request**.
-
-### Uno solo
-Después de abrirlo, cada `git push` a tu fork actualiza el mismo PR. No abras otro.
-
----
-
-## Paso 7 · Ver la nota
-
-### Dónde
-- En el PR aparece un comentario con la nota y la tabla de criterios.
-- En la lista de PRs, tu PR tiene la etiqueta `Nota X.X`.
-- El enlace **Ver qué falta por corregir** muestra cada prueba que falló y por qué.
-
-### Cuánto tarda
-El calificador compila, arranca y prueba tu proyecto completo: espera unos minutos después de cada push.
-
-### Ojo con la fecha límite
-Después de la fecha límite, los push ya no cambian la nota.
-Si tu primera entrega llega tarde, el PR queda con la etiqueta `⏰ Fuera de plazo`.
-
----
-
-## Archivos que NO debes modificar
-
-### La carpeta `.github/`
-Ahí vive el calificador. Si la modificas, tu PR queda con la etiqueta `⚠️ Revisar` y la profe lo revisa a mano.
-La nota se calcula igual, con el calificador original.
-
----
-
-## Errores frecuentes
-
-### "No encontré pom.xml en la raíz de tu fork"
-Dejaste el proyecto dentro de una subcarpeta. Muévelo a la raíz.
-
-### "Error de compilación en src/…, línea N"
-Abre ese archivo en esa línea. Mientras no compile, casi todos los criterios quedan en cero.
-
-### "La aplicación no arrancó: …"
-Lee el motivo. Lo más común: una propiedad que no tiene valor de relleno, o un bean que Spring no sabe crear.
-
-### "Tu pom.xml pide Java N, pero se está calificando con Java M"
-El calificador no pudo leer tu versión. Escríbela como número en `<java.version>` (por ejemplo `21`).
-
-### "Tu pom.xml no tiene el plugin spring-boot-maven-plugin"
-Te calificó igual, pero vuelve a poner el plugin en tu `pom.xml`: Render lo necesita.
-
-### "Tu proyecto (o una de sus librerías) necesita Java N"
-Alguna librería pide un Java más nuevo que el de tu `pom.xml`. Pon ese número en `<java.version>`.
-
-### "Se esperaba HTTP 201 y tu API respondió 404"
-La ruta no existe o se llama distinto al contrato.
-
-### "La respuesta no trae ese campo"
-El JSON no tiene el nombre exacto del contrato (por ejemplo `creditosIa`).
-
-### "Se esperaba HTTP 200 y tu API respondió 502" en pagos
-Tu cliente de Stripe no está usando `STRIPE_URL_API`.
-
-### Todo el criterio 05 en cero con "503"
-Tu proveedor de IA no lee `SILLON_IA_OPENAI_URL` o `GEMINI_LLAVE`.
-
-### "No encontré en tu README.md una URL de Render"
-Agrega la URL completa (`https://tu-app.onrender.com`) a tu README.
-
-### Error 403 al hacer push
-Clonaste el repo de la profe en vez de tu fork. Vuelve al Paso 2 con la URL de **tu** fork.
-
-### "Please tell me who you are"
-Configura Git una sola vez:
-
-```bash
-git config --global user.name "Tu Nombre"
-git config --global user.email "tu-correo@ejemplo.com"
-```
-
----
-
-<small>© 2026 Ana Alvarado · Educadora Tech & Desarrolladora Full Stack · Todos los derechos reservados · linkedin.com/in/ana-alvarado-instructora-full-stack</small>
+Cuidaría primero los datos sensibles de los clientes, especialmente sus teléfonos y el historial de citas.  
+Comprobaría que cada salón solo pueda consultar los datos de sus propios clientes.  
+Revisaría los permisos y los registros de la aplicación para evitar exponer esos datos al atender una consulta.
