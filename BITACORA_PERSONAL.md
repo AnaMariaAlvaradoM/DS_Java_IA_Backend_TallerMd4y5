@@ -11,8 +11,9 @@
 2. [Fase 0: Preparación del Terreno y Configuración Base](#2-fase-0-preparación-del-terreno-y-configuración-base)
 3. [Fase 1: La Base SaaS (Multi-tenancy, Errores y Modelo)](#3-fase-1-la-base-saas-multi-tenancy-errores-y-modelo)
 4. [Fase 2: Seguridad, Autenticación y Configuración de Inquilinos](#4-fase-2-seguridad-autenticación-y-configuración-de-inquilinos)
-5. [Bitácora de Incidencias y Soluciones Técnicas](#5-bitácora-de-incidencias-y-soluciones-técnicas)
-6. [Próximos Pasos](#6-próximos-pasos)
+5. [Fase 3: Catálogo de Servicios, Estilistas (ManyToMany) y Clientes](#5-fase-3-catálogo-de-servicios-estilistas-manytomany-y-clientes)
+6. [Bitácora de Incidencias y Soluciones Técnicas](#6-bitácora-de-incidencias-y-soluciones-técnicas)
+7. [Próximos Pasos](#7-próximos-pasos)
 
 ---
 
@@ -320,7 +321,81 @@ Se construyó la interfaz para que el dueño del salón consulte los datos de su
 
 ---
 
-## 5. Bitácora de Incidencias y Soluciones Técnicas
+## 5. Fase 3: Catálogo de Servicios, Estilistas (ManyToMany) y Clientes
+
+### 📋 Checklist de Entregables (Fase 3)
+* **Bloque A: Catálogo de Servicios (`servicio`) (✅ Completado)**
+  - [x] Entidad `Servicio` con relación obligatoria al `Salon` (`ManyToOne`).
+  - [x] Repositorio `ServicioRepository` con métodos multi-tenant (`findBySalonId`, `findByIdAndSalonId`, `findAllByIdInAndSalonId`).
+  - [x] DTOs `ServicioRequest` (con Bean Validation de duraciones y precios) y `ServicioResponse`.
+  - [x] Componente `ServicioMapper` para transformación limpia entidad-DTO con método `aResponse`.
+  - [x] Servicio de negocio `ServicioService` con operaciones de creación, consulta por inquilino y actualización.
+  - [x] Controlador `ServicioController` en `/api/servicios` (`POST`, `GET`, `PUT /{id}`) protegido con roles `DUENO` y `ESTILISTA`.
+* **Bloque B: Gestión de Estilistas y Asignación de Servicios (`usuario`) (✅ Completado)**
+  - [x] Relación `@ManyToMany` en entidad `Usuario` mapeada a tabla intermedia `estilista_servicios`.
+  - [x] Método de ayuda `ofreceServicio(Long servicioId)`.
+  - [x] Consultas en `UsuarioRepository`: conteo y filtrado de estilistas por salón (`countBySalonIdAndRol`, `findBySalonIdAndRol`).
+  - [x] DTOs `EstilistaRequest` (con contraseña 8-72 caracteres y servicios obligatorios) y `EstilistaResponse` (servicios ordenados alfabéticamente).
+  - [x] Reglas de negocio en `EstilistaService`:
+    - **Prioridad 1 (402 Payment Required):** Límite estricto de estilistas en plan GRATIS (máximo 2 activos) validado en primer lugar.
+    - **Prioridad 2 (409 Conflict):** Unicidad de correo electrónico.
+    - **Prioridad 3 (404 Not Found):** Verificación de que todos los servicios asignados pertenezcan estrictamente al salón del usuario autenticado.
+  - [x] Controlador `EstilistaController` en `/api/estilistas` (`POST` 201 Created y `GET` 200 OK).
+* **Bloque C: Gestión y Normalización de Clientes (`cliente`) (✅ Completado)**
+  - [x] Entidad `Cliente` con restricción de unicidad compuesta `@UniqueConstraint(columnNames = {"salon_id", "telefono"})`.
+  - [x] Repositorio `ClienteRepository` con consultas por salón y teléfono normalizado.
+  - [x] DTO `ClienteResponse`.
+  - [x] Algoritmo de normalización de teléfono (`replaceAll("[^0-9+]", "")`) en `ClienteService`.
+  - [x] Método `buscarOCrear` transaccional para reutilización eficiente de clientes en agenda.
+  - [x] Controlador `ClienteController` en `/api/clientes` (`GET` 200 OK).
+
+---
+
+### 5.1 Bloque A: Catálogo de Servicios (`com.devsenior.sillon.servicio`) — ✅ COMPLETADO
+Se desarrolló el módulo de catálogo asegurando que los salones administren sus propios servicios con aislamiento estricto:
+* **Entidad `Servicio`:** Mapeada a la tabla `servicios`. Contiene `id`, `nombre` (máx. 80), `descripcion` (máx. 300), `duracionMinutos` (entre 15 y 480 min), `precio` (> 0), bandera `activo` y relación `@ManyToOne(fetch = FetchType.LAZY)` hacia `Salon`.
+* **Consultas Multi-tenant (`ServicioRepository`):**
+  * `findBySalonId(Long salonId)`: Lista completa de servicios del salón.
+  * `findBySalonIdAndActivoTrue(Long salonId)`: Lista de servicios disponibles para agendamiento.
+  * `findByIdAndSalonId(Long id, Long salonId)`: Búsqueda segura que impide ver o mutar servicios de otros salones.
+  * `findAllByIdInAndSalonId(Collection<Long> ids, Long salonId)`: Validación por lote para verificar pertenencia de múltiples servicios al inquilino.
+* **Componente de Mapeo (`ServicioMapper`):** Componente `@Component` que desacopla el modelo relacional de la capa de transporte mediante `aResponse(Servicio servicio)`.
+* **Servicio y Controlador (`ServicioService`, `ServicioController`):**
+  * `POST /api/servicios` (201 Created): Creación de servicio vinculado al `salonId` del token.
+  * `GET /api/servicios` (200 OK): Consulta del catálogo del inquilino.
+  * `PUT /api/servicios/{id}` (200 OK): Modificación de nombre, descripción, duración, precio y estado, validando previamente que el servicio pertenezca al salón.
+
+---
+
+### 5.2 Bloque B: Equipo de Estilistas y Roles (`com.devsenior.sillon.usuario`) — ✅ COMPLETADO
+Se implementó la gestión del equipo de trabajo y la asignación de habilidades por estilista:
+* **Relación Muchos a Muchos (`estilista_servicios`):**
+  * `Usuario` incluye `Set<Servicio> servicios` asociado mediante `@JoinTable(name = "estilista_servicios")`.
+  * Método de negocio `ofreceServicio(Long servicioId)` para validaciones rápidas durante la reserva de citas.
+* **Secuencia Estricta de Validación en `EstilistaService`:**
+  1. **Límite de Plan (`402 Payment Required`):** Si el salón está en `Plan.GRATIS` y `countBySalonIdAndRol(salonId, Rol.ESTILISTA) >= limiteEstilistasGratis` (2), se bloquea la creación inmediatamente antes de verificar correo o servicios.
+  2. **Unicidad de Email (`409 Conflict`):** Se verifica `existsByEmail(emailNormalizado)`.
+  3. **Aislamiento de Servicios (`404 Not Found`):** Se valida `findAllByIdInAndSalonId(idsUnicos, salonId)`. Si la cantidad de servicios encontrados no coincide con la cantidad de IDs únicos solicitados, arroja `RecursoNoEncontradoException`.
+* **Endpoints (`EstilistaController`):**
+  * `POST /api/estilistas` (201 Created): Registra el nuevo estilista con contraseña hasheada (BCrypt) y rol `ESTILISTA`.
+  * `GET /api/estilistas` (200 OK): Retorna la nómina del salón con sus respectivos servicios ordenados alfabéticamente.
+
+---
+
+### 5.3 Bloque C: Directorio de Clientes (`com.devsenior.sillon.cliente`) — ✅ COMPLETADO
+Se diseñó el módulo de clientes con normalización automática y garantía de unicidad por salón:
+* **Aislamiento Multi-tenant y Unicidad Compuesta:**
+  * Tabla `clientes` protegida con `@UniqueConstraint(columnNames = {"salon_id", "telefono"})`. Un mismo número telefónico puede pertenecer a salones distintos sin entrar en conflicto.
+* **Normalización Telefónica Determinista:**
+  * `normalizarTelefono(String telefono)`: Filtra cualquier espacio, guion o carácter no numérico excepto `+` (`replaceAll("[^0-9+]", "")`).
+* **Operación Atómica `buscarOCrear`:**
+  * Si el cliente ya existe en el salón por su teléfono normalizado, lo retorna; de lo contrario, lo crea y persiste de forma transparente.
+* **Controlador (`ClienteController`):**
+  * `GET /api/clientes` (200 OK): Retorna los clientes registrados del salón autenticado.
+
+---
+
+## 6. Bitácora de Incidencias y Soluciones Técnicas
 
 | # | Problema / Incidencia | Causa Raíz | Solución Aplicada |
 |---|---|---|---|
@@ -337,16 +412,17 @@ Se construyó la interfaz para que el dueño del salón consulte los datos de su
 
 ---
 
-## 6. Próximos Pasos
+## 7. Próximos Pasos
 
 - [x] Desarrollar servicio de negocio (`SalonService` / `AuthService`) para orquestar la transacción atómica de registro y generación de slug único.
 - [x] Implementar capa de seguridad Spring Security 6, hashing de contraseñas con `BCryptPasswordEncoder` y generación/validación de tokens JWT (Fase 2).
 - [x] Exponer controladores REST con validación `@Valid` para endpoints públicos (`/api/auth/registro`, `/api/auth/login`) y privados (`/api/salon`).
+- [x] Implementar el Catálogo y Equipo (Fase 3: Entidades `Servicio`, `Estilista`, `Cliente`, reglas de asignación y límite de estilistas para plan GRATIS).
 - [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS`).
-- [ ] Implementar pruebas unitarias JUnit 5 y Mockito para `SlugUtil`, `JwtService`, `AuthService` y `SalonService` (Criterio 07).
-- [ ] Implementar el Catálogo y Equipo (Fase 3: Entidades `Servicio`, `Estilista`, `Cliente`, reglas de asignación y límite de estilistas para plan GRATIS).
-- [ ] Actualizar `BITACORA-IA.md` incorporando la entrada de la Fase 2 (requeridas 5+ entradas para el Criterio 08).
+- [ ] Implementar la Fase 4: Módulo de Agenda (Citas, Bloqueos, validación de horario comercial, intervalos y detección de cruces de turnos).
+- [ ] Implementar pruebas unitarias JUnit 5 y Mockito para `SlugUtil`, `JwtService`, `AuthService`, `SalonService`, `ServicioService` y `EstilistaService` (Criterio 07).
+- [ ] Diseñar la colección de pruebas en Postman para cubrir los flujos de Fase 1, 2 y 3 (Criterio 08).
 - [ ] Completar los documentos técnicos `SPEC.md` y `AGENTS.md` requeridos por el calificador automático (Criterio 08).
-- [ ] Diseñar la colección de pruebas en Postman para cubrir los flujos de registro, login y configuración de salón.
+
 
 

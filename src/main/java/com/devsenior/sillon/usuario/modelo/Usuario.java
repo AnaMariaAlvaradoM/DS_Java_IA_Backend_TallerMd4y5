@@ -2,8 +2,11 @@ package com.devsenior.sillon.usuario.modelo;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.devsenior.sillon.salon.modelo.Salon;
+import com.devsenior.sillon.servicio.modelo.Servicio;
 
 @Entity
 @Table(name = "usuarios")
@@ -35,6 +38,26 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "salon_id", nullable = false)
     private Salon salon;
+
+    @ManyToMany
+    @JoinTable(
+            name = "estilista_servicios",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "servicio_id")
+    )
+    private Set<Servicio> servicios = new HashSet<>();
+
+    public boolean ofreceServicio(Long servicioId) {
+        return servicios.stream().anyMatch(s -> s.getId().equals(servicioId));
+    }
+
+    public Set<Servicio> getServicios() {
+        return servicios;
+    }
+
+    public void setServicios(Set<Servicio> servicios) {
+        this.servicios = servicios;
+    }
 
     public Usuario() {
     }
