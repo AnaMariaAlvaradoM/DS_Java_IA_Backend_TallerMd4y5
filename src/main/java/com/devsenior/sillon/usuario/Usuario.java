@@ -1,7 +1,11 @@
 package com.devsenior.sillon.usuario;
 
 import com.devsenior.sillon.salon.Salon;
+import com.devsenior.sillon.servicio.Servicio;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "usuarios")
@@ -30,6 +34,21 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "salon_id", nullable = false)
     private Salon salon;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "estilista_servicios",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "servicio_id")
+    )
+    private List<Servicio> servicios = new ArrayList<>();
+
+    public boolean ofreceServicio(Long servicioId) {
+        if (servicios == null || servicioId == null) {
+            return false;
+        }
+        return servicios.stream().anyMatch(s -> s.getId() != null && s.getId().equals(servicioId));
+    }
 
     public Usuario() {
     }
@@ -98,5 +117,13 @@ public class Usuario {
 
     public void setSalon(Salon salon) {
         this.salon = salon;
+    }
+
+    public List<Servicio> getServicios() {
+        return servicios;
+    }
+
+    public void setServicios(List<Servicio> servicios) {
+        this.servicios = servicios;
     }
 }
