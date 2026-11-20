@@ -1,6 +1,7 @@
 package com.devsenior.sillon.usuario;
 
 import com.devsenior.sillon.salon.Salon;
+import com.devsenior.sillon.servicio.Servicio;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +12,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinTable;
+import java.util.HashSet;
+import java.util.Set;
 import jakarta.persistence.Table;
 
 @Entity
@@ -40,6 +45,12 @@ public class Usuario {
     @JoinColumn(name = "salon_id", nullable = false)
     private Salon salon;
 
+    @ManyToMany
+    @JoinTable(name = "estilista_servicios",
+            joinColumns = @JoinColumn(name = "estilista_id"),
+            inverseJoinColumns = @JoinColumn(name = "servicio_id"))
+    private Set<Servicio> servicios = new HashSet<>();
+
     public Usuario() {
     }
 
@@ -57,4 +68,10 @@ public class Usuario {
     public void setActivo(boolean activo) { this.activo = activo; }
     public Salon getSalon() { return salon; }
     public void setSalon(Salon salon) { this.salon = salon; }
+    public Set<Servicio> getServicios() { return servicios; }
+    public void setServicios(Set<Servicio> servicios) { this.servicios = servicios; }
+
+    public boolean ofreceServicio(Long servicioId) {
+        return servicios.stream().anyMatch(servicio -> servicio.getId().equals(servicioId));
+    }
 }
