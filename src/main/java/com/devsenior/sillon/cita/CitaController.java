@@ -21,9 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/citas")
 public class CitaController {
     private final CitaService servicio;
+    private final RecordatorioService recordatorios;
 
-    public CitaController(CitaService servicio) {
+    public CitaController(CitaService servicio, RecordatorioService recordatorios) {
         this.servicio = servicio;
+        this.recordatorios = recordatorios;
     }
 
     @PostMapping
@@ -45,5 +47,11 @@ public class CitaController {
                                        @Valid @RequestBody CambioEstadoSolicitud solicitud) {
         return servicio.cambiarEstado(usuario.getSalonId(), usuario.getId(), usuario.getRol(),
                 id, solicitud.estado());
+    }
+
+    @PostMapping("/{id}/recordatorio")
+    public RecordatorioRespuesta recordar(@AuthenticationPrincipal UsuarioPrincipal usuario,
+                                         @PathVariable Long id) {
+        return recordatorios.generar(usuario.getSalonId(), id);
     }
 }

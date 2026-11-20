@@ -4,6 +4,9 @@ import com.devsenior.sillon.cita.CitaRespuesta;
 import com.devsenior.sillon.cita.CitaService;
 import com.devsenior.sillon.cita.CitaSolicitud;
 import com.devsenior.sillon.compartido.NoEncontradoException;
+import com.devsenior.sillon.chat.ChatService;
+import com.devsenior.sillon.chat.ChatSolicitud;
+import com.devsenior.sillon.chat.ChatRespuesta;
 import com.devsenior.sillon.salon.SalonRepository;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -25,13 +28,15 @@ public class PublicoController {
     private final DisponibilidadService disponibilidad;
     private final SalonRepository salones;
     private final CitaService citas;
+    private final ChatService chat;
 
     public PublicoController(CatalogoService catalogo, DisponibilidadService disponibilidad,
-                             SalonRepository salones, CitaService citas) {
+                             SalonRepository salones, CitaService citas, ChatService chat) {
         this.catalogo = catalogo;
         this.disponibilidad = disponibilidad;
         this.salones = salones;
         this.citas = citas;
+        this.chat = chat;
     }
 
     @GetMapping
@@ -53,5 +58,10 @@ public class PublicoController {
                 .orElseThrow(() -> new NoEncontradoException("El salón no existe"))
                 .getId();
         return ResponseEntity.status(HttpStatus.CREATED).body(citas.agendarEnLinea(salonId, solicitud));
+    }
+
+    @PostMapping("/chat")
+    public ChatRespuesta conversar(@PathVariable String slug, @Valid @RequestBody ChatSolicitud solicitud) {
+        return chat.responder(slug, solicitud);
     }
 }

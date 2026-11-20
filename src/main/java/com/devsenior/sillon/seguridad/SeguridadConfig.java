@@ -56,6 +56,7 @@ public class SeguridadConfig {
                         .requestMatchers(HttpMethod.GET, "/api/citas").hasAnyRole("DUENO", "ESTILISTA")
                         .requestMatchers(HttpMethod.PATCH, "/api/citas/*/estado")
                                 .hasAnyRole("DUENO", "ESTILISTA")
+                        .requestMatchers(HttpMethod.POST, "/api/citas/*/recordatorio").hasRole("DUENO")
                         .requestMatchers("/api/citas", "/api/citas/**").hasRole("DUENO")
                         .anyRequest().denyAll())
                 .addFilterBefore(filtroJwt, UsernamePasswordAuthenticationFilter.class);
