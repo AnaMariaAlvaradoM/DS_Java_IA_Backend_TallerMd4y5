@@ -1,0 +1,16 @@
+package com.devSenior.sillon.cita.dto;
+
+import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+public record SolicitudCita(
+		@NotBlank @Size(max = 100) String clienteNombre,
+		@NotBlank @Size(min = 7, max = 30) String clienteTelefono,
+		@NotNull Long servicioId,
+		@NotNull Long estilistaId,
+		@NotNull LocalDateTime inicio,
+		@Size(max = 300) String nota) {
+}
