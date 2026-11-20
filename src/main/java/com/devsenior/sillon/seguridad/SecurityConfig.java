@@ -52,6 +52,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/servicios/**").hasAnyRole("DUENO", "ESTILISTA")
                         .requestMatchers("/api/servicios/**", "/api/estilistas/**", "/api/clientes/**").hasRole("DUENO")
                         .requestMatchers("/api/solicitudes/**", "/api/pagos/**").hasRole("DUENO")
+                        .requestMatchers(HttpMethod.POST, "/api/citas").hasRole("DUENO")
+                        .requestMatchers(HttpMethod.GET, "/api/citas").hasAnyRole("DUENO", "ESTILISTA")
+                        .requestMatchers(HttpMethod.PATCH, "/api/citas/*/estado").hasAnyRole("DUENO", "ESTILISTA")
+                        .requestMatchers(HttpMethod.POST, "/api/citas/*/recordatorio").hasRole("DUENO")
 
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

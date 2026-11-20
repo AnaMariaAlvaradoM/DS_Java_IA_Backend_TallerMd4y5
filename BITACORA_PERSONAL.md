@@ -12,8 +12,9 @@
 3. [Fase 1: La Base SaaS (Multi-tenancy, Errores y Modelo)](#3-fase-1-la-base-saas-multi-tenancy-errores-y-modelo)
 4. [Fase 2: Seguridad, Autenticación y Configuración de Inquilinos](#4-fase-2-seguridad-autenticación-y-configuración-de-inquilinos)
 5. [Fase 3: Catálogo de Servicios, Estilistas (ManyToMany) y Clientes](#5-fase-3-catálogo-de-servicios-estilistas-manytomany-y-clientes)
-6. [Bitácora de Incidencias y Soluciones Técnicas](#6-bitácora-de-incidencias-y-soluciones-técnicas)
-7. [Próximos Pasos](#7-próximos-pasos)
+6. [Fase 4: Agenda Inteligente, Disponibilidad y Reservas en Línea](#6-fase-4-agenda-inteligente-disponibilidad-y-reservas-en-línea)
+7. [Bitácora de Incidencias y Soluciones Técnicas](#7-bitácora-de-incidencias-y-soluciones-técnicas)
+8. [Próximos Pasos](#8-próximos-pasos)
 
 ---
 
@@ -395,7 +396,75 @@ Se diseñó el módulo de clientes con normalización automática y garantía de
 
 ---
 
-## 6. Bitácora de Incidencias y Soluciones Técnicas
+## 6. Fase 4: Agenda Inteligente, Disponibilidad y Reservas en Línea
+
+### 📋 Checklist de Entregables (Fase 4)
+* **Bloque A: Modelo de Dominio de Agenda (`cita.modelo` y `cita.repositorio`) (✅ Completado)**
+  - [x] Entidad `Cita` con relaciones hacia `Salon`, `Servicio`, `Usuario` (estilista) y `Cliente`.
+  - [x] Enums `EstadoCita` (`PENDIENTE`, `CONFIRMADA`, `CANCELADA`) y `OrigenCita` (`MANUAL`, `ONLINE`, `CHATBOT`).
+  - [x] Repositorio `CitaRepository` con consultas de solapamiento y filtrado de citas ocupadas por estilista y rango temporal.
+* **Bloque B: Motor de Reglas Temporales y Disponibilidad (`ReglasAgenda`) (✅ Completado)**
+  - [x] Algoritmo determinista para calcular horarios libres (`calcularHorariosLibres`) considerando intervalos de apertura/cierre.
+  - [x] Validación de política dominical (`abreDomingos`) y descarte automático de turnos pasados anclado al `Clock`.
+  - [x] Exclusión de slots con colisión temporal frente a citas existentes en estados `PENDIENTE` o `CONFIRMADA`.
+* **Bloque C: Gestión y Ciclo de Vida de Citas (`CitaService` y `CitaController`) (✅ Completado)**
+  - [x] Creación administrativa de citas (`POST /api/citas`) con validación de rol `DUENO`.
+  - [x] Creación de reservas públicas en línea (`POST /api/publico/salones/{slug}/reservas`).
+  - [x] Detección de colisiones de horario arrojando `ReglaNegocioException` (409 Conflict).
+  - [x] Validación de que el estilista ofrezca el servicio y esté activo.
+  - [x] Transición de estados (`PATCH /api/citas/{id}/estado`) para `DUENO` y `ESTILISTA`.
+* **Bloque D: Catálogo Público y Autoservicio (`CatalogoService` y `PublicoController`) (✅ Completado)**
+  - [x] DTOs `CatalogoPublicoResponse`, `DisponibilidadResponse` y `EstilistaPublicoDto`.
+  - [x] Endpoint de catálogo público: `GET /api/publico/salones/{slug}` sin autenticación.
+  - [x] Endpoint de consulta de disponibilidad: `GET /api/publico/salones/{slug}/disponibilidad`.
+* **Bloque E: Seguridad y Autorización Granular (`SecurityConfig`) (✅ Completado)**
+  - [x] Restricción HTTP por método en `/api/citas` para separar permisos entre dueño y estilista.
+
+---
+
+### 6.1 Bloque A: Modelo de Citas (`com.devsenior.sillon.cita`) — ✅ COMPLETADO
+Se modeló el núcleo de reservas multi-tenant:
+* **Entidad `Cita`:** Mapeada a la tabla `citas`. Almacena `id`, `inicio` (`LocalDateTime`), `fin` (`LocalDateTime`), `estado` (`EstadoCita`), `origen` (`OrigenCita`), `notas` opcionales, `fechaCreacion` y las referencias obligatorias `@ManyToOne` hacia `Salon`, `Servicio`, `Usuario` (como estilista) y `Cliente`.
+* **Estados y Ocupación:**
+  * Estados ocupados: `PENDIENTE` y `CONFIRMADA`. Bloquean la agenda del estilista impidiendo traslapes.
+  * Estado liberador: `CANCELADA`. Permite que el horario quede disponible de inmediato para nuevas reservas.
+* **Consultas de Agenda (`CitaRepository`):**
+  * `findByEstilistaIdAndEstadoInAndInicioBetweenOrderByInicioAsc(...)`: Recupera la agenda ocupada del estilista para un día específico ordenada cronológicamente.
+  * `existsByEstilistaIdAndEstadoInAndInicioLessThanAndFinGreaterThan(...)`: Detección directa de cruce de horarios para validar reservas en tiempo constante.
+
+---
+
+### 6.2 Bloque B: Algoritmo de Disponibilidad (`ReglasAgenda`) — ✅ COMPLETADO
+Se implementó el componente de cálculo temporal desacoplado del sistema operativo:
+* **Generación de Slots:** Itera desde `horaApertura` hasta `horaCierre` avanzando por pasos definidos en `intervaloMinutos`.
+* **Filtros de Validación:**
+  1. **Día Laborable:** Si la fecha solicitada es domingo y el salón no abre domingos (`!config.isAbreDomingos()`), retorna lista vacía.
+  2. **Límite de Cierre:** El fin estimado de la cita (`slot.plusMinutes(duracionMinutos)`) no puede superar la `horaCierre`.
+  3. **Turnos Pasados:** Compara la fecha y hora del slot contra `LocalDateTime.now(clock)` para descartar horarios vencidos en consultas del mismo día.
+  4. **Solapamiento:** Descarta cualquier slot donde el rango `[slot, slot + duracion]` colisione con el intervalo `[inicio, fin]` de una cita ocupada del estilista.
+
+---
+
+### 6.3 Bloque C: Orquestación de Citas y Reservas (`CitaService`, `CitaController`) — ✅ COMPLETADO
+* **Flujo de Creación de Cita (`POST /api/citas` y `/api/publico/salones/{slug}/reservas`):**
+  1. Verifica que el servicio pertenezca al salón y esté activo (`404` / `409`).
+  2. Verifica que el estilista pertenezca al salón, esté activo y ofrezca dicho servicio (`404` / `409`).
+  3. Valida que el horario esté dentro de la jornada comercial y día hábil del salón (`409 Conflict`).
+  4. Valida ausencia de traslape con otra cita ocupada del mismo estilista (`ReglaNegocioException` 409).
+  5. Localiza o crea al cliente automáticamente mediante `ClienteService.buscarOCrear`.
+  6. Persiste la cita con origen correspondiente (`MANUAL` u `ONLINE`) y estado inicial `CONFIRMADA` o `PENDIENTE`.
+* **Transición de Estados (`PATCH /api/citas/{id}/estado`):**
+  * Permite modificar el estado de la cita (`CONFIRMADA`, `CANCELADA`) garantizando que pertenezca al salón del usuario autenticado.
+
+---
+
+### 6.4 Bloque D: Catálogo Público (`CatalogoService`, `PublicoController`) — ✅ COMPLETADO
+* **Endpoint de Catálogo (`GET /api/publico/salones/{slug}`):** Retorna la información general del salón, horario formateado legiblemente (ej. "Lunes a sábado (domingos cerrado), de 08:00 a 19:00"), listado de servicios activos y estilistas activos con sus servicios ofrecidos.
+* **Endpoint de Disponibilidad (`GET /api/publico/salones/{slug}/disponibilidad`):** Expone los horarios libres exactos calculados para un servicio y estilista en una fecha específica.
+
+---
+
+## 7. Bitácora de Incidencias y Soluciones Técnicas
 
 | # | Problema / Incidencia | Causa Raíz | Solución Aplicada |
 |---|---|---|---|
@@ -409,20 +478,25 @@ Se diseñó el módulo de clientes con normalización automática y garantía de
 | 8 | Respuestas por defecto de Spring Security rompían el contrato JSON | Spring Security devuelve respuestas vacías o HTML en errores 401 y 403 | Se implementaron `AuthenticationEntryPoint` y `AccessDeniedHandler` personalizados en `SecurityConfig` inyectando `ObjectMapper` y `Clock` para responder estrictamente con el DTO `ErrorRespuesta`. |
 | 9 | Rutas no mapeadas arrojaban 500 en lugar de 404 | En Spring Boot 3 / Spring MVC 6, los recursos inexistentes lanzan `NoResourceFoundException`, que caía en el manejador genérico de errores 500 | Se agregó `@ExceptionHandler(NoResourceFoundException.class)` en `ManejadorGlobalErrores` devolviendo `404 Not Found` con mensaje "La ruta solicitada no existe". |
 | 10 | Bloqueo de concurrencia en `.m2/repository/.locks` de Maven en entorno sandbox | Maven detecta bloqueos de archivo en el repositorio global fuera del workspace | Se verificó la compilación limpia del proyecto ejecutando el wrapper Maven con éxito total (`BUILD SUCCESS`). |
+| 11 | Control de acceso fino en operaciones de citas según rol | La creación manual de citas y recordatorios debe ser exclusiva del dueño (`DUENO`), mientras que la consulta y cambio de estado debe permitirse tanto a `DUENO` como a `ESTILISTA` | Se configuraron directivas explícitas `HttpMethod.POST /api/citas` con `hasRole('DUENO')`, `HttpMethod.GET` y `HttpMethod.PATCH` con `hasAnyRole('DUENO', 'ESTILISTA')` en `SecurityConfig`. |
 
 ---
 
-## 7. Próximos Pasos
+## 8. Próximos Pasos
 
 - [x] Desarrollar servicio de negocio (`SalonService` / `AuthService`) para orquestar la transacción atómica de registro y generación de slug único.
 - [x] Implementar capa de seguridad Spring Security 6, hashing de contraseñas con `BCryptPasswordEncoder` y generación/validación de tokens JWT (Fase 2).
 - [x] Exponer controladores REST con validación `@Valid` para endpoints públicos (`/api/auth/registro`, `/api/auth/login`) y privados (`/api/salon`).
 - [x] Implementar el Catálogo y Equipo (Fase 3: Entidades `Servicio`, `Estilista`, `Cliente`, reglas de asignación y límite de estilistas para plan GRATIS).
-- [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS`).
-- [ ] Implementar la Fase 4: Módulo de Agenda (Citas, Bloqueos, validación de horario comercial, intervalos y detección de cruces de turnos).
-- [ ] Implementar pruebas unitarias JUnit 5 y Mockito para `SlugUtil`, `JwtService`, `AuthService`, `SalonService`, `ServicioService` y `EstilistaService` (Criterio 07).
-- [ ] Diseñar la colección de pruebas en Postman para cubrir los flujos de Fase 1, 2 y 3 (Criterio 08).
+- [x] Implementar la Fase 4: Módulo de Agenda (Citas, Disponibilidad, cálculo de horarios libres con `Clock`, catálogo público y reservas en línea).
+- [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS` con 65 fuentes).
+- [x] Completar las 5 entradas obligatorias de la bitácora de IA en `BITACORA-IA.md` (Criterio 08).
+- [ ] Implementar la Fase 5: Módulo de IA (Recordatorios deterministas y Chatbot con Gemini / OpenAI spec y control de créditos IA).
+- [ ] Implementar la Fase 6: Pasarela de Pagos Stripe (Suscripciones PRO, compra de paquetes de créditos y Webhooks firmados).
+- [ ] Implementar suite de pruebas unitarias JUnit 5 y Mockito para cumplir con el mínimo de tests requeridos (Criterio 07).
 - [ ] Completar los documentos técnicos `SPEC.md` y `AGENTS.md` requeridos por el calificador automático (Criterio 08).
+- [ ] Diseñar la colección oficial de pruebas en Postman (Criterio 08).
+
 
 
 
