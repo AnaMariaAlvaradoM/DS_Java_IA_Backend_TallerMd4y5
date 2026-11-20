@@ -13,8 +13,9 @@
 4. [Fase 2: Seguridad, Autenticación y Configuración de Inquilinos](#4-fase-2-seguridad-autenticación-y-configuración-de-inquilinos)
 5. [Fase 3: Catálogo de Servicios, Estilistas (ManyToMany) y Clientes](#5-fase-3-catálogo-de-servicios-estilistas-manytomany-y-clientes)
 6. [Fase 4: Agenda Inteligente, Disponibilidad y Reservas en Línea](#6-fase-4-agenda-inteligente-disponibilidad-y-reservas-en-línea)
-7. [Bitácora de Incidencias y Soluciones Técnicas](#7-bitácora-de-incidencias-y-soluciones-técnicas)
-8. [Próximos Pasos](#8-próximos-pasos)
+7. [Fase 5: Pagos e Integración con Stripe (Suscripciones, Créditos y Webhooks)](#7-fase-5-pagos-e-integración-con-stripe-suscripciones-créditos-y-webhooks)
+8. [Bitácora de Incidencias y Soluciones Técnicas](#8-bitácora-de-incidencias-y-soluciones-técnicas)
+9. [Próximos Pasos](#9-próximos-pasos)
 
 ---
 
@@ -464,7 +465,68 @@ Se implementó el componente de cálculo temporal desacoplado del sistema operat
 
 ---
 
-## 7. Bitácora de Incidencias y Soluciones Técnicas
+## 7. Fase 5: Pagos e Integración con Stripe (Suscripciones, Créditos y Webhooks)
+
+### 📋 Checklist de Entregables (Fase 5)
+* **Bloque A: Configuración y Cliente de Stripe (`pago.configuracion`) (✅ Completado)**
+  - [x] Configuración centralizada `StripeConfig` instanciando `StripeClient` con soporte para URLs simuladas de prueba (`sillon.stripe.url-api`).
+* **Bloque B: Creación de Sesiones de Checkout (`pago.servicio`) (✅ Completado)**
+  - [x] Enum `TipoCompra` (`SUSCRIPCION_PRO`, `PAQUETE_CREDITOS`).
+  - [x] DTO `SesionPagoResponse` (`tipo`, `sessionId`, `url`).
+  - [x] Método `crearSesionPago`: Validación de plan previo (409 si ya es PRO), generación de URLs de retorno (`/api/pagos/resultado`), inyección de metadatos multi-tenant (`salonId`, `tipoCompra`) y captura de `StripeException` traduciendo a `ErrorPasarelaException` (502).
+* **Bloque C: Procesamiento de Webhooks e Idempotencia (`pago.modelo`, `pago.repositorio`) (✅ Completado)**
+  - [x] Entidad `EventoStripe` para registro de auditoría e idempotencia con clave primaria `id` (identificador del evento Stripe).
+  - [x] Repositorio `EventoStripeRepository`.
+  - [x] DTO `WebhookResponse` (`recibido`, `procesado`).
+  - [x] Verificación estricta de firma HMAC (`Webhook.constructEvent`) arrojando `FirmaInvalidaException` (400) si falta o es inválida la cabecera `Stripe-Signature`.
+  - [x] Manejo de idempotencia: si el evento ya fue registrado, retorna `recibido: true, procesado: false` sin reprocesar.
+  - [x] Evento `checkout.session.completed`: Upgrade a `Plan.PRO` (+300 créditos IA) o recarga de paquete (+200 créditos IA).
+  - [x] Evento `customer.subscription.deleted`: Degradación automática a `Plan.GRATIS` y desvinculación de suscripción.
+* **Bloque D: Endpoints y Administración (`pago.controlador`, `salon.controlador`) (✅ Completado)**
+  - [x] Endpoints en `PagoController`: `POST /api/pagos/suscripcion`, `POST /api/pagos/creditos`, `POST /api/pagos/webhook` y `GET /api/pagos/resultado`.
+  - [x] Endpoint en `AdminController`: `GET /api/admin/salones` protegido para rol `ADMIN`.
+
+---
+
+### 7.1 Bloque A: Integración y Cliente de Stripe (`com.devsenior.sillon.pago.configuracion`) — ✅ COMPLETADO
+* **Bean `StripeClient`:** Configurado a partir de `sillon.stripe.clave-secreta` y parametrizado con `sillon.stripe.url-api`. Esto permite alternar entre la API real de Stripe (`https://api.stripe.com`) y el simulador local (`stripe-mock`) del calificador automático.
+
+---
+
+### 7.2 Bloque B: Sesiones de Pago Checkout (`com.devsenior.sillon.pago.servicio`) — ✅ COMPLETADO
+* **Suscripción PRO (`POST /api/pagos/suscripcion`):**
+  * Valida que el salón no tenga ya activo el plan PRO (`ReglaNegocioException` 409 Conflict).
+  * Crea una sesión en modo `SessionCreateParams.Mode.SUBSCRIPTION` vinculando el precio de suscripción configurado (`sillon.stripe.precio-pro`).
+  * Inyecta metadatos `salonId` y `tipoCompra` tanto en la sesión como en los datos de la suscripción para vincular el webhook entrante.
+* **Paquete de Créditos IA (`POST /api/pagos/creditos`):**
+  * Crea una sesión en modo `SessionCreateParams.Mode.PAYMENT` con el precio correspondiente a la recarga (`sillon.stripe.precio-creditos`).
+* **Manejo de Errores de Red:** Captura cualquier `StripeException` y la mapea a `ErrorPasarelaException` (HTTP 502 Bad Gateway).
+
+---
+
+### 7.3 Bloque C: Procesamiento de Webhooks e Idempotencia — ✅ COMPLETADO
+* **Verificación Criptográfica (`Stripe-Signature`):**
+  * Valida el payload crudo y la firma contra `sillon.stripe.secreto-webhook`.
+  * Si la cabecera no está presente o la firma es inválida, arroja `FirmaInvalidaException` (HTTP 400 Bad Request).
+* **Garantía de Idempotencia:**
+  * Si `eventoStripeRepository.existsById(evento.getId())` es verdadero, no se aplican mutaciones y se retorna inmediatamente `WebhookResponse(true, false)`.
+* **Procesamiento de Eventos:**
+  * `checkout.session.completed`: Verifica que el estado de pago sea `"paid"`. Extrae el `salonId` de los metadatos o del `clientReferenceId`. Si el tipo es `SUSCRIPCION_PRO`, actualiza el salón a `Plan.PRO`, le asigna los 300 créditos correspondientes y almacena el `stripeSubscriptionId`. Si es `PAQUETE_CREDITOS`, incrementa el saldo de créditos IA en 200.
+  * `customer.subscription.deleted`: Busca el salón por `stripeSubscriptionId`, revierte el plan a `Plan.GRATIS` y limpia el identificador de suscripción.
+  * Al finalizar, persiste la auditoría en `EventoStripe` (id, tipo de evento, fecha de recepción vía `Clock`).
+
+---
+
+### 7.4 Bloque D: Endpoints y Auditoría de Administración — ✅ COMPLETADO
+* **Controlador de Pagos (`PagoController`):**
+  * Expone los endpoints protegidos para el dueño (`/api/pagos/suscripcion`, `/api/pagos/creditos`) y el endpoint público para webhooks de pasarela (`/api/pagos/webhook`).
+  * Expone `GET /api/pagos/resultado` retornando confirmación o cancelación del flujo de checkout con `ResponseEntity<Map<String, String>>`.
+* **Controlador de Administración (`AdminController`):**
+  * Expone `GET /api/admin/salones` protegido exclusivamente para el rol `ADMIN`, retornando la totalidad de salones registrados y su estado actual de suscripción.
+
+---
+
+## 8. Bitácora de Incidencias y Soluciones Técnicas
 
 | # | Problema / Incidencia | Causa Raíz | Solución Aplicada |
 |---|---|---|---|
@@ -479,23 +541,25 @@ Se implementó el componente de cálculo temporal desacoplado del sistema operat
 | 9 | Rutas no mapeadas arrojaban 500 en lugar de 404 | En Spring Boot 3 / Spring MVC 6, los recursos inexistentes lanzan `NoResourceFoundException`, que caía en el manejador genérico de errores 500 | Se agregó `@ExceptionHandler(NoResourceFoundException.class)` en `ManejadorGlobalErrores` devolviendo `404 Not Found` con mensaje "La ruta solicitada no existe". |
 | 10 | Bloqueo de concurrencia en `.m2/repository/.locks` de Maven en entorno sandbox | Maven detecta bloqueos de archivo en el repositorio global fuera del workspace | Se verificó la compilación limpia del proyecto ejecutando el wrapper Maven con éxito total (`BUILD SUCCESS`). |
 | 11 | Control de acceso fino en operaciones de citas según rol | La creación manual de citas y recordatorios debe ser exclusiva del dueño (`DUENO`), mientras que la consulta y cambio de estado debe permitirse tanto a `DUENO` como a `ESTILISTA` | Se configuraron directivas explícitas `HttpMethod.POST /api/citas` con `hasRole('DUENO')`, `HttpMethod.GET` y `HttpMethod.PATCH` con `hasAnyRole('DUENO', 'ESTILISTA')` en `SecurityConfig`. |
+| 12 | Error de compilación en `PagoController.java:[42,26]` | En el método `resultado`, faltaba la declaración del tipo genérico `<Map<String, String>>` en `ResponseEntity` | Se corrigió la firma a `public ResponseEntity<Map<String, String>> resultado(...)`, logrando compilación limpia (`BUILD SUCCESS`). |
 
 ---
 
-## 8. Próximos Pasos
+## 9. Próximos Pasos
 
 - [x] Desarrollar servicio de negocio (`SalonService` / `AuthService`) para orquestar la transacción atómica de registro y generación de slug único.
 - [x] Implementar capa de seguridad Spring Security 6, hashing de contraseñas con `BCryptPasswordEncoder` y generación/validación de tokens JWT (Fase 2).
 - [x] Exponer controladores REST con validación `@Valid` para endpoints públicos (`/api/auth/registro`, `/api/auth/login`) y privados (`/api/salon`).
 - [x] Implementar el Catálogo y Equipo (Fase 3: Entidades `Servicio`, `Estilista`, `Cliente`, reglas de asignación y límite de estilistas para plan GRATIS).
 - [x] Implementar la Fase 4: Módulo de Agenda (Citas, Disponibilidad, cálculo de horarios libres con `Clock`, catálogo público y reservas en línea).
-- [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS` con 65 fuentes).
-- [x] Completar las 5 entradas obligatorias de la bitácora de IA en `BITACORA-IA.md` (Criterio 08).
-- [ ] Implementar la Fase 5: Módulo de IA (Recordatorios deterministas y Chatbot con Gemini / OpenAI spec y control de créditos IA).
-- [ ] Implementar la Fase 6: Pasarela de Pagos Stripe (Suscripciones PRO, compra de paquetes de créditos y Webhooks firmados).
+- [x] Implementar la Fase 5: Pasarela de Pagos Stripe (Suscripciones PRO, compra de paquetes de créditos y Webhooks firmados).
+- [x] Completar las 6 entradas de la bitácora de IA en `BITACORA-IA.md` (superando el umbral de 5 requerido para el Criterio 08).
+- [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS` con 74 fuentes).
+- [ ] Implementar el Módulo de IA (Recordatorios deterministas y Chatbot con Gemini / OpenAI spec y control de créditos IA).
 - [ ] Implementar suite de pruebas unitarias JUnit 5 y Mockito para cumplir con el mínimo de tests requeridos (Criterio 07).
 - [ ] Completar los documentos técnicos `SPEC.md` y `AGENTS.md` requeridos por el calificador automático (Criterio 08).
 - [ ] Diseñar la colección oficial de pruebas en Postman (Criterio 08).
+
 
 
 
