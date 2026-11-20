@@ -517,3 +517,21 @@ Transición de solicitud: PENDIENTE → ATENDIDA (final).
 - [ ] Firma inválida devuelve 400 y no cambia nada.
 - [ ] Compra de PAQUETE_CREDITOS suma 50 créditos.
 - [ ] Cancelación vuelve el plan a GRATIS.
+
+## FASE 7 · Consultas, indicadores y reportes
+**Objetivo:** indicadores de operación del salón.
+**Reglas**
+1. Solo datos del salón del token; sin entidades nuevas.
+2. Métricas **[DECISIÓN]**: citas por estado, ingresos (suma de `precio` de citas COMPLETADAS), tasa de no asistencia (NO_ASISTIO / citas finalizadas), top 5 servicios, citas por estilista, solicitudes pendientes, créditos restantes.
+3. Rango por `desde` y `hasta`; máximo 366 días.
+**Endpoints**
+| Método | Ruta | Respuestas |
+|---|---|---|
+| GET | /api/reportes/resumen?desde=&hasta= | 200 · 400 |
+| GET | /api/reportes/servicios-top?desde=&hasta= | 200 · 400 |
+| GET | /api/reportes/estilistas?desde=&hasta= | 200 · 400 |
+**Criterios de aceptación**
+- [ ] Los ingresos suman solo citas COMPLETADAS.
+- [ ] Un salón nunca ve datos de otro.
+- [ ] Rango invertido o mayor a 366 días devuelve 400.
+

@@ -533,4 +533,41 @@ No pidas ni uses llaves reales; usa los valores de relleno de application.proper
 ---
 
 
+## FASE 7 — Consultas y administración
+
+**SPEC:** §14 · **Reglas:** R1 y la matriz de roles (SPEC §3)
+
+**Alcance**
+- Hace: `GET /api/admin/salones`, auditoría de roles y de aislamiento entre salones.
+- No hace: reportes e indicadores (fuera de alcance de la guía; ver extensión opcional).
+
+**Pasos para el agente**
+1. `GET /api/admin/salones` (ADMIN): lista todos los salones; cualquier otro rol → 403. El primer ADMIN se crea cambiando el rol en la base de datos (no por endpoint).
+2. Auditoría de roles: una prueba por rol para **cada** endpoint contra la tabla del SPEC §3.
+3. Auditoría de aislamiento: con dos salones A y B, cada endpoint privado devuelve 404 o lista vacía al usuario del otro salón (B cambia cita de A → 404; B lista servicios y agenda → vacío; dueño A en administración → 403).
+4. Corregir cualquier consulta que no filtre por salón (se reporta como hallazgo, no se oculta).
+
+**Extensión opcional (no calificada; solo con aprobación expresa y después de la Fase 8 en verde)**
+- Indicadores (citas por estado, ingresos de `COMPLETADA`, tasa de no asistencia, top servicios, solicitudes pendientes, créditos) sin entidades nuevas. **No implementar sin que se pida.**
+
+**Prohibido en esta fase**
+- Crear un endpoint para asignar `ADMIN`.
+- Tablas o entidades nuevas.
+- Exponer contraseñas, correos de otros salones o datos internos.
+
+**Verificación**
+- ADMIN 200; DUENO y ESTILISTA 403.
+- Matriz de roles sin excepciones; aislamiento A/B en todos los endpoints.
+
+**Cierre:** lista de hallazgos de la auditoría y su estado en `BITACORA-IA.md`.
+**Commit:** "Administración y auditoría de roles y aislamiento".
+
+**Prompt de arranque**
+```text
+Contexto: @SPEC.md @AGENTS.md
+Fase 7 — Administración y auditoría (SPEC §14).
+Implementa solo GET /api/admin/salones. Luego entrégame un INFORME (no código) con los endpoints que no cumplen la matriz de roles o que no filtran por salón.
+No implementes indicadores ni reportes.
+```
+
 

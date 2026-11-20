@@ -1,5 +1,7 @@
 package com.devSenior.sillon.salon.servicio;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,13 @@ public class SalonServicio {
 	@Transactional(readOnly = true)
 	public SalonRespuesta obtener(Long salonId) {
 		return aRespuesta(buscar(salonId));
+	}
+
+	@Transactional(readOnly = true)
+	public List<SalonRespuesta> listarTodos() {
+		return salonRepositorio.findAll().stream()
+				.map(this::aRespuesta)
+				.toList();
 	}
 
 	@Transactional
