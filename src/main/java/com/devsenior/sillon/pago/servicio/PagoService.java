@@ -14,19 +14,17 @@ import com.devsenior.sillon.salon.modelo.Salon;
 import com.devsenior.sillon.salon.repositorio.SalonRepository;
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 import com.stripe.StripeClient;
-import com.stripe.exception.EventDataObjectDeserializationException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
-import com.stripe.model.EventDataObjectDeserializer;
-import com.stripe.model.StripeObject;
-import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -38,6 +36,7 @@ public class PagoService {
     private final SalonRepository salonRepository;
     private final EventoStripeRepository eventoStripeRepository;
     private final Clock clock;
+    private final ObjectMapper objectMapper;
     private final String secretoWebhook;
     private final String precioPro;
     private final String precioCreditos;
@@ -50,6 +49,7 @@ public class PagoService {
             SalonRepository salonRepository,
             EventoStripeRepository eventoStripeRepository,
             Clock clock,
+            ObjectMapper objectMapper,
             @Value("${sillon.stripe.secreto-webhook}") String secretoWebhook,
             @Value("${sillon.stripe.precio-pro}") String precioPro,
             @Value("${sillon.stripe.precio-creditos}") String precioCreditos,
@@ -60,6 +60,7 @@ public class PagoService {
         this.salonRepository = salonRepository;
         this.eventoStripeRepository = eventoStripeRepository;
         this.clock = clock;
+        this.objectMapper = objectMapper;
         this.secretoWebhook = secretoWebhook;
         this.precioPro = precioPro;
         this.precioCreditos = precioCreditos;
@@ -130,29 +131,44 @@ public class PagoService {
             return new WebhookResponse(true, false);
         }
 
-        StripeObject objeto = extraerObjeto(evento);
+        try {
+            JsonNode root = objectMapper.readTree(payload);
+            JsonNode dataObject = root.path("data").path("object");
 
-        if ("checkout.session.completed".equals(evento.getType()) && objeto instanceof Session session) {
-            aplicarCheckoutCompletado(session);
-        } else if ("customer.subscription.deleted".equals(evento.getType()) && objeto instanceof Subscription sub) {
-            aplicarCancelacionSuscripcion(sub);
+            if ("checkout.session.completed".equals(evento.getType())) {
+                aplicarCheckoutDesdeJson(dataObject);
+            } else if ("customer.subscription.deleted".equals(evento.getType())) {
+                aplicarCancelacionDesdeJson(dataObject);
+            }
+        } catch (RecursoNoEncontradoException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ErrorPasarelaException("No se pudo procesar el cuerpo del evento de Stripe");
         }
 
         eventoStripeRepository.save(new EventoStripe(evento.getId(), evento.getType(), LocalDateTime.now(clock)));
         return new WebhookResponse(true, true);
     }
 
-    private void aplicarCheckoutCompletado(Session session) {
-        if (!"paid".equalsIgnoreCase(session.getPaymentStatus())) {
+    private void aplicarCheckoutDesdeJson(JsonNode dataObject) {
+        String paymentStatus = dataObject.path("payment_status").asText("paid");
+        if (!paymentStatus.isBlank() && !"paid".equalsIgnoreCase(paymentStatus)) {
             return;
         }
-        String salonIdStr = session.getMetadata() != null ? session.getMetadata().get("salonId") : null;
-        if (salonIdStr == null) {
-            salonIdStr = session.getClientReferenceId();
+
+        JsonNode metadata = dataObject.path("metadata");
+        String salonIdStr = metadata.path("salonId").asText(null);
+        if (salonIdStr == null || salonIdStr.isBlank()) {
+            salonIdStr = dataObject.path("client_reference_id").asText(null);
         }
-        String tipoCompraStr = session.getMetadata() != null ? session.getMetadata().get("tipoCompra") : null;
-        if (salonIdStr == null || tipoCompraStr == null) {
+        if (salonIdStr == null || salonIdStr.isBlank()) {
             return;
+        }
+
+        String tipoCompraStr = metadata.path("tipoCompra").asText(null);
+        if (tipoCompraStr == null || tipoCompraStr.isBlank()) {
+            String mode = dataObject.path("mode").asText("");
+            tipoCompraStr = "subscription".equalsIgnoreCase(mode) ? "SUSCRIPCION_PRO" : "PAQUETE_CREDITOS";
         }
 
         Long salonId = Long.parseLong(salonIdStr);
@@ -164,8 +180,9 @@ public class PagoService {
         if (tipo == TipoCompra.SUSCRIPCION_PRO) {
             salon.setPlan(Plan.PRO);
             salon.setCreditosIa(salon.getCreditosIa() + creditosPlanPro);
-            if (session.getSubscription() != null) {
-                salon.setStripeSubscriptionId(session.getSubscription());
+            String subId = dataObject.path("subscription").asText(null);
+            if (subId != null && !subId.isBlank()) {
+                salon.setStripeSubscriptionId(subId);
             }
         } else if (tipo == TipoCompra.PAQUETE_CREDITOS) {
             salon.setCreditosIa(salon.getCreditosIa() + creditosPaquete);
@@ -174,27 +191,23 @@ public class PagoService {
         salonRepository.save(salon);
     }
 
-    private void aplicarCancelacionSuscripcion(Subscription subscription) {
-        salonRepository.findByStripeSubscriptionId(subscription.getId()).ifPresent(salon -> {
-            salon.setPlan(Plan.GRATIS);
-            salon.setStripeSubscriptionId(null);
-            salonRepository.save(salon);
-        });
-    }
-
-    private StripeObject extraerObjeto(Event evento) {
-        EventDataObjectDeserializer deserializer = evento.getDataObjectDeserializer();
-        try {
-            if (deserializer.getObject().isPresent()) {
-                return deserializer.getObject().get();
-            }
-        } catch (Exception ignored) {
-            // El SDK de Stripe lanza NPE en getObject() si api_version es nulo (común en eventos de prueba)
-        }
-        try {
-            return deserializer.deserializeUnsafe();
-        } catch (EventDataObjectDeserializationException e) {
-            return null;
+    private void aplicarCancelacionDesdeJson(JsonNode dataObject) {
+        String subId = dataObject.path("id").asText(null);
+        if (subId != null && !subId.isBlank()) {
+            salonRepository.findByStripeSubscriptionId(subId).ifPresentOrElse(salon -> {
+                salon.setPlan(Plan.GRATIS);
+                salon.setStripeSubscriptionId(null);
+                salonRepository.save(salon);
+            }, () -> {
+                String salonIdStr = dataObject.path("metadata").path("salonId").asText(null);
+                if (salonIdStr != null && !salonIdStr.isBlank()) {
+                    salonRepository.findById(Long.parseLong(salonIdStr)).ifPresent(salon -> {
+                        salon.setPlan(Plan.GRATIS);
+                        salon.setStripeSubscriptionId(null);
+                        salonRepository.save(salon);
+                    });
+                }
+            });
         }
     }
 }

@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -46,7 +47,7 @@ class PagoServiceTest {
     @BeforeEach
     void setUp() {
         pagoService = new PagoService(
-                stripeClient, salonRepository, eventoStripeRepository, clock,
+                stripeClient, salonRepository, eventoStripeRepository, clock, new ObjectMapper(),
                 secretoWebhook, "price_pro", "price_cred", "http://localhost:8080", 300, 200
         );
     }
