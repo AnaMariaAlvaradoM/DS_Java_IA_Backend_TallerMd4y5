@@ -184,8 +184,12 @@ public class PagoService {
 
     private StripeObject extraerObjeto(Event evento) {
         EventDataObjectDeserializer deserializer = evento.getDataObjectDeserializer();
-        if (deserializer.getObject().isPresent()) {
-            return deserializer.getObject().get();
+        try {
+            if (deserializer.getObject().isPresent()) {
+                return deserializer.getObject().get();
+            }
+        } catch (Exception ignored) {
+            // El SDK de Stripe lanza NPE en getObject() si api_version es nulo (común en eventos de prueba)
         }
         try {
             return deserializer.deserializeUnsafe();

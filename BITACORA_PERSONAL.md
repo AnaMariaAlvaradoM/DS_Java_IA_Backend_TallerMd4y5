@@ -628,6 +628,8 @@ Se implementó un subsistema de IA desacoplado, resiliente y compatible con Open
 | 11 | Control de acceso fino en operaciones de citas según rol | La creación manual de citas y recordatorios debe ser exclusiva del dueño (`DUENO`), mientras que la consulta y cambio de estado debe permitirse tanto a `DUENO` como a `ESTILISTA` | Se configuraron directivas explícitas `HttpMethod.POST /api/citas` con `hasRole('DUENO')`, `HttpMethod.GET` y `HttpMethod.PATCH` con `hasAnyRole('DUENO', 'ESTILISTA')` en `SecurityConfig`. |
 | 12 | Error de compilación en `PagoController.java:[42,26]` | En el método `resultado`, faltaba la declaración del tipo genérico `<Map<String, String>>` en `ResponseEntity` | Se corrigió la firma a `public ResponseEntity<Map<String, String>> resultado(...)`, logrando compilación limpia (`BUILD SUCCESS`). |
 | 13 | Pérdida de tipos genéricos en snippets de IA (`ProveedorOpenAi.java`) | Al copiar/procesar el código del proveedor, los corchetes angulares `<Map<String, Object>>` se truncaron en `List> choices = (List>)` provocando error de sintaxis en el compilador | Se restauraron las firmas genéricas estrictas `List<Map<String, Object>> choices = (List<Map<String, Object>>) respuesta.get("choices");`, logrando compilación limpia (`BUILD SUCCESS`). |
+| 14 | Expiración de firmas de Stripe por desfase temporal en `PagoServiceTest` | `Webhook.constructEvent` valida que la cabecera `Stripe-Signature` no exceda 300 segundos frente al reloj del sistema (`System.currentTimeMillis()`). Un `Clock.fixed` estático causaba que las pruebas fallaran con `FirmaInvalidaException` | Se inicializó el reloj con `Clock.system(ZoneId.of("America/Bogota"))` en la clase de test para generar timestamps sincronizados con el instante de ejecución. |
+| 15 | `NullPointerException` en deserialización de eventos Stripe de prueba (`PagoService.java`) | En eventos construidos manualmente sin la clave `api_version`, `EventDataObjectDeserializer.getObject()` arroja NPE en `apiVersionMatch()`. | Se envolvió la llamada en un bloque `try-catch` para delegar automáticamente en `deserializer.deserializeUnsafe()`, logrando deserialización segura en pruebas y producción. |
 
 ---
 
@@ -642,7 +644,7 @@ Se implementó un subsistema de IA desacoplado, resiliente y compatible con Open
 - [x] Implementar el Módulo de IA (Fase 6: Recordatorios deterministas y Chatbot con Gemini / OpenAI spec y control atómico de créditos IA).
 - [x] Completar las 7 entradas de la bitácora de IA en `BITACORA-IA.md` (superando el umbral de 5 requerido para el Criterio 08).
 - [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS` con 96 fuentes compiladas).
-- [ ] Implementar suite de pruebas unitarias JUnit 5 y Mockito para cumplir con el mínimo de tests requeridos (Criterio 07).
+- [x] Implementar suite de pruebas unitarias JUnit 5 y Mockito para cumplir con el mínimo de tests requeridos (Criterio 07) (34 tests pasando con 0 errores).
 - [ ] Completar los documentos técnicos `SPEC.md` y `AGENTS.md` requeridos por el calificador automático (Criterio 08).
 - [ ] Diseñar la colección oficial de pruebas en Postman (Criterio 08).
 
