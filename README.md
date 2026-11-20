@@ -19,6 +19,18 @@ Importa los tres archivos de `postman/`. Elige **local** o **produccion** y ejec
 
 Para probar el pago manual, crea un precio mensual de 15 USD para Sillón PRO y un precio único de 5 USD para 200 créditos en el entorno de prueba de Stripe. Configura los dos IDs de precio y la clave de prueba. En local ejecuta `stripe listen --forward-to localhost:8080/api/pagos/webhook`, guarda el secreto de firma que muestra la CLI en tu configuración local y reinicia la API. Abre la `urlPago` de la suscripción, usa la tarjeta de prueba `4242 4242 4242 4242`, una fecha futura y un CVC de prueba. Cuando llegue el webhook, ejecuta la carpeta 7. Reenviar el evento debe conservar el mismo saldo.
 
+### Comprobar los pagos sin cuenta de Stripe
+
+Desde la raíz del proyecto, con Java 17, ejecuta en PowerShell:
+
+```powershell
+.\mvnw.cmd '-Dtest=WebhookTest,FlujosDelSalonTest#cicloStripeYLimiteDeEquipo' test
+```
+
+Estas pruebas usan H2 y eventos de ejemplo firmados con una clave de prueba local. Verifican la firma, la activación del plan PRO, la compra de 200 créditos y la cancelación. También envían dos veces el mismo evento y comprueban que los créditos se abonen una sola vez.
+
+En GitHub, el calificador del curso ejecuta además el criterio **06 · Pagos con Stripe** contra `stripe/stripe-mock`. El resultado está en el [Pull Request de la entrega](https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/pull/17). Para completar la demostración en el Dashboard hace falta acceso a un entorno de pruebas de Stripe, registrar el webhook de Render allí y hacer el pago de prueba descrito arriba.
+
 ## Variables de Render
 
 | Grupo | Nombres |
