@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AgendaTest {
     final Salon salon=new Salon();
+    { salon.horaCierre=LocalTime.of(18,0); }
     final LocalDate lunes=LocalDate.of(2030,1,7);
     final LocalDateTime ayer=lunes.minusDays(1).atStartOfDay();
     final List<ReglasAgenda.Tramo> ocupado=List.of(new ReglasAgenda.Tramo(lunes.atTime(10,0),lunes.atTime(10,45)));
@@ -38,7 +39,7 @@ class AgendaTest {
         assertThat(ReglasAgenda.disponible(salon,lunes.atTime(8,40),30,ayer,List.of())).isTrue();
         assertThat(ReglasAgenda.disponible(salon,lunes.atTime(8,30),30,ayer,List.of())).isFalse();
     }
-    @ParameterizedTest @CsvSource({"PENDIENTE,CONFIRMADA,true","PENDIENTE,CANCELADA,true","PENDIENTE,COMPLETADA,false",
+    @ParameterizedTest @CsvSource({"NO_ASISTIO,CANCELADA,false","PENDIENTE,CONFIRMADA,true","PENDIENTE,CANCELADA,true","PENDIENTE,COMPLETADA,false",
             "CONFIRMADA,CANCELADA,true","CONFIRMADA,COMPLETADA,true","CONFIRMADA,NO_ASISTIO,true","CONFIRMADA,PENDIENTE,false",
             "COMPLETADA,CONFIRMADA,false","CANCELADA,CONFIRMADA,false","NO_ASISTIO,CONFIRMADA,false"})
     void transiciones(String desde, String hasta, boolean permitido) {

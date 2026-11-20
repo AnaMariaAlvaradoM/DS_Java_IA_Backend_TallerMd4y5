@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 
 @Entity
-@Table(uniqueConstraints=@UniqueConstraint(columnNames={"salon_id","telefono"}))
+@Table(name="clientes", uniqueConstraints=@UniqueConstraint(columnNames={"salon_id","telefono"}))
 class Cliente extends Entidad {
     @ManyToOne(optional=false) @JoinColumn(name="salon_id") Salon salon;
     String nombre;

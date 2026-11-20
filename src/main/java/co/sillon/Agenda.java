@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
+
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -22,17 +22,18 @@ class Agenda {
 
     private List<ReglasAgenda.Tramo> ocupados(Usuario u, LocalDate fecha) {
         return datos.em().createQuery("""
-                from Cita where estilista=:u and inicio<:fin and fin>:desde and estado<>'CANCELADA'
+                from Cita where estilista=:u and inicio<:fin and fin>:desde and estado in ('PENDIENTE','CONFIRMADA')
                 """,Cita.class).setParameter("u",u).setParameter("desde",fecha.atStartOfDay())
                 .setParameter("fin",fecha.plusDays(1).atStartOfDay()).getResultList().stream()
                 .map(c -> new ReglasAgenda.Tramo(c.inicio,c.fin)).toList();
     }
     private Usuario profesional(Salon s, long id, Servicio servicio) {
         var u=datos.estilista(s,id);
+        if (!servicio.activo || !u.activo) throw fallo(409,"El servicio o el estilista está inactivo");
         if (!u.servicios.contains(servicio)) throw fallo(409,"El estilista no ofrece el servicio solicitado");
         return u;
     }
-    record Disponibilidad(LocalDate fecha, List<String> horariosLibres) {}
+    record Disponibilidad(LocalDate fecha, String servicio, String estilista, int duracionMinutos, List<String> horariosLibres) {}
     @GetMapping("/publico/salones/{slug}/disponibilidad")
     Disponibilidad disponibilidad(@PathVariable String slug, @RequestParam long servicioId, @RequestParam long estilistaId,
                                  @RequestParam LocalDate fecha) {
@@ -46,15 +47,15 @@ class Agenda {
             if (ReglasAgenda.disponible(s,t,servicio.duracionMinutos,ahora,ocupados))
                 libres.add(t.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         }
-        return new Disponibilidad(fecha,libres);
+        return new Disponibilidad(fecha,servicio.nombre,u.nombre,servicio.duracionMinutos,libres);
     }
     @PostMapping("/publico/salones/{slug}/reservas") @ResponseStatus(HttpStatus.CREATED)
     Vistas.CitaDto reservar(@PathVariable String slug, @RequestBody @Valid Entradas.Reserva r) {
         return crear(datos.publico(slug,true),r,true);
     }
     @PostMapping("/citas") @ResponseStatus(HttpStatus.CREATED) @SecurityRequirement(name="sesion")
-    Vistas.CitaDto agendar(@AuthenticationPrincipal Jwt jwt, @RequestBody @Valid Entradas.Reserva r) {
-        return crear(datos.salon(Actor.de(jwt).salon(),true),r,false);
+    Vistas.CitaDto agendar(@AuthenticationPrincipal Actor jwt, @RequestBody @Valid Entradas.Reserva r) {
+        return crear(datos.salon(jwt.salon(),true),r,false);
     }
     private Vistas.CitaDto crear(Salon s, Entradas.Reserva r, boolean publica) {
         var servicio=datos.servicio(s,r.servicioId());
@@ -63,8 +64,8 @@ class Agenda {
         var tramos=ocupados(u,r.inicio().toLocalDate());
         if (!ReglasAgenda.disponible(s,r.inicio(),servicio.duracionMinutos,ahora,tramos))
             throw fallo(409,"El horario solicitado no está disponible");
-        var telefono=r.clienteTelefono().replaceAll("[^0-9]","");
-        if (telefono.length()<7 || telefono.length()>15) throw fallo(400,"Revisa clienteTelefono");
+        var telefono=r.clienteTelefono().replaceAll("[^+0-9]","");
+        if (telefono.length()<7 || !telefono.matches("\\+?[0-9]{7,30}")) throw fallo(400,"Revisa clienteTelefono");
         var cliente=datos.em().createQuery("from Cliente where salon=:s and telefono=:t",Cliente.class)
             .setParameter("s",s).setParameter("t",telefono).getResultList().stream().findFirst().orElseGet(() -> {
                 var nuevo=new Cliente(); nuevo.salon=s; nuevo.nombre=r.clienteNombre().strip(); nuevo.telefono=telefono;
@@ -78,8 +79,9 @@ class Agenda {
         return Vistas.cita(c);
     }
     @GetMapping("/citas") @SecurityRequirement(name="sesion")
-    List<Vistas.CitaDto> listar(@AuthenticationPrincipal Jwt jwt, @RequestParam LocalDate fecha) {
-        Actor a=Actor.de(jwt);
+    List<Vistas.CitaDto> listar(@AuthenticationPrincipal Actor jwt, @RequestParam(required=false) LocalDate fecha) {
+        if (fecha==null) fecha=LocalDate.now(clock);
+        Actor a=jwt;
         String filtro=a.dueno() ? "" : " and estilista.id=:estilista";
         var q=datos.em().createQuery("from Cita where salon.id=:salon and inicio>=:desde and inicio<:hasta" +
                 filtro+" order by inicio,id",Cita.class).setParameter("salon",a.salon())
@@ -88,8 +90,8 @@ class Agenda {
         return q.getResultList().stream().map(Vistas::cita).toList();
     }
     @PatchMapping("/citas/{id}/estado") @SecurityRequirement(name="sesion")
-    Vistas.CitaDto estado(@AuthenticationPrincipal Jwt jwt, @PathVariable long id, @Valid @RequestBody Entradas.CambioEstado r) {
-        var a=Actor.de(jwt);
+    Vistas.CitaDto estado(@AuthenticationPrincipal Actor jwt, @PathVariable long id, @Valid @RequestBody Entradas.CambioEstado r) {
+        var a=jwt;
         datos.salon(a.salon(),true);
         var c=datos.cita(a,id);
         if (!a.dueno() && !Set.of("COMPLETADA","NO_ASISTIO").contains(r.estado())) throw fallo(403,"Acción reservada al dueño");
@@ -98,9 +100,9 @@ class Agenda {
         return Vistas.cita(c);
     }
     @GetMapping("/clientes") @SecurityRequirement(name="sesion")
-    List<Vistas.ClienteDto> clientes(@AuthenticationPrincipal Jwt jwt) {
+    List<Vistas.ClienteDto> clientes(@AuthenticationPrincipal Actor jwt) {
         return datos.em().createQuery("from Cliente where salon.id=:s order by nombre,id",Cliente.class)
-                .setParameter("s",Actor.de(jwt).salon()).getResultList().stream()
+                .setParameter("s",jwt.salon()).getResultList().stream()
                 .map(c -> new Vistas.ClienteDto(c.id,c.nombre,c.telefono)).toList();
     }
 }

@@ -1,13 +1,13 @@
 package co.sillon;
 
-import com.fasterxml.jackson.databind.*;
-import java.io.IOException;
+import tools.jackson.databind.*;
+import com.stripe.param.checkout.SessionCreateParams;
 import java.time.Clock;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
+
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -21,43 +21,44 @@ class Pagos {
     private final Datos datos;
     private final ObjectMapper json;
     private final Clock clock;
-    private final RestClient http;
-    private final String api, clave, secreto, pro, creditos, publica;
-    Pagos(Datos datos, ObjectMapper json, Clock clock, RestClient http,
-          @Value("${sillon.stripe.api}") String api, @Value("${sillon.stripe.clave}") String clave,
+    private final com.stripe.StripeClient stripe;
+    private final String clave, secreto, pro, creditos, publica;
+    Pagos(Datos datos, ObjectMapper json, Clock clock, com.stripe.StripeClient stripe,
+          @Value("${sillon.stripe.clave}") String clave,
           @Value("${sillon.stripe.webhook}") String secreto, @Value("${sillon.stripe.pro}") String pro,
           @Value("${sillon.stripe.creditos}") String creditos, @Value("${sillon.url-publica}") String publica) {
-        this.datos=datos; this.json=json; this.clock=clock; this.http=http;
-        this.api=api.replaceFirst("/+$",""); this.clave=clave; this.secreto=secreto; this.pro=pro;
+        this.datos=datos; this.json=json; this.clock=clock; this.stripe=stripe;
+        this.clave=clave; this.secreto=secreto; this.pro=pro;
         this.creditos=creditos; this.publica=publica.replaceFirst("/+$","");
     }
-    record Checkout(String urlPago) {}
+    record Checkout(String tipo, String sesionId, String urlPago) {}
     @PostMapping("/api/pagos/suscripcion") @SecurityRequirement(name="sesion")
-    Checkout suscripcion(@AuthenticationPrincipal Jwt jwt) {
-        var s=datos.salon(Actor.de(jwt).salon(),false);
+    Checkout suscripcion(@AuthenticationPrincipal Actor jwt) {
+        var s=datos.salon(jwt.salon(),false);
         if (s.plan.equals("PRO")) throw fallo(409,"El salón ya tiene plan PRO");
-        return checkout(s,true);
+        return checkout(s,jwt.email(),true);
     }
     @PostMapping("/api/pagos/creditos") @SecurityRequirement(name="sesion")
-    Checkout creditos(@AuthenticationPrincipal Jwt jwt) { return checkout(datos.salon(Actor.de(jwt).salon(),false),false); }
-    private Checkout checkout(Salon s, boolean plan) {
+    Checkout creditos(@AuthenticationPrincipal Actor jwt) { return checkout(datos.salon(jwt.salon(),false),jwt.email(),false); }
+    private Checkout checkout(Salon s,String correo,boolean plan) {
         var precio=plan ? pro : creditos;
-        if (clave.isBlank() || precio.isBlank()) throw fallo(503,"Configura Stripe y los precios antes de cobrar");
-        var form=new LinkedMultiValueMap<String,String>();
-        form.add("mode",plan ? "subscription":"payment"); form.add("line_items[0][price]",precio);
-        form.add("line_items[0][quantity]","1"); form.add("metadata[salonId]",s.id.toString());
-        form.add("metadata[tipo]",plan ? "SUSCRIPCION_PRO":"PAQUETE_CREDITOS");
-        form.add("success_url",publica+"/pagos/retorno?resultado=exito"); form.add("cancel_url",publica+"/pagos/retorno?resultado=cancelado");
+        if (clave.isBlank() || precio.isBlank()) throw fallo(502,"Configura Stripe y los precios antes de cobrar");
+        String tipo=plan ? "SUSCRIPCION_PRO" : "PAQUETE_CREDITOS";
+        var meta=Map.of("salonId",s.id.toString(),"tipo",tipo);
+        var params=SessionCreateParams.builder().setMode(plan ? SessionCreateParams.Mode.SUBSCRIPTION : SessionCreateParams.Mode.PAYMENT)
+                .setCustomerEmail(correo).setClientReferenceId(s.id.toString()).putAllMetadata(meta)
+                .setSuccessUrl(publica+"/api/pagos/resultado?estado=exito").setCancelUrl(publica+"/api/pagos/resultado?estado=cancelado")
+                .addLineItem(SessionCreateParams.LineItem.builder().setPrice(precio).setQuantity(1L).build());
+        if (plan) params.setSubscriptionData(SessionCreateParams.SubscriptionData.builder().putAllMetadata(meta).build());
         try {
-            var respuesta=http.post().uri(api+"/v1/checkout/sessions").headers(h -> h.setBasicAuth(clave,""))
-                    .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(JsonNode.class);
-            if (respuesta==null || !respuesta.path("url").asText("").startsWith("https://")) throw fallo(502,"Stripe omitió la URL de pago");
-            return new Checkout(respuesta.get("url").asText());
-        } catch (RestClientException e) { throw fallo(502,"No se pudo abrir la sesión de pago en Stripe"); }
+            var sesion=stripe.v1().checkout().sessions().create(params.build());
+            if (sesion.getUrl()==null || !sesion.getUrl().startsWith("https://")) throw fallo(502,"Stripe omitió la URL de pago");
+            return new Checkout(tipo,sesion.getId(),sesion.getUrl());
+        } catch (com.stripe.exception.StripeException e) { throw fallo(502,"No se pudo abrir la sesión de pago en Stripe"); }
     }
-    @GetMapping(value="/pagos/retorno",produces=MediaType.TEXT_PLAIN_VALUE)
-    String retorno(@RequestParam(defaultValue="") String resultado) {
-        return "exito".equals(resultado) ? "Gracias. El salón recibirá la confirmación del pago de Stripe." : "Se cerró el proceso de pago.";
+    @GetMapping("/api/pagos/resultado")
+    Map<String,String> retorno(@RequestParam(defaultValue="") String estado) {
+        return Map.of("mensaje", "exito".equals(estado) ? "Gracias. El salón recibirá la confirmación del pago de Stripe." : "Se cerró el proceso de pago.");
     }
 
     @PostMapping("/api/pagos/webhook")
@@ -67,15 +68,15 @@ class Pagos {
             var evento=json.readTree(cuerpo);
             if (evento==null || !evento.isObject()) throw fallo(400,"Evento inválido");
             String id=campo(evento,"id"), tipo=campo(evento,"type");
-            if (datos.em().find(EventoPago.class,id)!=null) return Map.of("procesado",false);
+            if (datos.em().find(EventoPago.class,id)!=null) return Map.of("recibido",true,"procesado",false);
             var objeto=evento.path("data").path("object");
             boolean procesado=switch (tipo) {
                 case "checkout.session.completed","checkout.session.async_payment_succeeded" -> acreditar(id,objeto);
                 case "customer.subscription.deleted" -> cancelar(id,objeto);
                 default -> false;
             };
-            return Map.of("procesado",procesado);
-        } catch (IOException e) { throw fallo(400,"JSON de evento inválido"); }
+            return Map.of("recibido",true,"procesado",procesado);
+        } catch (tools.jackson.core.JacksonException e) { throw fallo(400,"JSON de evento inválido"); }
     }
     private static String campo(JsonNode n, String nombre) {
         var valor=n.path(nombre).asText("");
@@ -86,7 +87,7 @@ class Pagos {
         var previos=datos.em().createQuery("select id from EventoPago where id=:id or operacion=:op",String.class)
                 .setParameter("id",id).setParameter("op",operacion).getResultList();
         if (!previos.isEmpty()) return false;
-        var evento=new EventoPago(); evento.id=id; evento.operacion=operacion; datos.em().persist(evento);
+        var evento=new EventoPago(); evento.id=id; evento.operacion=operacion; evento.tipo=operacion.startsWith("cancel/") ? "customer.subscription.deleted" : "checkout.session.completed"; evento.fechaProcesado=java.time.LocalDateTime.now(clock); datos.em().persist(evento);
         return true;
     }
     private boolean acreditar(String id, JsonNode o) {
@@ -102,16 +103,16 @@ class Pagos {
         if (!registrar(id,"checkout/"+campo(o,"id"))) return false;
         if (plan) {
             if (s.plan.equals("PRO")) return false;
-            s.plan="PRO"; s.suscripcion=sub; s.creditosIa+=300;
-        } else s.creditosIa+=200;
+            s.plan="PRO"; s.stripeSuscripcionId=sub; s.creditosIa=s.creditosIa+300;
+        } else s.creditosIa=s.creditosIa+200;
         return true;
     }
     private boolean cancelar(String id, JsonNode o) {
         String sub=campo(o,"id");
-        var salones=datos.em().createQuery("from Salon where suscripcion=:sub",Salon.class)
+        var salones=datos.em().createQuery("from Salon where stripeSuscripcionId=:sub",Salon.class)
                 .setParameter("sub",sub).setLockMode(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE).getResultList();
         if (salones.isEmpty() || !registrar(id,"cancel/"+sub)) return false;
-        var s=salones.getFirst(); s.plan="GRATIS"; s.suscripcion=null;
+        var s=salones.get(0); s.plan="GRATIS"; s.stripeSuscripcionId=null;
         return true;
     }
 }

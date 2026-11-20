@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(indexes=@Index(name="idx_agenda", columnList="estilista_id,inicio"))
+@Table(name="citas", indexes=@Index(name="idx_agenda", columnList="estilista_id,inicio"))
 class Cita extends Entidad {
     @ManyToOne(optional=false) Salon salon;
     @ManyToOne(optional=false) Usuario estilista;
@@ -17,6 +17,6 @@ class Cita extends Entidad {
     LocalDateTime fin;
     LocalDateTime fechaCreacion;
     LocalDateTime fechaActualizacion;
-    @Column(precision=12, scale=2) BigDecimal precio;
+    @Column(precision=12, scale=0) BigDecimal precio;
     @Column(length=1000) String nota;
 }
