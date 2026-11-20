@@ -1,13 +1,41 @@
-node_modules/
-resultado.json
-notas.csv
-
-# Java
+HELP.md
 target/
-*.class
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# Secretos: nunca se suben
-/secrets.properties
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
-# Material privado de la profe (guía, solución y scripts): NO se sube al repo
-_docente/
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# Secretos locales (NUNCA subir a Git)
+secrets.properties
+.env
+*.key
+*.pem
+
+
