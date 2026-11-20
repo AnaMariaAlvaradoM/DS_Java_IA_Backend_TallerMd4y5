@@ -1,8 +1,9 @@
 package com.devsenior.sillon.usuario.modelo;
 
-import com.devsenior.sillon.salon.modelo.Salon;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import com.devsenior.sillon.salon.modelo.Salon;
 
 @Entity
 @Table(name = "usuarios")

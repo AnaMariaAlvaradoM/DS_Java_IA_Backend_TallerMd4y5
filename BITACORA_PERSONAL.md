@@ -10,8 +10,9 @@
 1. [Arquitectura y Principios de Diseño](#1-arquitectura-y-principios-de-diseño)
 2. [Fase 0: Preparación del Terreno y Configuración Base](#2-fase-0-preparación-del-terreno-y-configuración-base)
 3. [Fase 1: La Base SaaS (Multi-tenancy, Errores y Modelo)](#3-fase-1-la-base-saas-multi-tenancy-errores-y-modelo)
-4. [Bitácora de Incidencias y Soluciones Técnicas](#4-bitácora-de-incidencias-y-soluciones-técnicas)
-5. [Próximos Pasos](#5-próximos-pasos)
+4. [Fase 2: Seguridad, Autenticación y Configuración de Inquilinos](#4-fase-2-seguridad-autenticación-y-configuración-de-inquilinos)
+5. [Bitácora de Incidencias y Soluciones Técnicas](#5-bitácora-de-incidencias-y-soluciones-técnicas)
+6. [Próximos Pasos](#6-próximos-pasos)
 
 ---
 
@@ -103,6 +104,7 @@ Todas extienden de `RuntimeException`:
   * Excepciones de negocio personalizadas mapeando su respectivo HTTP status.
   * `MethodArgumentNotValidException`: Extrae errores de validación de campos (`FieldError`) y los formatea como `campo: mensaje; ...`.
   * `HttpMessageNotReadableException`, `MissingServletRequestParameterException`, `MethodArgumentTypeMismatchException`: Devuelve `400 Bad Request` con mensaje genérico estandarizado.
+  * `NoResourceFoundException`: Devuelve `404 Not Found` ("La ruta solicitada no existe") para URLs no mapeadas, evitando que caigan como error 500.
   * `Exception` (genérica): Devuelve `500 Internal Server Error` evitando fuga de trazas de pila al cliente.
 
 ---
@@ -160,25 +162,191 @@ Se construyó el núcleo del dominio SaaS, implementando el modelo multi-inquili
 
 ---
 
-## 4. Bitácora de Incidencias y Soluciones Técnicas
+## 4. Fase 2: Seguridad, Autenticación y Configuración de Inquilinos
+
+### 📋 Checklist de Entregables (Fase 2)
+* **Bloque A: Seguridad con Spring Security 6 & JWT (✅ Completado)**
+  - [x] Dependencias añadidas en `pom.xml`: `spring-boot-starter-security` y suite `jjwt` (versión 0.12.6).
+  - [x] Servicio criptográfico `JwtService` desacoplado temporalmente con `Clock` y vigencia de 24 horas (1440 min).
+  - [x] Contexto de usuario `UsuarioPrincipal` (implementación de `UserDetails`) y servicio de carga `UsuarioDetailsService`.
+  - [x] Filtro de interceptación `JwtFiltro` (`OncePerRequestFilter`) para autorización basada en encabezado `Authorization: Bearer`.
+  - [x] Cadena de filtros `SecurityConfig` en modo *Stateless*, CSRF deshabilitado y control de acceso RBAC (`DUENO`, `ESTILISTA`, `ADMIN`).
+  - [x] Estandarización de respuestas de error 401 (Unauthorized) y 403 (Forbidden) con DTO `ErrorRespuesta` en lugar de respuestas por defecto de Spring.
+* **Bloque B: Flujo de Autenticación y Registro (`AuthService` y `AuthController`) (✅ Completado)**
+  - [x] DTO de petición `LoginRequest` con validaciones de email y password.
+  - [x] Lógica de registro transaccional: normalización de email, validación de unicidad, generación determinista de slug con resolución de colisiones y alta del dueño con `BCryptPasswordEncoder`.
+  - [x] Lógica de inicio de sesión: verificación criptográfica de credenciales y estado activo de la cuenta.
+  - [x] Endpoints públicos expuestos: `POST /api/auth/registro` (201 Created) y `POST /api/auth/login` (200 OK) retornando `AuthResponse`.
+* **Bloque C: Configuración del Salón y Dominio del Inquilino (`SalonService` y `SalonController`) (✅ Completado)**
+  - [x] DTOs de configuración: `SalonResponse`, `ConfiguracionSalonDto` y `ConfiguracionSalonRequest` (intervalo validado entre 15 y 60 min).
+  - [x] Regla de validación temporal: restricción de negocio exigiendo que la hora de apertura sea estrictamente anterior a la de cierre.
+  - [x] Endpoints protegidos para el inquilino: `GET /api/salon` y `PUT /api/salon/configuracion` con acceso restringido a rol `DUENO`.
+* **Bloque D: Robustecimiento Transversal de Errores (✅ Completado)**
+  - [x] Soporte para `NoResourceFoundException` en `ManejadorGlobalErrores` respondiendo `404 Not Found` en rutas inexistentes sin degradar a error 500.
+
+---
+
+### 4.1 Bloque A: Seguridad y Control de Acceso (Spring Security 6 + JJWT) — ✅ COMPLETADO
+
+Se diseñó la arquitectura de seguridad basada en tokens sin estado (stateless), evitando el uso de sesiones de servidor HTTP y garantizando el aislamiento seguro entre inquilinos (*tenants*):
+
+#### 1. Dependencias en `pom.xml`
+Se integró Spring Security junto con la biblioteca JJWT (Java JWT) versión 0.12.6 en tres módulos:
+* `jjwt-api`: Interfaz de programación y firma.
+* `jjwt-impl` (runtime): Motor de implementación criptográfica.
+* `jjwt-jackson` (runtime): Serializador JSON para claims y payloads.
+
+#### 2. Servicio de Tokens JWT (`JwtService`)
+* **Archivo:** `com.devsenior.sillon.seguridad.JwtService`
+* **Criptografía:** Clave HMAC-SHA (`Keys.hmacShaKeyFor`) leída desde la propiedad `sillon.jwt.secreto` (inyectable vía variable de entorno `JWT_SECRETO`).
+* **Claims incluidos en el token:**
+  * `sub`: Email normalizado del usuario (sujeto principal).
+  * `rol`: Rol del usuario en el sistema (`DUENO`, `ESTILISTA`, `ADMIN`).
+  * `salonId`: Identificador del salón asignado al usuario (anclaje multi-tenant).
+* **Desacoplamiento temporal:** Utiliza el bean inyectado `Clock` tanto para la emisión (`issuedAt`) como para la expiración (`expiration = ahora + 1440 min`).
+* **Operaciones clave:**
+  * `generarToken(UsuarioPrincipal usuario)`: Construye y firma el token compacto.
+  * `extraerEmail(String token)`: Recupera el claim `subject`.
+  * `esTokenValido(String token)`: Valida la firma criptográfica y que la fecha de expiración no haya sido superada.
+
+#### 3. Adaptador de Usuario (`UsuarioPrincipal` y `UsuarioDetailsService`)
+* **`UsuarioPrincipal` (`com.devsenior.sillon.seguridad.UsuarioPrincipal`):**
+  * Implementa `UserDetails`.
+  * Encapsula los campos de negocio requeridos en cada petición: `id`, `salonId`, `nombre`, `email`, `rol` y bandera `activo`.
+  * Mapea el rol a una autoridad de Spring Security con prefijo canónico: `ROLE_DUENO`, `ROLE_ESTILISTA`, `ROLE_ADMIN`.
+* **`UsuarioDetailsService` (`com.devsenior.sillon.seguridad.UsuarioDetailsService`):**
+  * Implementa `UserDetailsService`.
+  * Carga y autentica al usuario desde `UsuarioRepository` normalizando el email (`trim().toLowerCase()`).
+  * `@Transactional(readOnly = true)` para garantizar lectura eficiente sin bloqueo.
+
+#### 4. Filtro de Interceptación (`JwtFiltro`)
+* **Archivo:** `com.devsenior.sillon.seguridad.JwtFiltro`
+* **Tipo:** Extiende `OncePerRequestFilter`.
+* **Flujo de procesamiento:**
+  1. Extrae la cabecera HTTP `Authorization`.
+  2. Verifica el prefijo `Bearer `.
+  3. Si el token es válido y no hay autenticación previa en `SecurityContextHolder`, carga los detalles del usuario a través de `UsuarioDetailsService`.
+  4. Si el usuario está activo (`isEnabled()`), inyecta un `UsernamePasswordAuthenticationToken` con sus autoridades en el contexto de seguridad.
+
+#### 5. Configuración de la Cadena de Seguridad (`SecurityConfig`)
+* **Archivo:** `com.devsenior.sillon.seguridad.SecurityConfig`
+* **Anotaciones:** `@Configuration`, `@EnableWebSecurity`.
+* **Políticas clave:**
+  * **Stateless:** `SessionCreationPolicy.STATELESS` (sin sesiones `HttpSession`).
+  * **CSRF:** Deshabilitado (`AbstractHttpConfigurer::disable`) al ser una API REST basada en tokens.
+  * **Filtro JWT:** Registrado antes de `UsernamePasswordAuthenticationFilter`.
+  * **Codificador de contraseñas:** Bean `PasswordEncoder` implementado con `BCryptPasswordEncoder`.
+* **Matriz de Control de Rutas:**
+  | Ruta | Métodos | Acceso Permitido |
+  |---|---|---|
+  | `/api/auth/**`, `/api/publico/**`, `/error` | Cualquiera | Público (`permitAll`) |
+  | `/api/pagos/webhook`, `/api/pagos/resultado/**` | Cualquiera | Público (`permitAll`) |
+  | `/swagger-ui/**`, `/v3/api-docs/**` | Cualquiera | Público (`permitAll`) |
+  | `/api/salon/**` | Cualquiera | Rol `DUENO` |
+  | `/api/admin/**` | Cualquiera | Rol `ADMIN` |
+  | `/api/servicios/**` | GET | Roles `DUENO` o `ESTILISTA` |
+  | `/api/servicios/**`, `/api/estilistas/**`, `/api/clientes/**` | POST, PUT, DELETE | Rol `DUENO` |
+  | `/api/solicitudes/**`, `/api/pagos/**` | Cualquiera | Rol `DUENO` |
+  | Cualquier otra ruta no listada | Cualquiera | Autenticado (`authenticated`) |
+* **Personalización de Errores 401 y 403:**
+  * Se configuraron `AuthenticationEntryPoint` y `AccessDeniedHandler` personalizados.
+  * En lugar de devolver respuestas HTML genéricas del contenedor, serializan el DTO unificado `ErrorRespuesta` en formato JSON (`application/json;charset=UTF-8`) con el código HTTP correspondiente y fecha generada mediante `Clock`.
+
+---
+
+### 4.2 Bloque B: Servicios y Endpoints de Autenticación (`AuthService` y `AuthController`) — ✅ COMPLETADO
+
+Se implementó el ciclo de vida de registro de inquilinos y autenticación de usuarios:
+
+#### 1. DTO de Login (`LoginRequest`)
+* **Archivo:** `com.devsenior.sillon.salon.dto.LoginRequest`
+* **Campos y validaciones:**
+  * `email`: `@NotBlank(message = "El correo es obligatorio")`, `@Email(message = "El formato del correo es inválido")`.
+  * `password`: `@NotBlank(message = "La contraseña es obligatoria")`.
+
+#### 2. Servicio de Autenticación (`AuthService`)
+* **Archivo:** `com.devsenior.sillon.salon.servicio.AuthService`
+* **Lógica del método `registrar(RegistroRequest request)`:**
+  1. **Normalización:** Convierte el email a minúsculas y elimina espacios en blanco.
+  2. **Validación de unicidad:** Comprueba `usuarioRepository.existsByEmail(...)`. Si ya existe, arroja `ReglaNegocioException("El correo ya está registrado")` (HTTP 409).
+  3. **Generación de Slug único:** Invoca `SlugUtil.generarSlug(salonNombre)`. Si el slug ya está en uso por otro salón, aplica un sufijo secuencial incremental determinista (`-2`, `-3`, etc.) hasta encontrar uno libre.
+  4. **Inicialización del Salón:** Se crea con `Plan.GRATIS`, configuración por defecto (8:00 a 19:00, lunes a sábado, intervalos de 30 min) y créditos de IA iniciales leídos de la propiedad `sillon.negocio.creditos-registro` (10 créditos).
+  5. **Creación del Usuario Dueño:** Asigna rol `DUENO`, estado activo, fecha de auditoría con `Clock` y hashea la contraseña con `BCryptPasswordEncoder`.
+  6. **Retorno:** Emite el token JWT y responde con `AuthResponse` (datos del usuario, token, tipo "Bearer", expiración en 1440 min e identificadores del salón).
+* **Lógica del método `login(LoginRequest request)`:**
+  1. Busca al usuario por su email normalizado.
+  2. Verifica que el usuario exista, que su estado sea `activo = true` y que la contraseña coincida con `passwordEncoder.matches(...)`.
+  3. Si falla cualquier validación, lanza `CredencialesInvalidasException("Credenciales inválidas")` (HTTP 401), previniendo ataques de enumeración de usuarios.
+  4. Retorna el DTO `AuthResponse` con un token JWT recién firmado.
+
+#### 3. Controlador REST (`AuthController`)
+* **Archivo:** `com.devsenior.sillon.salon.controlador.AuthController`
+* **Ruta base:** `/api/auth`
+* **Endpoints:**
+  * `POST /api/auth/registro`: Valida el payload con `@Valid`. Responde HTTP `201 Created` con el `AuthResponse`.
+  * `POST /api/auth/login`: Valida el payload con `@Valid`. Responde HTTP `200 OK` con el `AuthResponse`.
+
+---
+
+### 4.3 Bloque C: Gestión y Configuración del Salón (`SalonService` y `SalonController`) — ✅ COMPLETADO
+
+Se construyó la interfaz para que el dueño del salón consulte los datos de su negocio y ajuste sus parámetros de agenda:
+
+#### 1. DTOs de Salón y Configuración
+* **`SalonResponse` (`com.devsenior.sillon.salon.dto.SalonResponse`):** Proyecta la información del salón (`id`, `nombre`, `slug`, `ciudad`, `direccion`, `telefono`, `plan`, `creditosIa`, `configuracion`, `fechaCreacion`) ocultando detalles sensibles internos.
+* **`ConfiguracionSalonDto` (`com.devsenior.sillon.salon.dto.ConfiguracionSalonDto`):** Mapeo inmutable de los 4 campos de configuración horaria (`horaApertura`, `horaCierre`, `abreDomingos`, `intervaloMinutos`).
+* **`ConfiguracionSalonRequest` (`com.devsenior.sillon.salon.dto.ConfiguracionSalonRequest`):**
+  * `horaApertura` y `horaCierre`: `@NotNull`.
+  * `abreDomingos`: `@NotNull`.
+  * `intervaloMinutos`: `@NotNull`, `@Min(value = 15, message = "El intervalo mínimo es de 15 minutos")`, `@Max(value = 60, message = "El intervalo máximo es de 60 minutos")`.
+
+#### 2. Servicio del Salón (`SalonService`)
+* **Archivo:** `com.devsenior.sillon.salon.servicio.SalonService`
+* **`obtenerMiSalon(Long salonId)`:**
+  * Consulta el salón por su ID.
+  * Si no existe, arroja `RecursoNoEncontradoException("Salón no encontrado")` (HTTP 404).
+  * Devuelve la respuesta convertida a `SalonResponse`.
+* **`actualizarConfiguracion(Long salonId, ConfiguracionSalonRequest request)`:**
+  * **Regla de Negocio:** Verifica estrictamente `request.horaApertura().isBefore(request.horaCierre())`. Si la condición no se cumple, arroja `ReglaNegocioException("La hora de apertura debe ser anterior a la hora de cierre")` (HTTP 409 Conflict).
+  * Actualiza los valores en el objeto embebido `ConfiguracionSalon` y persiste los cambios transaccionalmente.
+
+#### 3. Controlador del Salón (`SalonController`)
+* **Archivo:** `com.devsenior.sillon.salon.controlador.SalonController`
+* **Ruta base:** `/api/salon` (protegida con `hasRole('DUENO')`).
+* **Inyección de seguridad:** Obtiene el usuario autenticado directamente con `@AuthenticationPrincipal UsuarioPrincipal usuario`. Ningún ID de salón viene en la URL ni en el body: se extrae estrictamente del token verificado.
+* **Endpoints:**
+  * `GET /api/salon`: Obtiene el salón del dueño autenticado (`200 OK`).
+  * `PUT /api/salon/configuracion`: Actualiza la configuración horaria y de intervalos del salón autenticado (`200 OK`).
+
+---
+
+## 5. Bitácora de Incidencias y Soluciones Técnicas
 
 | # | Problema / Incidencia | Causa Raíz | Solución Aplicada |
 |---|---|---|---|
-| 1 | `secrets.properties` aparecía como *Untracked` en Git | Faltaba la regla limpia en `.gitignore` | Se añadió `secrets.properties` al `.gitignore` y se verificó con `git status`. |
+| 1 | `secrets.properties` aparecía como *Untracked* en Git | Faltaba la regla limpia en `.gitignore` | Se añadió `secrets.properties` al `.gitignore` y se verificó con `git status`. |
 | 2 | Intento de reutilizar URL de base de datos anterior | Confusión con el proyecto previo `vetturno` | Se corrigió la base de datos a `sillon_db`, asegurando independencia total de esquemas. |
 | 3 | Error al clonar URL en GitHub Desktop | La pestaña activa era *GitHub.com* (búsqueda de repositorios) | Se cambió a la pestaña *URL* para clonar directamente vía HTTPS. |
 | 4 | No aparecía el botón "Open pull request" | Sesión iniciada en el navegador con cuenta de GitHub distinta | Se inició sesión con `jhonnlealDev` y se generó el PR oficial vía *Contribute*. |
 | 5 | Error `Failed to clean project` con `mvnw clean` | Bloqueo de archivos `.class` en `target/` por OneDrive / IDE | Se pausó la sincronización y se compiló directamente con `.\mvnw.cmd compile`. |
 | 6 | Error de ejecución en comando Maven con guiones | Sintaxis errónea `compile-test-compile` | Se corrigió el comando a `.\mvnw.cmd test-compile`, obteniendo `BUILD SUCCESS`. |
 | 7 | Clases ubicadas en subcarpeta `sillon/` en raíz | Creación de archivos fuera de la ruta canónica del calificador | Se reubicaron en `src/main/java/com/devsenior/sillon/` respetando sus paquetes y se eliminó la carpeta residual. |
+| 8 | Respuestas por defecto de Spring Security rompían el contrato JSON | Spring Security devuelve respuestas vacías o HTML en errores 401 y 403 | Se implementaron `AuthenticationEntryPoint` y `AccessDeniedHandler` personalizados en `SecurityConfig` inyectando `ObjectMapper` y `Clock` para responder estrictamente con el DTO `ErrorRespuesta`. |
+| 9 | Rutas no mapeadas arrojaban 500 en lugar de 404 | En Spring Boot 3 / Spring MVC 6, los recursos inexistentes lanzan `NoResourceFoundException`, que caía en el manejador genérico de errores 500 | Se agregó `@ExceptionHandler(NoResourceFoundException.class)` en `ManejadorGlobalErrores` devolviendo `404 Not Found` con mensaje "La ruta solicitada no existe". |
+| 10 | Bloqueo de concurrencia en `.m2/repository/.locks` de Maven en entorno sandbox | Maven detecta bloqueos de archivo en el repositorio global fuera del workspace | Se verificó la compilación limpia del proyecto ejecutando el wrapper Maven con éxito total (`BUILD SUCCESS`). |
 
 ---
 
-## 5. Próximos Pasos
+## 6. Próximos Pasos
 
-- [ ] Implementar pruebas unitarias JUnit para `SlugUtil` (validación de diacríticos, mayúsculas, espacios y caracteres especiales).
-- [ ] Desarrollar servicio de negocio (`SalonService` / `AuthService`) para orquestar la transacción atómica de registro y generación de slug único.
-- [ ] Implementar capa de seguridad Spring Security 6, hashing de contraseñas con `BCryptPasswordEncoder` y generación/validación de tokens JWT (Fase 2).
-- [ ] Exponer controladores REST con validación `@Valid` para endpoints públicos (`/api/auth/registro`, `/api/auth/login`).
-- [ ] Ejecutar compilación y suite de pruebas automatizadas con el wrapper Maven.
+- [x] Desarrollar servicio de negocio (`SalonService` / `AuthService`) para orquestar la transacción atómica de registro y generación de slug único.
+- [x] Implementar capa de seguridad Spring Security 6, hashing de contraseñas con `BCryptPasswordEncoder` y generación/validación de tokens JWT (Fase 2).
+- [x] Exponer controladores REST con validación `@Valid` para endpoints públicos (`/api/auth/registro`, `/api/auth/login`) y privados (`/api/salon`).
+- [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS`).
+- [ ] Implementar pruebas unitarias JUnit 5 y Mockito para `SlugUtil`, `JwtService`, `AuthService` y `SalonService` (Criterio 07).
+- [ ] Implementar el Catálogo y Equipo (Fase 3: Entidades `Servicio`, `Estilista`, `Cliente`, reglas de asignación y límite de estilistas para plan GRATIS).
+- [ ] Actualizar `BITACORA-IA.md` incorporando la entrada de la Fase 2 (requeridas 5+ entradas para el Criterio 08).
+- [ ] Completar los documentos técnicos `SPEC.md` y `AGENTS.md` requeridos por el calificador automático (Criterio 08).
+- [ ] Diseñar la colección de pruebas en Postman para cubrir los flujos de registro, login y configuración de salón.
+
 

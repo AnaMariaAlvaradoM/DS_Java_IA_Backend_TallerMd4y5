@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -94,6 +96,13 @@ public class ManejadorGlobalErrores {
     public ResponseEntity<ErrorRespuesta> manejarPeticionInvalida(Exception ex) {
         HttpStatus status = HttpStatus.BAD_REQUEST; // 400
         return ResponseEntity.status(status).body(construirRespuesta(status, "La petición es inválida o tiene un formato incorrecto"));
+    }
+
+    // Ruta no encontrada (404) en vez de error interno 500
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorRespuesta> manejarRutaNoEncontrada(Exception ex) {
+        HttpStatus status = HttpStatus.NOT_FOUND; // 404
+        return ResponseEntity.status(status).body(construirRespuesta(status, "La ruta solicitada no existe"));
     }
 
     // Error interno genérico (500)
