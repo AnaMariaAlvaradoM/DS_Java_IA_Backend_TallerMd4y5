@@ -15,8 +15,9 @@
 6. [Fase 4: Agenda Inteligente, Disponibilidad y Reservas en Línea](#6-fase-4-agenda-inteligente-disponibilidad-y-reservas-en-línea)
 7. [Fase 5: Pagos e Integración con Stripe (Suscripciones, Créditos y Webhooks)](#7-fase-5-pagos-e-integración-con-stripe-suscripciones-créditos-y-webhooks)
 8. [Fase 6: Inteligencia Artificial (Recordatorios WhatsApp y Chatbot)](#8-fase-6-inteligencia-artificial-recordatorios-whatsapp-y-chatbot)
-9. [Bitácora de Incidencias y Soluciones Técnicas](#9-bitácora-de-incidencias-y-soluciones-técnicas)
-10. [Próximos Pasos](#10-próximos-pasos)
+9. [Fase 7: Suite de Pruebas Automatizadas (JUnit 5, Mockito y Calidad)](#9-fase-7-suite-de-pruebas-automatizadas-junit-5-mockito-y-calidad)
+10. [Bitácora de Incidencias y Soluciones Técnicas](#10-bitácora-de-incidencias-y-soluciones-técnicas)
+11. [Próximos Pasos](#11-próximos-pasos)
 
 ---
 
@@ -611,7 +612,69 @@ Se implementó un subsistema de IA desacoplado, resiliente y compatible con Open
 
 ---
 
-## 9. Bitácora de Incidencias y Soluciones Técnicas
+## 9. Fase 7: Suite de Pruebas Automatizadas (JUnit 5, Mockito y Calidad)
+
+### 📋 Checklist de Entregables (Fase 7 - Criterio 07)
+* **Bloque A: Reglas de Negocio de Agenda y Modelo (`cita.servicio`, `cita.modelo`) (✅ Completado)**
+  - [x] `ReglasAgendaTest` (10 tests): Cobertura total de validación de horarios comerciales, políticas dominicales, traslapes temporales y algoritmo de cálculo de horarios libres determinista.
+  - [x] `EstadoCitaTest` (8 tests): Validación de ocupación de agenda (`PENDIENTE`, `CONFIRMADA`), transiciones de ciclo de vida válidas/inválidas, inmutabilidad de estados terminales, normalización de slugs (`SlugUtil`) y limpieza de teléfonos (`ClienteService`).
+* **Bloque B: Pasarela de Pagos y Webhooks de Stripe (`pago.servicio`) (✅ Completado)**
+  - [x] `PagoServiceTest` (7 tests): Simulación y validación de creación de sesiones (409 si ya es PRO, 404 si el salón no existe), rechazo de peticiones sin firma o firma falsa (400 `FirmaInvalidaException`), verificación criptográfica HMAC-SHA256, idempotencia de eventos repetidos (`recibido: true, procesado: false`), upgrade a plan PRO con recarga de créditos IA y degradación automática ante cancelación de suscripción.
+* **Bloque C: Inteligencia Artificial y Chatbot Resiliente (`ia.servicio`) (✅ Completado)**
+  - [x] `ChatbotIaServiceTest` (8 tests): Consulta de catálogo sin escalamiento, escalamiento asistido con creación de solicitud (`PEDIDO_POR_IA`), barrera de seguridad en código contra promesas indebidas (cupones, descuentos, "gratis") generando solicitud `REGLA_DE_SEGURIDAD`, control de excepciones (404 salón inexistente, 402 créditos insuficientes, 502 respuestas vacías) y blindaje contra *prompt injection* en la separación de roles.
+* **Bloque D: Prueba de Integración del Contexto Spring Boot (`com.devsenior.sillon`) (✅ Completado)**
+  - [x] `SillonApplicationTests` (1 test): Carga íntegra del contexto Spring Boot, repositorios JPA e inyección de beans.
+  - [x] Superación del umbral requerido: **34 tests unitarios e integrados pasando al 100%** (meta mínima del calificador: 30 tests).
+* **Bloque E: Documentación Interactiva y Despliegue en Contenedores (Swagger y Docker) (✅ Completado)**
+  - [x] Configuración de OpenAPI / Swagger UI (`OpenApiConfig`) con esquema de autorización JWT Bearer (`bearerAuth`).
+  - [x] Contenedorización con `Dockerfile` multi-stage (`eclipse-temurin:17`) y exclusiones de seguridad en `.dockerignore`.
+
+---
+
+### 9.1 Bloque A: Pruebas Unitarias de Agenda y Dominio — ✅ COMPLETADO
+* **`ReglasAgendaTest`:**
+  * Valida que las citas se ajusten estrictamente a la jornada comercial del salón (`horaApertura` a `horaCierre`) y no crucen la medianoche.
+  * Valida la política `abreDomingos`.
+  * Prueba el algoritmo `seCruzan` tanto para solapamientos parciales como para citas contiguas.
+  * Evalúa `calcularHorariosLibres` confirmando que se descartan intervalos ya ocupados o que pertenezcan al pasado relativo al `Clock`.
+* **`EstadoCitaTest`:**
+  * Evalúa el método `ocupaAgenda()`, garantizando que únicamente `PENDIENTE` y `CONFIRMADA` bloqueen espacio.
+  * Comprueba la máquina de estados en `puedeCambiarA()`, asegurando que citas canceladas o completadas no permitan nuevas transiciones.
+  * Evalúa los algoritmos de normalización de cadenas (`SlugUtil` y `ClienteService.normalizarTelefono`).
+
+---
+
+### 9.2 Bloque B: Pruebas de Pagos y Webhooks Criptográficos — ✅ COMPLETADO
+* **Mocks y Criptografía:**
+  * Uso de `@ExtendWith(MockitoExtension.class)` aislando `StripeClient`, `SalonRepository` y `EventoStripeRepository`.
+  * Implementación de método auxiliar `firmarPayload` generando firmas HMAC-SHA256 reales (`t=...,v1=...`) idénticas a las emitidas por la infraestructura de Stripe.
+* **Resiliencia de Deserialización y Tolerancia Temporal:**
+  * Sincronización con el reloj de ejecución para mantenerse dentro de la tolerancia de 300 segundos exigida por el SDK de Stripe.
+  * Blindaje ante eventos sintéticos de prueba sin versión de API explícita.
+
+---
+
+### 9.3 Bloque C: Pruebas del Chatbot de IA y Defensas de Seguridad — ✅ COMPLETADO
+* **Aislamiento Multimodelo:**
+  * Mockeo de `CatalogoService`, `CreditosIaService`, `BibliotecaPrompts`, `AsistenteIaService` y `SolicitudService`.
+* **Garantías de Seguridad:**
+  * Valida que ante intentos de solicitar cupones o servicios gratis, el chatbot neutralice la respuesta con el mensaje institucional seguro y registre una solicitud prioritaria en la base de datos.
+  * Valida que el prompt de usuario viaje de forma estricta en el payload de mensajes del cliente, impidiendo la manipulación de las directivas del sistema.
+
+---
+
+### 9.4 Bloque D: Documentación Interactiva OpenAPI y Contenedorización — ✅ COMPLETADO
+* **Swagger UI y OpenAPI 3 (`OpenApiConfig.java`):**
+  * Configuración de metadatos del proyecto y esquema de seguridad global `bearerAuth` (HTTP Bearer JWT).
+  * Habilita el botón **Authorize** en `/swagger-ui.html` para pruebas autenticadas interactivas.
+* **Dockerfile Multi-Etapa y .dockerignore:**
+  * Etapa de construcción `build` basada en `eclipse-temurin:17-jdk-jammy`, optimizando la caché de capas mediante `./mvnw dependency:go-offline` antes del copiado de código fuente y empaquetado (`-DskipTests`).
+  * Etapa de ejecución basada en `eclipse-temurin:17-jre-jammy`, reduciendo drásticamente la superficie de ataque y el peso de la imagen final.
+  * Exclusión en `.dockerignore` de carpetas locales de compilación (`target/`), control de versiones (`.git`), secretos (`secrets.properties`) y configuraciones de IDE.
+
+---
+
+## 10. Bitácora de Incidencias y Soluciones Técnicas
 
 | # | Problema / Incidencia | Causa Raíz | Solución Aplicada |
 |---|---|---|---|
@@ -633,7 +696,7 @@ Se implementó un subsistema de IA desacoplado, resiliente y compatible con Open
 
 ---
 
-## 10. Próximos Pasos
+## 11. Próximos Pasos
 
 - [x] Desarrollar servicio de negocio (`SalonService` / `AuthService`) para orquestar la transacción atómica de registro y generación de slug único.
 - [x] Implementar capa de seguridad Spring Security 6, hashing de contraseñas con `BCryptPasswordEncoder` y generación/validación de tokens JWT (Fase 2).
@@ -642,11 +705,14 @@ Se implementó un subsistema de IA desacoplado, resiliente y compatible con Open
 - [x] Implementar la Fase 4: Módulo de Agenda (Citas, Disponibilidad, cálculo de horarios libres con `Clock`, catálogo público y reservas en línea).
 - [x] Implementar la Fase 5: Pasarela de Pagos Stripe (Suscripciones PRO, compra de paquetes de créditos y Webhooks firmados).
 - [x] Implementar el Módulo de IA (Fase 6: Recordatorios deterministas y Chatbot con Gemini / OpenAI spec y control atómico de créditos IA).
-- [x] Completar las 7 entradas de la bitácora de IA en `BITACORA-IA.md` (superando el umbral de 5 requerido para el Criterio 08).
-- [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS` con 96 fuentes compiladas).
+- [x] Completar las 8 entradas de la bitácora de IA en `BITACORA-IA.md` (superando holgadamente el umbral de 5 requerido para el Criterio 08).
+- [x] Configurar documentación OpenAPI / Swagger UI con soporte JWT Bearer (`OpenApiConfig.java`).
+- [x] Diseñar el `Dockerfile` multi-etapa y archivo `.dockerignore` en la raíz del proyecto (Fase 12).
+- [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS` con 97 fuentes compiladas).
 - [x] Implementar suite de pruebas unitarias JUnit 5 y Mockito para cumplir con el mínimo de tests requeridos (Criterio 07) (34 tests pasando con 0 errores).
 - [ ] Completar los documentos técnicos `SPEC.md` y `AGENTS.md` requeridos por el calificador automático (Criterio 08).
 - [ ] Diseñar la colección oficial de pruebas en Postman (Criterio 08).
+
 
 
 

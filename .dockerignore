@@ -1,0 +1,11 @@
+target/
+.git
+.gitignore
+secrets.properties
+*.md
+postman/
+.idea
+.vscode
+*.log
+.env
+
