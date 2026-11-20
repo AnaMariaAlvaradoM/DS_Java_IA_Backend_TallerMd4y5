@@ -17,7 +17,7 @@ import tools.jackson.databind.JsonNode;
 @Service
 public class ChatService {
     public static final String RESPUESTA_SEGURA =
-            "No puedo confirmar descuentos, promociones ni reembolsos. Un miembro del equipo revisará su consulta y se comunicará con usted.";
+            "No puedo confirmar esa propuesta. Un miembro del equipo revisará su consulta y se comunicará con usted.";
 
     private final SalonRepository salones;
     private final CatalogoService catalogo;

@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-class ChatServiceTest {
+class ChatbotServiceTest {
     private SalonRepository salones;
     private CatalogoService catalogo;
     private CreditosIaService creditos;
@@ -100,3 +100,4 @@ class ChatServiceTest {
         return new ChatSolicitud("Ana", "+56912345678", List.of(new TurnoChat(RolTurno.CLIENTE, "Quiero un corte")));
     }
 }
+
