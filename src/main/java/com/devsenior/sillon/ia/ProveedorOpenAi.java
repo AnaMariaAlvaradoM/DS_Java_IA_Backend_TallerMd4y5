@@ -19,7 +19,7 @@ public class ProveedorOpenAi implements ProveedorIa {
     public ProveedorOpenAi(ClienteHttpIa fabrica,
                            @Value("${sillon.ia.openai.url}") String url,
                            @Value("${sillon.ia.gemini.llave}") String llave,
-                           @Value("${sillon.ia.openai.modelo:gemini-3.8-flash}") String modelo) {
+                           @Value("${sillon.ia.openai.modelo}") String modelo) {
         this.cliente = fabrica.crear(url);
         this.llave = llave;
         this.modelo = modelo;

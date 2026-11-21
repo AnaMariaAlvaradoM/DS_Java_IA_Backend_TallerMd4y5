@@ -38,6 +38,7 @@ La zona horaria predeterminada del enunciado es `America/Bogota`; para Chile se 
 | `STRIPE_PRECIO_PRO`, `STRIPE_PRECIO_CREDITOS` | IDs de precios creados en Stripe |
 | `STRIPE_URL_API` | API de Stripe; permite el simulador de pruebas |
 | `GEMINI_LLAVE` | Clave de Google AI Studio |
+| `GEMINI_MODELO` | Modelo de Gemini; por defecto `gemini-3.5-flash-lite` |
 | `SILLON_IA_OPENAI_URL` | Base compatible con OpenAI; permite el simulador de pruebas |
 | `SILLON_IA_CLAUDE_LLAVE` | Respaldo opcional de Claude |
 
