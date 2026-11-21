@@ -23,7 +23,7 @@ Cada entidad de negocio pertenece a un salón. El backend obtiene `salonId` del 
 3. Configurar `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD` para MySQL. La URL predeterminada es `jdbc:mysql://localhost:3306/sillon_db?createDatabaseIfNotExist=true`.
 4. Ejecutar `mvn spring-boot:run`. Swagger queda en `http://localhost:8080/swagger-ui.html` salvo que se defina otro `PORT`.
 
-La zona horaria predeterminada del enunciado es `America/Bogota`; para Chile se define `SILLON_ZONA_HORARIA=America/Santiago`. Los IDs de precio `price_...` deben pertenecer al mismo sandbox que `STRIPE_CLAVE_SECRETA`. El backend elige los precios; las peticiones de compra no los reciben.
+La zona horaria predeterminada del enunciado es `America/Bogota`; el entorno local y Render definen `SILLON_ZONA_HORARIA=America/Santiago` para operar con hora chilena. Los IDs de precio `price_...` deben pertenecer al mismo sandbox que `STRIPE_CLAVE_SECRETA`. El backend elige los precios; las peticiones de compra no los reciben.
 
 ### Variables
 
