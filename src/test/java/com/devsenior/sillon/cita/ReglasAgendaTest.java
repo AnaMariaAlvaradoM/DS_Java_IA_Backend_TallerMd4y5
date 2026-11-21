@@ -140,4 +140,82 @@ class ReglasAgendaTest {
         assertTrue(libres.contains(LocalTime.of(10, 0)));
     }
 
+
+        @Test
+        void rechazarCitaAntesDeLaApertura() {
+
+                LocalDateTime inicio =
+            LocalDateTime.of(2026, 11, 17, 7, 30);
+
+                        LocalDateTime fin = inicio.plusMinutes(45);
+
+            assertThrows(ReglaNegocioException.class, () ->
+                reglas.validarHorario(
+                        inicio,
+                        fin,
+                        configuracion
+                )
+            );
+        }
+
+
+        @Test
+        void domingoCerradoNoTieneHorariosDisponibles() {
+
+                LocalDate domingo =
+                        LocalDate.of(2026, 11, 22);
+
+                Clock reloj = Clock.fixed(
+                        Instant.parse("2026-11-21T17:00:00Z"),
+                        ZoneId.of("America/Bogota")
+                );
+
+                List<LocalTime> horariosLibres =
+                        reglas.calcularHorariosLibres(
+                                domingo,
+                    45,
+                                configuracion,
+                                List.of(),
+                                reloj
+                        );
+
+                assertTrue(horariosLibres.isEmpty());
+        }
+
+
+        @Test
+        void hoyNoDebeOfrecerHorariosPasados() {
+
+                LocalDate hoy = LocalDate.of(2026, 11, 17);
+
+                Clock reloj = Clock.fixed(
+                        Instant.parse("2026-11-17T15:15:00Z"),
+                        ZoneId.of("America/Bogota")
+                );
+
+                List<LocalTime> horariosLibres =
+                        reglas.calcularHorariosLibres(
+                                hoy,
+                    45,
+                                configuracion,
+                                List.of(),
+                                reloj
+                        );
+
+                assertFalse(
+                        horariosLibres.contains(LocalTime.of(9, 0))
+                );
+
+                assertFalse(
+                        horariosLibres.contains(LocalTime.of(10, 0))
+                );
+
+                assertTrue(
+                        horariosLibres.contains(LocalTime.of(10, 30))
+                );
+
+                assertTrue(
+                        horariosLibres.contains(LocalTime.of(11, 0))
+                );
+        }
 }
