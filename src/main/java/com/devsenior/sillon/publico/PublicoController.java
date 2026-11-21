@@ -1,5 +1,8 @@
 package com.devsenior.sillon.publico;
 
+import com.devsenior.sillon.chat.ChatService;
+import com.devsenior.sillon.chat.dto.ChatRequest;
+import com.devsenior.sillon.chat.dto.ChatRespuesta;
 import com.devsenior.sillon.cita.dto.CitaRespuesta;
 import com.devsenior.sillon.cita.dto.CrearCitaRequest;
 import com.devsenior.sillon.publico.dto.CatalogoSalonRespuesta;
@@ -17,9 +20,11 @@ import java.time.LocalDate;
 public class PublicoController {
 
     private final PublicoService publicoService;
+    private final ChatService chatService;
 
-    public PublicoController(PublicoService publicoService) {
+    public PublicoController(PublicoService publicoService, ChatService chatService) {
         this.publicoService = publicoService;
+        this.chatService = chatService;
     }
 
     @GetMapping
@@ -46,5 +51,14 @@ public class PublicoController {
     ) {
         CitaRespuesta cita = publicoService.crearReservaEnLinea(slug, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(cita);
+    }
+
+    @PostMapping("/chat")
+    public ResponseEntity<ChatRespuesta> conversar(
+            @PathVariable String slug,
+            @Valid @RequestBody ChatRequest request
+    ) {
+        ChatRespuesta respuesta = chatService.conversar(slug, request);
+        return ResponseEntity.ok(respuesta);
     }
 }
