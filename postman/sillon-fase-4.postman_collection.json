@@ -1,0 +1,691 @@
+{
+  "info": {
+    "_postman_id": "52798952-77d9-4515-84c3-09797d3fd340",
+    "name": "Sillón - Fase 4",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "45707915",
+    "_collection_link": "https://go.postman.co/collection/45707915-52798952-77d9-4515-84c3-09797d3fd340?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01 - Registrar cita",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_08xn}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Juan Pérez\",\n  \"clienteTelefono\": \"3105551234\",\n  \"servicioId\": 1,\n  \"estilistaId\": 4,\n  \"inicio\": \"2026-11-19T10:00:00\",\n  \"nota\": \"Cliente solicita corte clásico\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "13 - Crear cita para Mateo",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0213}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Paola Ramírez\",\n  \"clienteTelefono\": \"3155554321\",\n  \"servicioId\": 1,\n  \"estilistaId\": 3,\n  \"inicio\": \"2026-11-20T11:00:00\",\n  \"nota\": \"Cita de prueba para validar permisos de Mateo\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "14 - Rechazar cancelación como estilista",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0juj}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"estado\": \"CANCELADA\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas/5/estado",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas",
+            "5",
+            "estado"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "15 - Registrar inasistencia como estilista",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0juj}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"estado\": \"NO_ASISTIO\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas/5/estado",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas",
+            "5",
+            "estado"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "07 - Permitir citas consecutivas",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_08xn}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Laura Martínez\",\n  \"clienteTelefono\": \"3205557890\",\n  \"servicioId\": 1,\n  \"estilistaId\": 4,\n  \"inicio\": \"2026-11-19T10:45:00\",\n  \"nota\": \"Prueba de citas consecutivas\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Rechazar cita cruzada",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_08xn}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Carlos Rodríguez\",\n  \"clienteTelefono\": \"3105559876\",\n  \"servicioId\": 1,\n  \"estilistaId\": 4,\n  \"inicio\": \"2026-11-19T10:30:00\",\n  \"nota\": \"Prueba de cruce de horarios\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Rechazar servicio no asignado",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_08xn}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Carlos Rodríguez\",\n  \"clienteTelefono\": \"3105559876\",\n  \"servicioId\": 2,\n  \"estilistaId\": 4,\n  \"inicio\": \"2026-11-19T11:30:00\",\n  \"nota\": \"Prueba de servicio no asignado\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Rechazar cita fuera del horario",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_08xn}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Andrés Gómez\",\n  \"clienteTelefono\": \"3105556789\",\n  \"servicioId\": 1,\n  \"estilistaId\": 4,\n  \"inicio\": \"2026-11-19T18:45:00\",\n  \"nota\": \"Prueba de horario fuera de atención\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Rechazar cita en fecha pasada",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_08xn}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Andrés Gómez\",\n  \"clienteTelefono\": \"3105556789\",\n  \"servicioId\": 1,\n  \"estilistaId\": 4,\n  \"inicio\": \"2026-11-13T10:00:00\",\n  \"nota\": \"Prueba de fecha pasada\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Rechazar cita en domingo",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0zee}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Andrés Gómez\",\n  \"clienteTelefono\": \"3105556789\",\n  \"servicioId\": 1,\n  \"estilistaId\": 4,\n  \"inicio\": \"2026-11-22T10:00:00\",\n  \"nota\": \"Prueba de reserva en domingo\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "08 - Consultar citas por fecha",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_06dl}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/citas?fecha=2026-11-27",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ],
+          "query": [
+            {
+              "key": "fecha",
+              "value": "2026-11-27"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "09 - Consultar citas como Mateo",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_05fz}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/citas?fecha=2026-11-19",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ],
+          "query": [
+            {
+              "key": "fecha",
+              "value": "2026-11-19"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10 - Completar cita como dueño",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0tig}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"estado\": \"COMPLETADA\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas/1/estado",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas",
+            "1",
+            "estado"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "16 - Cancelar cita como dueño",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0tig}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"estado\": \"CANCELADA\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas/2/estado",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas",
+            "2",
+            "estado"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12 - Rechazar modificación de cita ajena",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0d4s}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"estado\": \"COMPLETADA\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas/1/estado",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas",
+            "1",
+            "estado"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11 - Rechazar transición inválida",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_0tig}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"estado\": \"PENDIENTE\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/citas/1/estado",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas",
+            "1",
+            "estado"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_08xn",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0zee",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_06y0",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_05fz",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0tig",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0d4s",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0j62",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0juj",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0ykx",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0186",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0213",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_06dl",
+      "secret": true
+    }
+  ]
+}

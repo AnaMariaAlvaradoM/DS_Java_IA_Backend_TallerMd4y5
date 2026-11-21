@@ -1,0 +1,1019 @@
+{
+  "info": {
+    "_postman_id": "5a9caaba-4053-4521-bd8e-07b080140317",
+    "name": "Sillón - Fase 2 Seguridad",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "45707915",
+    "_collection_link": "https://go.postman.co/collection/45707915-5a9caaba-4053-4521-bd8e-07b080140317?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01 - Login correcto",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Login correcto - HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"El login devuelve un token JWT\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.token).to.be.a(\"string\");",
+              "    pm.expect(respuesta.token).to.not.be.empty;",
+              "    pm.expect(respuesta.tipo).to.eql(\"Bearer\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"dueno.navaja.01@example.com\",\n    \"password\": \"ClaveSegura123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11 - Login segundo salón",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Login correcto - HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"El login devuelve un token JWT\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.token).to.be.a(\"string\");",
+              "    pm.expect(respuesta.token).to.not.be.empty;",
+              "    pm.expect(respuesta.tipo).to.eql(\"Bearer\");",
+              "});",
+              "",
+              "",
+              "const respuestaLogin = pm.response.json();",
+              "",
+              "if (pm.response.code === 200 && respuestaLogin.token) {",
+              "    pm.collectionVariables.set(\"jwtSalonEstilo\", respuestaLogin.token);",
+              "}",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"email\": \"dueno.estilo.01@example.com\",\n  \"password\": \"ClavePrueba123!\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Login incorrecto",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Login incorrecto - HTTP 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test(\"El error cumple el formato requerido\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(401);",
+              "    pm.expect(respuesta.error).to.eql(\"Unauthorized\");",
+              "    pm.expect(respuesta.mensaje).to.eql(",
+              "        \"Correo o contraseña incorrectos\"",
+              "    );",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"La respuesta no contiene un token JWT\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.not.have.property(\"token\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"email\": \"dueno.navaja.01@example.com\",\n  \"password\": \"ClaveIncorrecta123\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Acceso denegado a ADMIN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Acceso denegado - HTTP 403\", function () {",
+              "    pm.response.to.have.status(403);",
+              "});",
+              "",
+              "pm.test(\"El error 403 cumple el formato requerido\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(403);",
+              "    pm.expect(respuesta.error).to.eql(\"Forbidden\");",
+              "    pm.expect(respuesta.mensaje).to.eql(",
+              "        \"No tienes permisos para realizar esta operación\"",
+              "    );",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"El propietario no recibe datos administrativos\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.not.have.property(\"salones\");",
+              "    pm.expect(respuesta).to.not.be.an(\"array\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0z85}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/admin/salones",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "admin",
+            "salones"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Acceso sin token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Acceso sin token - HTTP 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test(\"El error 401 cumple el formato requerido\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(401);",
+              "    pm.expect(respuesta.error).to.eql(\"Unauthorized\");",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\");",
+              "    pm.expect(respuesta.mensaje).to.not.be.empty;",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"No se muestran datos del salón\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.not.have.property(\"salonId\");",
+              "    pm.expect(respuesta).to.not.have.property(\"creditosIa\");",
+              "    pm.expect(respuesta).to.not.have.property(\"configuracion\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/salon",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "salon"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Token JWT inválido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Token JWT inválido - HTTP 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test(\"El error 401 cumple el formato requerido\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(401);",
+              "    pm.expect(respuesta.error).to.eql(\"Unauthorized\");",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\").and.not.empty;",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"Un token inválido no permite consultar el salón\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.not.have.property(\"configuracion\");",
+              "    pm.expect(respuesta).to.not.have.property(\"creditosIa\");",
+              "    pm.expect(respuesta).to.not.have.property(\"token\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "token-invalido",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/salon",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "salon"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Consultar mi salón",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Consultar mi salón - HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"El salón pertenece al propietario autenticado\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.nombre).to.eql(\"Barbería La Navaja\");",
+              "    pm.expect(respuesta.slug).to.eql(\"barberia-la-navaja\");",
+              "});",
+              "",
+              "pm.test(\"El salón tiene el plan GRATIS y 10 créditos\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.plan).to.eql(\"GRATIS\");",
+              "    pm.expect(respuesta.creditosIa).to.eql(10);",
+              "});",
+              "",
+              "pm.test(\"El salón devuelve su configuración\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.configuracion).to.have.all.keys(",
+              "        \"horaApertura\",",
+              "        \"horaCierre\",",
+              "        \"abreDomingos\",",
+              "        \"intervaloMinutos\"",
+              "    );",
+              "",
+              "    pm.expect(respuesta.configuracion.horaApertura).to.eql(\"09:00:00\");",
+              "    pm.expect(respuesta.configuracion.horaCierre).to.eql(\"18:00:00\");",
+              "    pm.expect(respuesta.configuracion.abreDomingos).to.eql(true);",
+              "    pm.expect(respuesta.configuracion.intervaloMinutos).to.eql(45);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_11zr}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/salon",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "salon"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "07 - Registro con correo duplicado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Correo duplicado - HTTP 409\", function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "",
+              "pm.test(\"El error 409 cumple el formato requerido\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(409);",
+              "    pm.expect(respuesta.error).to.eql(\"Conflict\");",
+              "    pm.expect(respuesta.mensaje).to.eql(",
+              "        \"El correo ya está registrado\"",
+              "    );",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"El registro rechazado no devuelve un token\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.not.have.property(\"token\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"salonNombre\": \"Barbería Segunda Sede\",\n  \"ciudad\": \"Bogotá\",\n  \"direccion\": \"Calle 15 #25-40\",\n  \"telefono\": \"3009876543\",\n  \"nombre\": \"Otro Propietario\",\n  \"email\": \"dueno.navaja.01@example.com\",\n  \"password\": \"OtraClaveSegura123!\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/registro",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "registro"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "08 - Registro con datos inválidos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Registro con datos inválidos - HTTP 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"El error 400 cumple el formato requerido\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(400);",
+              "    pm.expect(respuesta.error).to.eql(\"Bad Request\");",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"El mensaje identifica los campos inválidos\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.mensaje).to.include(\"email\");",
+              "    pm.expect(respuesta.mensaje).to.include(\"password\");",
+              "});",
+              "",
+              "pm.test(\"El registro rechazado no devuelve un token\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.not.have.property(\"token\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"salonNombre\": \"Barbería de Prueba\",\n  \"ciudad\": \"Bogotá\",\n  \"direccion\": \"Calle 10 #20-30\",\n  \"telefono\": \"3001234567\",\n  \"nombre\": \"Usuario de Prueba\",\n  \"email\": \"correo-invalido\",\n  \"password\": \"123\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/registro",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "registro"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "09 - Registro exitoso",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Registro exitoso - HTTP 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"La respuesta contiene los 8 campos requeridos\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.have.all.keys(",
+              "        \"token\",",
+              "        \"tipo\",",
+              "        \"expiraEnMinutos\",",
+              "        \"usuarioId\",",
+              "        \"nombre\",",
+              "        \"rol\",",
+              "        \"salonId\",",
+              "        \"salonSlug\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El propietario tiene los datos correctos\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.tipo).to.eql(\"Bearer\");",
+              "    pm.expect(respuesta.rol).to.eql(\"DUENO\");",
+              "    pm.expect(respuesta.nombre).to.eql(\"Propietario de Prueba\");",
+              "    pm.expect(respuesta.salonSlug).to.eql(\"barberia-el-estilo\");",
+              "    pm.expect(respuesta.expiraEnMinutos).to.eql(1440);",
+              "});",
+              "",
+              "pm.test(\"El registro devuelve un token y no expone la contraseña\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.token).to.be.a(\"string\").and.not.empty;",
+              "    pm.expect(respuesta.usuarioId).to.be.a(\"number\");",
+              "    pm.expect(respuesta.salonId).to.be.a(\"number\");",
+              "    pm.expect(respuesta).to.not.have.property(\"password\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"salonNombre\": \"Barbería El Estilo\",\n  \"ciudad\": \"Bogotá\",\n  \"direccion\": \"Carrera 15 #45-20\",\n  \"telefono\": \"3005551234\",\n  \"nombre\": \"Propietario de Prueba\",\n  \"email\": \"dueno.estilo.01@example.com\",\n  \"password\": \"ClavePrueba123!\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/registro",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "registro"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10 - Aislamiento entre salones",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Consultar segundo salón - HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"El propietario consulta su propio salón\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.nombre).to.eql(\"Barbería El Estilo\");",
+              "    pm.expect(respuesta.slug).to.eql(\"barberia-el-estilo\");",
+              "});",
+              "",
+              "pm.test(\"No se devuelven los datos del primer salón\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.nombre).to.not.eql(\"Barbería La Navaja\");",
+              "    pm.expect(respuesta.slug).to.not.eql(\"barberia-la-navaja\");",
+              "});",
+              "",
+              "pm.test(\"El segundo salón tiene su configuración inicial\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.plan).to.eql(\"GRATIS\");",
+              "    pm.expect(respuesta.creditosIa).to.eql(10);",
+              "    pm.expect(respuesta.configuracion.horaApertura).to.eql(\"08:00:00\");",
+              "    pm.expect(respuesta.configuracion.horaCierre).to.eql(\"19:00:00\");",
+              "    pm.expect(respuesta.configuracion.abreDomingos).to.eql(false);",
+              "    pm.expect(respuesta.configuracion.intervaloMinutos).to.eql(30);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtSalonEstilo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/salon",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "salon"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12 - Actualizar configuración del salón",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Actualización exitosa - HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"La respuesta corresponde al segundo salón\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.nombre).to.eql(\"Barbería El Estilo\");",
+              "    pm.expect(respuesta.slug).to.eql(\"barberia-el-estilo\");",
+              "});",
+              "",
+              "pm.test(\"La configuración conserva los valores enviados\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.configuracion.horaApertura).to.eql(\"08:00:00\");",
+              "    pm.expect(respuesta.configuracion.horaCierre).to.eql(\"19:00:00\");",
+              "    pm.expect(respuesta.configuracion.abreDomingos).to.eql(false);",
+              "    pm.expect(respuesta.configuracion.intervaloMinutos).to.eql(30);",
+              "});",
+              "",
+              "pm.test(\"El plan y los créditos no se modifican\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.plan).to.eql(\"GRATIS\");",
+              "    pm.expect(respuesta.creditosIa).to.eql(10);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtSalonEstilo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"horaApertura\": \"08:00\",\n  \"horaCierre\": \"19:00\",\n  \"abreDomingos\": false,\n  \"intervaloMinutos\": 30\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/salon/configuracion",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "salon",
+            "configuracion"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "13 - Rechazar horarios inválidos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Horarios inválidos - HTTP 409\", function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "",
+              "pm.test(\"La respuesta contiene los campos de error\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.have.all.keys(",
+              "        \"codigo\", \"error\", \"mensaje\", \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El error corresponde a un conflicto\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(409);",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\").and.not.empty;",
+              "});",
+              "",
+              "pm.test(\"No se devuelve una configuración actualizada\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.not.have.property(\"configuracion\");",
+              "    pm.expect(respuesta).to.not.have.property(\"salonId\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtSalonEstilo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"horaApertura\": \"19:00\",\n  \"horaCierre\": \"08:00\",\n  \"abreDomingos\": false,\n  \"intervaloMinutos\": 30\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/salon/configuracion",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "salon",
+            "configuracion"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "14 - Rechazar intervalo inválido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Intervalo inválido - HTTP 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"La respuesta tiene el formato de error esperado\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.have.all.keys(",
+              "        \"codigo\", \"error\", \"mensaje\", \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El código de error es 400\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(400);",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\").and.not.empty;",
+              "});",
+              "",
+              "pm.test(\"No se devuelve una configuración actualizada\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta).to.not.have.property(\"configuracion\");",
+              "    pm.expect(respuesta).to.not.have.property(\"salonId\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtSalonEstilo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"horaApertura\": \"08:00\",\n  \"horaCierre\": \"19:00\",\n  \"abreDomingos\": false,\n  \"intervaloMinutos\": 10\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/salon/configuracion",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "salon",
+            "configuracion"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_0ubu",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_0z85",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_11zr",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_01se",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_0je9",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0bcc",
+      "secret": true
+    },
+    {
+      "key": "jwtSalonEstilo",
+      "value": ""
+    }
+  ]
+}
