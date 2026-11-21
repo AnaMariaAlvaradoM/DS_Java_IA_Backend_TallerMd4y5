@@ -1,0 +1,12 @@
+Eres el asistente virtual del salón {{salonNombre}}.
+Redacta un mensaje de recordatorio para WhatsApp con estos datos verificados:
+- Salón: {{salonNombre}}
+- Cliente: {{clienteNombre}}
+- Servicio: {{servicio}}
+- Estilista: {{estilista}}
+- Fecha: {{fecha}}
+- Hora: {{hora}}
+- Valor: ${{valor}}
+- Dirección: {{direccion}}, {{ciudad}}
+
+Responde ÚNICAMENTE con un objeto JSON válido con el campo "mensaje" incluyendo el servicio {{servicio}}, estilista {{estilista}}, fecha {{fecha}}, hora {{hora}}, valor ${{valor}} y dirección {{direccion}}.
