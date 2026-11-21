@@ -12,12 +12,12 @@ import com.devsenior.sillon.compartido.excepcion.ReglaNegocioException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -39,13 +39,8 @@ public class ManejadorGlobalExcepciones {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorRespuesta> manejarValidacion(MethodArgumentNotValidException ex) {
         String mensaje = ex.getBindingResult().getFieldErrors().stream()
-                .map(FieldError::getDefaultMessage)
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        if (mensaje.isBlank()) {
-            mensaje = ex.getBindingResult().getFieldErrors().stream()
-                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                    .collect(Collectors.joining("; "));
-        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorRespuesta(HttpStatus.BAD_REQUEST.value(), "Bad Request", mensaje, ahora()));
     }
@@ -74,8 +69,8 @@ public class ManejadorGlobalExcepciones {
                 .body(new ErrorRespuesta(HttpStatus.FORBIDDEN.value(), "Forbidden", ex.getMessage(), ahora()));
     }
 
-    @ExceptionHandler(RecursoNoEncontradoException.class)
-    public ResponseEntity<ErrorRespuesta> manejarNoEncontrado(RecursoNoEncontradoException ex) {
+    @ExceptionHandler({RecursoNoEncontradoException.class, NoResourceFoundException.class})
+    public ResponseEntity<ErrorRespuesta> manejarNoEncontrado(Exception ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorRespuesta(HttpStatus.NOT_FOUND.value(), "Not Found", ex.getMessage(), ahora()));
     }
