@@ -2,7 +2,7 @@
 
 **Java AI Engineer · Dev Senior Code**
 
-**URL de Producción en Render:** https://sillon-api.onrender.com
+**URL de Producción en Render:** https://sillon-api-u6na.onrender.com
 
 ---
 
@@ -263,7 +263,7 @@ Tu cliente de Stripe no está usando `STRIPE_URL_API`.
 Tu proveedor de IA no lee `SILLON_IA_OPENAI_URL` o `GEMINI_LLAVE`.
 
 ### "No encontré en tu README.md una URL de Render"
-Agrega la URL completa (`https://tu-app.onrender.com`) a tu README.
+Agrega la URL completa (`https://sillon-api-u6na.onrender.com`) a tu README.
 
 ### Error 403 al hacer push
 Clonaste el repo de la profe en vez de tu fork. Vuelve al Paso 2 con la URL de **tu** fork.
