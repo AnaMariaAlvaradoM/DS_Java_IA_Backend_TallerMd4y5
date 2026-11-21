@@ -16,8 +16,10 @@
 7. [Fase 5: Pagos e Integración con Stripe (Suscripciones, Créditos y Webhooks)](#7-fase-5-pagos-e-integración-con-stripe-suscripciones-créditos-y-webhooks)
 8. [Fase 6: Inteligencia Artificial (Recordatorios WhatsApp y Chatbot)](#8-fase-6-inteligencia-artificial-recordatorios-whatsapp-y-chatbot)
 9. [Fase 7: Suite de Pruebas Automatizadas (JUnit 5, Mockito y Calidad)](#9-fase-7-suite-de-pruebas-automatizadas-junit-5-mockito-y-calidad)
-10. [Bitácora de Incidencias y Soluciones Técnicas](#10-bitácora-de-incidencias-y-soluciones-técnicas)
-11. [Próximos Pasos](#11-próximos-pasos)
+10. [Fase 8: Documentación de Arquitectura (SPEC.md, AGENTS.md y Respaldo de Webhooks)](#10-fase-8-documentación-de-arquitectura-specmd-agentsmd-y-respaldo-de-webhooks)
+11. [Fase 9: Despliegue en Producción y Lecciones Aprendidas (Render + Supabase + Stripe)](#11-fase-9-despliegue-en-producción-y-lecciones-aprendidas-render--supabase--stripe)
+12. [Bitácora de Incidencias y Soluciones Técnicas](#12-bitácora-de-incidencias-y-soluciones-técnicas)
+13. [Próximos Pasos](#13-próximos-pasos)
 
 ---
 
@@ -674,7 +676,64 @@ Se implementó un subsistema de IA desacoplado, resiliente y compatible con Open
 
 ---
 
-## 10. Bitácora de Incidencias y Soluciones Técnicas
+## 10. Fase 8: Documentación de Arquitectura (SPEC.md, AGENTS.md y Respaldo de Webhooks)
+
+### 📋 Checklist de Entregables (Fase 8 - Criterio 08)
+* **Bloque A: Especificación Técnica de Negocio (`SPEC.md`) (✅ Completado)**
+  - [x] Redacción exhaustiva alcanzando 21.772 caracteres (umbral mínimo del calificador: 500).
+  - [x] Detalle de arquitectura multi-inquilino, discriminador `salon_id` y aislamiento en contexto `@AuthenticationPrincipal`.
+  - [x] Matriz de roles y permisos (`PÚBLICO`, `DUENO`, `ESTILISTA`, `ADMIN`).
+  - [x] Modelo de suscripciones (`GRATIS`, `PRO`) y recargas de créditos de IA.
+  - [x] Algoritmos deterministas: orden secuencial de validación para estilistas (1. límite 402, 2. correo 409, 3. servicios 404) y 7 pasos para agendamiento de citas.
+  - [x] Máquina de estados de `EstadoCita` y ocupación de agenda.
+  - [x] Reglas de IA (créditos atómicos, desacoplamiento transaccional, datos verificados y regla anti-promesas) y pasarela Stripe con webhooks idempotentes.
+  - [x] Catálogo de 25 endpoints REST mapeados y formato de error inmutable de 4 campos.
+  - [x] Delimitación de alcance excluido.
+* **Bloque B: Guía Técnica y Directivas para Agentes de IA (`AGENTS.md`) (✅ Completado)**
+  - [x] Redacción técnica profunda alcanzando 8.943 caracteres (umbral mínimo del calificador: 300).
+  - [x] Paquete raíz canónico `com.devsenior.sillon` y responsabilidades de los 13 submódulos.
+  - [x] Directivas inmutables de multi-tenancy y uso mandatorio del bean `java.time.Clock` (`America/Bogota`).
+  - [x] Manejo uniforme de errores vía `ManejadorGlobalErrores` y serialización manual en `SecurityConfig`.
+  - [x] Directivas de IA: Java como única fuente de verdad, salida JSON estricta y cadena de fallback multimodelo (`ProveedorOpenAi` -> `ProveedorClaude`).
+  - [x] Rigor metodológico en pruebas unitarias: aislamiento con Mockito y prohibición de relajar tests.
+* **Bloque C: Respaldo de Webhooks y Directorio Postman (✅ Completado)**
+  - [x] Inyección de `ObjectMapper` en `PagoService` para lectura tolerante a esquemas y versiones de Stripe.
+  - [x] Creación de la carpeta `postman/` en la raíz del proyecto para alojar las colecciones de prueba y entornos.
+
+---
+
+## 11. Fase 9: Despliegue en Producción y Lecciones Aprendidas (Render + Supabase + Stripe)
+
+### 📋 Checklist de Entregables (Fase 9 - Criterio 09)
+* **Bloque A: Infraestructura y Base de Datos Cloud (✅ Completado)**
+  - [x] Base de datos PostgreSQL aprovisionada en Supabase mediante el *Session Pooler* en el puerto 5432 / 6543 (`sslmode=require`).
+  - [x] Ejecución de migraciones DDL automáticas gestionadas por JPA/Hibernate sobre PostgreSQL sin requerir ajustes de código Java.
+* **Bloque B: Web Service en Render y Docker Multi-Stage (✅ Completado)**
+  - [x] Despliegue exitoso del contenedor `Dockerfile` multi-etapa en Render Web Services.
+  - [x] Asignación y verificación del dominio público oficial: `https://sillon-api-42n5.onrender.com`.
+  - [x] Exposición funcional de Swagger UI en producción: `https://sillon-api-42n5.onrender.com/swagger-ui.html`.
+  - [x] Validación de la especificación OpenAPI en `https://sillon-api-42n5.onrender.com/v3/api-docs`.
+* **Bloque C: Webhooks de Stripe y Entorno de Producción (✅ Completado)**
+  - [x] Configuración del endpoint de Webhook en Stripe Dashboard apuntando a `https://sillon-api-42n5.onrender.com/api/pagos/webhook`.
+  - [x] Sincronización del entorno `postman/produccion.postman_environment.json` con `baseUrl = https://sillon-api-42n5.onrender.com`.
+
+### 🎓 Lecciones Aprendidas Clave del Despliegue en Producción
+1. **Evitar sintaxis Markdown en variables de entorno de Render:**
+   * *Problema:* Al copiar la cadena de conexión JDBC de Supabase desde guías técnicas o notas documentadas en Markdown, el portapapeles copió inadvertidamente los corchetes o paréntesis del enlace (ejemplo: `[jdbc:postgresql://...](...)`).
+   * *Impacto:* Durante el arranque de la aplicación en Render, Spring Boot y Hibernate no pudieron reconocer el prefijo `jdbc:postgresql:` debido al caracter espurio inicial `[`, arrojando un error fatal al intentar inferir el dialecto: `Unable to determine Dialect to use [null]`.
+   * *Solución:* Asegurarse de que el valor en el panel de Environment de Render sea texto plano estricto (`jdbc:postgresql://host:puerto/db?sslmode=require`), sin caracteres de formateo.
+2. **Verificar el nombre de dominio final asignado por Render (sufijos aleatorios):**
+   * *Problema:* Render añade frecuentemente un sufijo alfanumérico aleatorio al subdominio del servicio web para garantizar unicidad global (por ejemplo: `sillon-api-42n5.onrender.com` en lugar de `sillon-api.onrender.com`).
+   * *Impacto:* Si los sistemas externos (Stripe Webhooks, Postman o la variable `URL_PUBLICA`) utilizan el nombre hipotético sin el sufijo, las redirecciones de checkout (`/api/pagos/resultado`), los webhooks y las pruebas automatizadas fallarán por host inalcanzable.
+   * *Solución:* Comprobar siempre la URL final activa en el dashboard de Render e inmediatamente sincronizar:
+     1. La variable de entorno `URL_PUBLICA` en Render.
+     2. La URL del Webhook en Stripe Dashboard (`/api/pagos/webhook`).
+     3. La variable `baseUrl` en `postman/produccion.postman_environment.json`.
+     4. La URL pública documentada en `README.md`.
+
+---
+
+## 12. Bitácora de Incidencias y Soluciones Técnicas
 
 | # | Problema / Incidencia | Causa Raíz | Solución Aplicada |
 |---|---|---|---|
@@ -693,10 +752,13 @@ Se implementó un subsistema de IA desacoplado, resiliente y compatible con Open
 | 13 | Pérdida de tipos genéricos en snippets de IA (`ProveedorOpenAi.java`) | Al copiar/procesar el código del proveedor, los corchetes angulares `<Map<String, Object>>` se truncaron en `List> choices = (List>)` provocando error de sintaxis en el compilador | Se restauraron las firmas genéricas estrictas `List<Map<String, Object>> choices = (List<Map<String, Object>>) respuesta.get("choices");`, logrando compilación limpia (`BUILD SUCCESS`). |
 | 14 | Expiración de firmas de Stripe por desfase temporal en `PagoServiceTest` | `Webhook.constructEvent` valida que la cabecera `Stripe-Signature` no exceda 300 segundos frente al reloj del sistema (`System.currentTimeMillis()`). Un `Clock.fixed` estático causaba que las pruebas fallaran con `FirmaInvalidaException` | Se inicializó el reloj con `Clock.system(ZoneId.of("America/Bogota"))` en la clase de test para generar timestamps sincronizados con el instante de ejecución. |
 | 15 | `NullPointerException` en deserialización de eventos Stripe de prueba (`PagoService.java`) | En eventos construidos manualmente sin la clave `api_version`, `EventDataObjectDeserializer.getObject()` arroja NPE en `apiVersionMatch()`. | Se envolvió la llamada en un bloque `try-catch` para delegar automáticamente en `deserializer.deserializeUnsafe()`, logrando deserialización segura en pruebas y producción. |
+| 16 | Desacoplamiento de versiones del SDK de Stripe en `PagoService` | El método `extraerObjeto` dependía de `EventDataObjectDeserializer`, el cual puede fallar ante variaciones de esquema o versiones no fijadas | Se inyectó `ObjectMapper` para parsear directamente el JSON crudo en `data.object`, abstrayendo diferencias de versiones y logrando soporte universal para eventos reales y simulados. |
+| 17 | Fallo de arranque en Render por sintaxis Markdown en `SPRING_DATASOURCE_URL` | Al copiar la URL de Supabase desde un documento markdown, se colaron caracteres de enlace `[...]`, haciendo que Hibernate no reconociera el protocolo JDBC y fallara al deducir el dialecto de base de datos | Se limpió la variable en el dashboard de Render retirando los corchetes y paréntesis de markdown, dejando la URL JDBC pura (`jdbc:postgresql://...`), logrando conexión exitosa y arranque limpio de Spring Boot. |
+| 18 | Desajuste de URL pública por sufijo aleatorio asignado por Render | Render asignó un sufijo de unicidad (`sillon-api-42n5.onrender.com`) diferente al nombre base inicial | Se actualizó la URL en `URL_PUBLICA` de Render, el webhook de Stripe, `README.md` y `postman/produccion.postman_environment.json`, asegurando que las redirecciones de checkout y pruebas apunten al servicio activo. |
 
 ---
 
-## 11. Próximos Pasos
+## 13. Próximos Pasos
 
 - [x] Desarrollar servicio de negocio (`SalonService` / `AuthService`) para orquestar la transacción atómica de registro y generación de slug único.
 - [x] Implementar capa de seguridad Spring Security 6, hashing de contraseñas con `BCryptPasswordEncoder` y generación/validación de tokens JWT (Fase 2).
@@ -705,13 +767,17 @@ Se implementó un subsistema de IA desacoplado, resiliente y compatible con Open
 - [x] Implementar la Fase 4: Módulo de Agenda (Citas, Disponibilidad, cálculo de horarios libres con `Clock`, catálogo público y reservas en línea).
 - [x] Implementar la Fase 5: Pasarela de Pagos Stripe (Suscripciones PRO, compra de paquetes de créditos y Webhooks firmados).
 - [x] Implementar el Módulo de IA (Fase 6: Recordatorios deterministas y Chatbot con Gemini / OpenAI spec y control atómico de créditos IA).
-- [x] Completar las 8 entradas de la bitácora de IA en `BITACORA-IA.md` (superando holgadamente el umbral de 5 requerido para el Criterio 08).
+- [x] Completar las 10 entradas de la bitácora de IA en `BITACORA-IA.md` (superando holgadamente el umbral de 5 requerido para el Criterio 08).
 - [x] Configurar documentación OpenAPI / Swagger UI con soporte JWT Bearer (`OpenApiConfig.java`).
 - [x] Diseñar el `Dockerfile` multi-etapa y archivo `.dockerignore` en la raíz del proyecto (Fase 12).
 - [x] Ejecutar compilación limpia del proyecto con el wrapper Maven (`BUILD SUCCESS` con 97 fuentes compiladas).
 - [x] Implementar suite de pruebas unitarias JUnit 5 y Mockito para cumplir con el mínimo de tests requeridos (Criterio 07) (34 tests pasando con 0 errores).
-- [ ] Completar los documentos técnicos `SPEC.md` y `AGENTS.md` requeridos por el calificador automático (Criterio 08).
+- [x] Completar los documentos técnicos `SPEC.md` y `AGENTS.md` requeridos por el calificador automático (Criterio 08).
+- [x] Crear el directorio `postman/` para albergar colecciones y entornos.
+- [x] Desplegar servicio en Render con PostgreSQL Supabase y Stripe Webhook.
+- [x] Configurar `postman/produccion.postman_environment.json` con la URL oficial de Render (`https://sillon-api-42n5.onrender.com`).
 - [ ] Diseñar la colección oficial de pruebas en Postman (Criterio 08).
+
 
 
 
