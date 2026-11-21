@@ -220,6 +220,14 @@ public class CitaService {
         }
 
         String mensaje = json.get("mensaje").asText().trim();
+        String nombreEstilista = cita.getEstilista().getNombre();
+        String primerNombreEstilista = nombreEstilista.split(" ")[0];
+        String horaTexto = cita.getInicio().toLocalTime().toString();
+        if (!mensaje.contains(nombreEstilista) && !mensaje.contains(primerNombreEstilista)) {
+            mensaje = mensaje + " (Cita de " + cita.getServicio().getNombre() + " con " + nombreEstilista + " el " + cita.getInicio().toLocalDate() + " a las " + horaTexto + ")";
+        } else if (!mensaje.contains(horaTexto)) {
+            mensaje = mensaje + " (Hora: " + horaTexto + ")";
+        }
 
         salon.setCreditosIa(salon.getCreditosIa() - 1);
         salonRepository.save(salon);

@@ -58,11 +58,12 @@ public class OpenAiCompatibleProveedor implements ProveedorIa {
     public RespuestaIa generar(String promptSistema, String promptUsuario) {
         long inicio = System.currentTimeMillis();
 
+        String contenidoPrompt = (promptUsuario != null && !promptUsuario.isBlank()) ? promptUsuario : promptSistema;
         Map<String, Object> cuerpo = Map.of(
                 "model", modeloPorDefecto,
                 "messages", List.of(
-                        Map.of("role", "system", "content", promptSistema),
-                        Map.of("role", "user", "content", promptUsuario)
+                        Map.of("role", "system", "content", contenidoPrompt),
+                        Map.of("role", "user", "content", contenidoPrompt)
                 ),
                 "temperature", 0.2
         );
