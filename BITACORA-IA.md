@@ -15,9 +15,7 @@ Registro del apoyo de inteligencia artificial utilizado durante el desarrollo de
 | 8 | Fase 6 | ChatGPT — chat del navegador | Apoyo para integrar Stripe Checkout, los pagos de prueba y el procesamiento de webhooks. | Sesiones de pago, respuestas HTTP, firma del webhook, cambios de plan, créditos y eventos duplicados. |
 | 9 | Fase 7 | ChatGPT — chat del navegador | Compilación Maven, pruebas JUnit con Mockito, manejo de errores de proveedores y descuento condicional de créditos en MySQL. | Se corrigió la ubicación de las pruebas JUnit. Se comprobó el descuento de un crédito y su recuperación mediante ROLLBACK. |
 | 10 | Fase 8 | ChatGPT — chat del navegador | Apoyo para implementar recordatorios de WhatsApp con IA, utilizando datos verificados de las citas, prompts externos, validación de JSON y consumo de créditos. | Pruebas con Postman y un servidor local de IA simulada. |
-
-
-
+| 11 | Fase 9 | ChatGPT — chat del navegador | Se revisaron respuestas HTTP 200, 400, 403, 404 y 409 en Postman, protección contra cupones, escalamiento y pruebas JUnit con Mockito. |
 
 
 ## Observaciones

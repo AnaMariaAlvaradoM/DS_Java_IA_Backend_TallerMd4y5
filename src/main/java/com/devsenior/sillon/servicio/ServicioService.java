@@ -2,6 +2,7 @@
 package com.devsenior.sillon.servicio;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,4 +72,91 @@ public class ServicioService {
 
         return servicioMapper.aRespuesta(actualizado);
     }
+
+
+        @Transactional(readOnly = true)
+        public String obtenerCatalogoParaIA(Long salonId) {
+
+                if (!salonRepository.existsById(salonId)) {
+                        throw new RecursoNoEncontradoException(
+                        "Salón no encontrado"
+                        );
+                }
+
+                List<Servicio> servicios =
+                        servicioRepository
+                                .findBySalonIdAndActivoTrueOrderByNombreAsc(
+                                        salonId
+                        );
+
+                if (servicios.isEmpty()) {
+                        return "El salón no tiene servicios activos disponibles.";
+                }
+
+                return servicios.stream()
+                        .map(servicio -> {
+
+                                String precio = String.format(
+                                        Locale.GERMANY,
+                                        "%,d",
+                                        servicio.getPrecio()
+                                );
+
+                                return "%s (%d minutos) - Precio: $%s"
+                                        .formatted(
+                                                servicio.getNombre(),
+                                                servicio.getDuracionMinutos(),
+                                                precio
+                                        );
+                        })
+                        .collect(
+                                java.util.stream.Collectors.joining("\n")
+                        );
+        }
+
+
+        @Transactional(readOnly = true)
+        public String obtenerHorarioParaIA(Long salonId) {
+
+                Salon salon = salonRepository.findById(salonId)
+                        .orElseThrow(() ->
+                                new RecursoNoEncontradoException(
+                                "Salón no encontrado"
+                                )
+                        );
+
+                var configuracion = salon.getConfiguracion();
+
+                if (configuracion == null
+                        || configuracion.getHoraApertura() == null
+                        || configuracion.getHoraCierre() == null) {
+
+                   throw new IllegalStateException(
+                                "El salón no tiene un horario configurado"
+                        );
+                }
+
+        String dias = configuracion.isAbreDomingos()
+                ? "lunes a domingo"
+                : "lunes a sábado";
+
+        String domingos = configuracion.isAbreDomingos()
+                ? "Abierto"
+                : "Cerrado";
+
+        return """
+                Días de atención: %s
+                Hora de apertura: %s
+                Hora de cierre: %s
+                Domingos: %s
+                Intervalo de reservas: %d minutos
+                """.formatted(
+                dias,
+                configuracion.getHoraApertura(),
+                configuracion.getHoraCierre(),
+                domingos,
+                configuracion.getIntervaloMinutos()
+        ).trim();
+        }
+
 }
