@@ -6,7 +6,8 @@ API SaaS para salones y barberías. Permite administrar servicios, estilistas, c
 
 - Repositorio de trabajo: https://github.com/Fhv5/DS_Java_IA_Backend_TallerMd4y5
 - Pull request de entrega: https://github.com/AnaMariaAlvaradoM/DS_Java_IA_Backend_TallerMd4y5/pull/18
-- API en Render: **pendiente de asignación**
+- API en Render: https://sillon-bser.onrender.com
+- Swagger en Render: https://sillon-bser.onrender.com/swagger-ui.html
 - Swagger local: http://localhost:8080/swagger-ui.html
 
 ## Tecnología y reglas
@@ -54,7 +55,7 @@ En CLI: `newman run postman/Sillon.postman_collection.json -e postman/local.post
 
 El [Dockerfile](Dockerfile) compila con Java 17 y ejecuta el JAR en una imagen JRE. En Render se crea un Web Service Docker desde `fase-0-base`. En Supabase se usa el **Session pooler** en el puerto 5432. Su URL JDBC tiene la forma `jdbc:postgresql://<host-del-pooler>:5432/postgres?sslmode=require`; el usuario tiene la forma `postgres.<ref-del-proyecto>`. Se configuran en Render las variables de base, JWT, URL pública, Stripe, Gemini y zona horaria.
 
-Después se registra en el mismo sandbox de Stripe un webhook hacia `https://<servicio>.onrender.com/api/pagos/webhook` para `checkout.session.completed` y `customer.subscription.deleted`; su secreto `whsec_...` se guarda como `STRIPE_SECRETO_WEBHOOK`. Verificar `GET /v3/api-docs`, registro, login, catálogo público, una reserva y ambos flujos de pago. Stripe confirma el plan y los créditos únicamente mediante el webhook firmado.
+Después se registra en el mismo sandbox de Stripe un webhook hacia `https://sillon-bser.onrender.com/api/pagos/webhook` para `checkout.session.completed` y `customer.subscription.deleted`; su secreto `whsec_...` se guarda como `STRIPE_SECRETO_WEBHOOK`. Verificar `GET /v3/api-docs`, registro, login, catálogo público, una reserva y ambos flujos de pago. Stripe confirma el plan y los créditos únicamente mediante el webhook firmado.
 
 ## Reflexión
 
