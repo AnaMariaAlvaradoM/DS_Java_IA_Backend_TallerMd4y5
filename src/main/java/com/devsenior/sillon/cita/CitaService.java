@@ -3,11 +3,17 @@ package com.devsenior.sillon.cita;
 import com.devsenior.sillon.cita.dto.CambiarEstadoCitaRequest;
 import com.devsenior.sillon.cita.dto.CitaRespuesta;
 import com.devsenior.sillon.cita.dto.CrearCitaRequest;
+import com.devsenior.sillon.cita.dto.RecordatorioRespuesta;
 import com.devsenior.sillon.cliente.Cliente;
 import com.devsenior.sillon.cliente.ClienteService;
 import com.devsenior.sillon.compartido.excepcion.AccionNoPermitidaException;
+import com.devsenior.sillon.compartido.excepcion.PagoRequeridoException;
+import com.devsenior.sillon.compartido.excepcion.PasarelaException;
 import com.devsenior.sillon.compartido.excepcion.RecursoNoEncontradoException;
 import com.devsenior.sillon.compartido.excepcion.ReglaNegocioException;
+import com.devsenior.sillon.ia.MotorIaService;
+import com.devsenior.sillon.ia.PromptService;
+import com.devsenior.sillon.ia.dto.RespuestaIa;
 import com.devsenior.sillon.salon.Salon;
 import com.devsenior.sillon.salon.SalonRepository;
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
@@ -18,11 +24,13 @@ import com.devsenior.sillon.usuario.Usuario;
 import com.devsenior.sillon.usuario.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.JsonNode;
 
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CitaService {
@@ -33,6 +41,8 @@ public class CitaService {
     private final UsuarioRepository usuarioRepository;
     private final ClienteService clienteService;
     private final ReglasAgenda reglasAgenda;
+    private final MotorIaService motorIaService;
+    private final PromptService promptService;
     private final Clock clock;
 
     public CitaService(
@@ -42,6 +52,8 @@ public class CitaService {
             UsuarioRepository usuarioRepository,
             ClienteService clienteService,
             ReglasAgenda reglasAgenda,
+            MotorIaService motorIaService,
+            PromptService promptService,
             Clock clock
     ) {
         this.citaRepository = citaRepository;
@@ -50,6 +62,8 @@ public class CitaService {
         this.usuarioRepository = usuarioRepository;
         this.clienteService = clienteService;
         this.reglasAgenda = reglasAgenda;
+        this.motorIaService = motorIaService;
+        this.promptService = promptService;
         this.clock = clock;
     }
 
@@ -166,6 +180,57 @@ public class CitaService {
 
         cita = citaRepository.saveAndFlush(cita);
         return mapearARespuesta(cita);
+    }
+
+    @Transactional
+    public RecordatorioRespuesta generarRecordatorio(Long salonId, Long citaId) {
+        Cita cita = citaRepository.findByIdAndSalonId(citaId, salonId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada"));
+
+        if (cita.getEstado() != EstadoCita.PENDIENTE && cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new ReglaNegocioException("Solo se pueden generar recordatorios para citas en estado PENDIENTE o CONFIRMADA");
+        }
+
+        Salon salon = cita.getSalon();
+        if (salon.getCreditosIa() <= 0) {
+            throw new PagoRequeridoException("El salón no tiene créditos de IA disponibles");
+        }
+
+        Map<String, String> variables = Map.of(
+                "salonNombre", salon.getNombre(),
+                "clienteNombre", cita.getCliente().getNombre(),
+                "servicio", cita.getServicio().getNombre(),
+                "estilista", cita.getEstilista().getNombre(),
+                "fecha", cita.getInicio().toLocalDate().toString(),
+                "hora", cita.getInicio().toLocalTime().toString(),
+                "valor", String.valueOf(cita.getPrecio()),
+                "direccion", salon.getDireccion(),
+                "ciudad", salon.getCiudad()
+        );
+
+        String prompt = promptService.cargarYRenderizar("recordatorio.txt", variables);
+        RespuestaIa respuestaIa = motorIaService.ejecutarConFallback(
+                "Eres un asistente que responde solo en JSON con el campo mensaje.",
+                prompt
+        );
+
+        JsonNode json = motorIaService.extraerYValidarJson(respuestaIa.contenido());
+        if (!json.hasNonNull("mensaje") || json.get("mensaje").asText().isBlank()) {
+            throw new PasarelaException("La respuesta de la IA no contiene el campo mensaje");
+        }
+
+        String mensaje = json.get("mensaje").asText().trim();
+
+        salon.setCreditosIa(salon.getCreditosIa() - 1);
+        salonRepository.save(salon);
+
+        return new RecordatorioRespuesta(
+                cita.getId(),
+                cita.getCliente().getTelefono(),
+                mensaje,
+                salon.getCreditosIa(),
+                respuestaIa.factura()
+        );
     }
 
     public CitaRespuesta mapearARespuesta(Cita cita) {

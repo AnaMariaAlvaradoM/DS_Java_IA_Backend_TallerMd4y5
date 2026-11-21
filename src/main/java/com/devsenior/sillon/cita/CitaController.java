@@ -3,6 +3,7 @@ package com.devsenior.sillon.cita;
 import com.devsenior.sillon.cita.dto.CambiarEstadoCitaRequest;
 import com.devsenior.sillon.cita.dto.CitaRespuesta;
 import com.devsenior.sillon.cita.dto.CrearCitaRequest;
+import com.devsenior.sillon.cita.dto.RecordatorioRespuesta;
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -49,6 +50,15 @@ public class CitaController {
             @Valid @RequestBody CambiarEstadoCitaRequest request
     ) {
         CitaRespuesta respuesta = citaService.cambiarEstadoCita(principal, id, request);
+        return ResponseEntity.ok(respuesta);
+    }
+
+    @PostMapping("/{id}/recordatorio")
+    public ResponseEntity<RecordatorioRespuesta> generarRecordatorio(
+            @AuthenticationPrincipal UsuarioPrincipal principal,
+            @PathVariable Long id
+    ) {
+        RecordatorioRespuesta respuesta = citaService.generarRecordatorio(principal.getSalonId(), id);
         return ResponseEntity.ok(respuesta);
     }
 }
