@@ -47,6 +47,8 @@ Las claves reales viven en `secrets.properties` local o en Environment de Render
 
 `mvn test` ejecuta pruebas de agenda, errores, slug, webhook y chatbot, además del test de contexto conectado a MySQL. Las pruebas de webhook generan firmas locales y comprueban pagos, repetición y cancelación sin llamar a Stripe. Construir el contenedor con `docker build -t sillon-local .`.
 
+En Render se verificaron `GET /v3/api-docs` con HTTP 200 y `POST /api/auth/registro` con HTTP 201, token y rol `DUENO`, conectados a PostgreSQL de Supabase.
+
 La colección [postman/Sillon.postman_collection.json](postman/Sillon.postman_collection.json) contiene 59 peticiones en siete carpetas y pruebas automáticas en cada una. Importar también `local.postman_environment.json` o `produccion.postman_environment.json`. Ejecutar carpetas 1 a 6 en orden: la colección crea correos y salones únicos, calcula fechas futuras y guarda tokens e IDs. Antes de repetir el recorrido completo, borrar la variable de colección `runId`. La carpeta 7 se verifica manualmente después de interactuar con Stripe Checkout.
 
 En CLI: `newman run postman/Sillon.postman_collection.json -e postman/local.postman_environment.json`. Para otro puerto, agregar `--env-var baseUrl=http://localhost:18081`.
