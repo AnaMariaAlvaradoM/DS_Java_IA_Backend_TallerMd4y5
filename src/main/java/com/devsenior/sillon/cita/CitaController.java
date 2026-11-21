@@ -21,16 +21,26 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
+import com.devsenior.sillon.ia.ServicioRecordatorioIA;
+import com.devsenior.sillon.ia.RespuestaRecordatorioIA;
+
 
 @RestController
 @RequestMapping("/api/citas")
 public class CitaController {
 
-    private final CitaService citaService;
 
-    public CitaController(CitaService citaService) {
+    private final CitaService citaService;
+    private final ServicioRecordatorioIA servicioRecordatorioIA;
+
+    public CitaController(
+            CitaService citaService,
+            ServicioRecordatorioIA servicioRecordatorioIA
+    ) {
         this.citaService = citaService;
+        this.servicioRecordatorioIA = servicioRecordatorioIA;
     }
+
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -75,4 +85,14 @@ public class CitaController {
     }
 
 
+    @PostMapping("/{id}/recordatorio")
+    public RespuestaRecordatorioIA generarRecordatorio(
+            @AuthenticationPrincipal UsuarioPrincipal usuario,
+            @PathVariable Long id
+    ) {
+        return servicioRecordatorioIA.generar(
+                usuario.getSalonId(),
+                id
+        );
+    }
 }

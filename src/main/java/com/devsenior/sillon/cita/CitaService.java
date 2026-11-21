@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Isolation;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 
 import com.devsenior.sillon.cliente.ClienteService;
@@ -388,4 +390,78 @@ public class CitaService {
     }
 
 
+        @Transactional(readOnly = true)
+        public DatosRecordatorio obtenerDatosRecordatorio(
+                Long salonId,
+                Long citaId
+        ) {
+
+                Cita cita = citaRepository
+                        .findByIdAndSalonId(citaId, salonId)
+                        .orElseThrow(() ->
+                                new RecursoNoEncontradoException(
+                            "Cita no encontrada"
+                                )
+                        );
+
+                if (cita.getEstado() != EstadoCita.PENDIENTE
+                        && cita.getEstado() != EstadoCita.CONFIRMADA) {
+
+                        throw new ReglaNegocioException(
+                        "Solo se pueden generar recordatorios para citas pendientes o confirmadas"
+                        );
+        }
+
+        Locale colombia = Locale.forLanguageTag("es-CO");
+
+        DateTimeFormatter formatoFecha =
+                DateTimeFormatter.ofPattern(
+                        "EEEE d 'de' MMMM",
+                        colombia
+                );
+
+        DateTimeFormatter formatoHora =
+                DateTimeFormatter.ofPattern(
+                        "h:mm a",
+                        colombia
+                );
+
+        String fecha = cita.getInicio()
+                .format(formatoFecha);
+
+        String hora = cita.getInicio()
+                .format(formatoHora)
+                .replace('\u202F', ' ')
+                .replace('\u00A0', ' ');
+
+        String precio = String.format(
+                Locale.GERMANY,
+                "%,d",
+                cita.getPrecio()
+                );
+
+        String datos = """
+                Servicio: %s (%d minutos)
+                Estilista: %s
+                Fecha: %s
+                Hora: %s
+                Valor: $%s
+                Dirección: %s
+                """.formatted(
+                cita.getServicio().getNombre(),
+                cita.getServicio().getDuracionMinutos(),
+                cita.getEstilista().getNombre(),
+                fecha,
+                hora,
+                precio,
+                cita.getSalon().getDireccion()
+        ).trim();
+
+        return new DatosRecordatorio(
+                cita.getSalon().getNombre(),
+                cita.getCliente().getNombre(),
+                cita.getCliente().getTelefono(),
+                datos
+                );
+        }
 }
