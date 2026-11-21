@@ -36,6 +36,7 @@ public class ProveedorOpenAi implements ProveedorIa {
         long inicio = System.nanoTime();
         Map<String, Object> cuerpo = Map.of(
                 "model", modelo,
+                "response_format", Map.of("type", "json_object"),
                 "messages", List.of(Map.of("role", "system", "content", instrucciones),
                         Map.of("role", "user", "content", mensajeUsuario)));
         JsonNode respuesta = cliente.post().uri("/chat/completions")
