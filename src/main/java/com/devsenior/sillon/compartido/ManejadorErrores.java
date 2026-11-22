@@ -52,6 +52,11 @@ public class ManejadorErrores {
         return responder(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(ParametroInvalidoException.class)
+    public ResponseEntity<ErrorRespuesta> parametroInvalido(ParametroInvalidoException ex) {
+        return responder(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(PasarelaException.class)
     public ResponseEntity<ErrorRespuesta> pasarela(PasarelaException ex) {
         return responder(HttpStatus.BAD_GATEWAY, ex.getMessage());
