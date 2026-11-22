@@ -3,9 +3,10 @@
 > Alcance general: SaaS multi-inquilino de agenda inteligente para barberías y salones de belleza.
 > Fase 3: Catálogo y equipo (servicios, estilistas y clientes).
 > Fase 4: La agenda (citas, reglas de horario, cruces y máquina de estados).
+> Fase 5: La cara pública (catálogo público, disponibilidad y reservas en línea).
 > Fases 7 y 9: Dominios `chat` e `ia`, más el consumo de créditos. Todo respeta el contrato de la sección 4 del documento del proyecto.
 
-## 0. Catálogo, equipo y agenda (Fases 3 y 4)
+## 0. Catálogo, equipo, agenda y cara pública (Fases 3, 4 y 5)
 
 ### Entidades y Relaciones
 - **Servicio** (`servicios`): `id`, `nombre` (máx. 80), `descripcion` (máx. 300, opcional), `duracionMinutos` (15 a 480), `precio` (entero > 0), `activo`, `salon` (ManyToOne).
@@ -37,6 +38,12 @@ Al invocar `POST /api/estilistas`, se aplican las validaciones en este orden est
 - **Ocupan agenda**: Únicamente `PENDIENTE` y `CONFIRMADA`. `COMPLETADA`, `CANCELADA` y `NO_ASISTIO` liberan el espacio en la agenda.
 - **Permisos del estilista**: Solo puede consultar y modificar sus propias citas (cita ajena: `404`), y solo puede transicionarlas a `COMPLETADA` o `NO_ASISTIO` (otro destino: `403`). El dueño puede realizar cualquier transición permitida.
 - **Regla de cruce**: Dos intervalos se cruzan si `inicio1 < fin2 && fin1 > inicio2`. Una cita que termina a las 10:45 no se cruza con otra que empieza a las 10:45.
+
+### La Cara Pública del Salón (Fase 5)
+- **Ruta base**: `/api/publico/salones/{slug}` (sin token).
+- **Catálogo público** (`GET /api/publico/salones/{slug}`): Retorna `nombre`, `slug`, `ciudad`, `direccion`, `telefono`, `horario` (en texto formateado en español de Colombia, ej: `"Lunes a sábado (domingos cerrado), de 8:00 a. m. a 7:00 p. m."`), `servicios` (únicamente los activos) y `estilistas` (únicamente activos, con `id`, `nombre` y `servicioIds`). **NUNCA expone correos ni contraseñas**.
+- **Disponibilidad** (`GET /api/publico/salones/{slug}/disponibilidad?servicioId=&estilistaId=&fecha=`): Los tres parámetros son obligatorios (400 si faltan). Valida que el servicio y estilista pertenezcan al salón y estén activos, y que el estilista ofrezca el servicio (409 si no). Retorna `fecha`, `servicio`, `estilista`, `duracionMinutos` y `horariosLibres` calculados por Java descartando cruces y horas pasadas.
+- **Reservas en línea** (`POST /api/publico/salones/{slug}/reservas`): Mismo cuerpo que la cita del salón. La cita nace en estado `PENDIENTE` y con origen `EN_LINEA`. Aplica las mismas validaciones de agenda (horario, cruces, domingo, no pasado).
 
 
 ---
