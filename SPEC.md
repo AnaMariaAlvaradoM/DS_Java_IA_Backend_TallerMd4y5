@@ -2,16 +2,18 @@
 
 > Alcance general: SaaS multi-inquilino de agenda inteligente para barberías y salones de belleza.
 > Fase 3: Catálogo y equipo (servicios, estilistas y clientes).
+> Fase 4: La agenda (citas, reglas de horario, cruces y máquina de estados).
 > Fases 7 y 9: Dominios `chat` e `ia`, más el consumo de créditos. Todo respeta el contrato de la sección 4 del documento del proyecto.
 
-## 0. Catálogo y equipo (Fase 3)
+## 0. Catálogo, equipo y agenda (Fases 3 y 4)
 
 ### Entidades y Relaciones
 - **Servicio** (`servicios`): `id`, `nombre` (máx. 80), `descripcion` (máx. 300, opcional), `duracionMinutos` (15 a 480), `precio` (entero > 0), `activo`, `salon` (ManyToOne).
 - **Usuario (Estilista)**: Relación ManyToMany con `Servicio` a través de tabla intermedia `estilista_servicios`.
 - **Cliente** (`clientes`): `id`, `nombre` (máx. 100), `telefono` (máx. 30, normalizado con dígitos y +), `salon` (ManyToOne). Restricción única `(salon_id, telefono)`.
+- **Cita** (`citas`): `id`, `inicio`, `fin`, `precio` (fijado al momento de agendar), `estado` (`EstadoCita`), `origen` (`OrigenCita`), `nota` (opcional máx. 300), `fechaCreacion`, `fechaActualizacion`. Relaciones ManyToOne con `Salon`, `Cliente`, `Usuario` (estilista) y `Servicio`.
 
-### Reglas de Negocio y Orden de Validación al Crear Estilista
+### Reglas de Negocio y Orden de Validación al Crear Estilista (Fase 3)
 Al invocar `POST /api/estilistas`, se aplican las validaciones en este orden estricto:
 1. **Límite del plan (402 Payment Required)**:
    Si el salón está en plan `GRATIS`, no puede tener más de 2 estilistas (el 3° se bloquea con 402). En plan `PRO` no hay límite.
@@ -21,6 +23,21 @@ Al invocar `POST /api/estilistas`, se aplican las validaciones en este orden est
    El correo se normaliza (minúsculas y sin espacios) y no puede existir previamente en ningún usuario de la plataforma.
 3. **Servicios pertenecientes al salón (404 Not Found)**:
    Todos los `servicioIds` proporcionados deben existir y pertenecer al salón autenticado. Si alguno pertenece a otro salón o no existe, se responde 404 (ocultando información entre salones).
+
+### Máquina de Estados de la Cita (Fase 4)
+| Estado Origen | Estado Destino | Permitida | Caso de negocio real |
+|---|---|---|---|
+| `PENDIENTE` | `CONFIRMADA` | Sí | El salón o dueño confirma una reserva realizada en línea. |
+| `PENDIENTE` | `CANCELADA` | Sí | El cliente avisa que no podrá asistir antes de que se confirme la reserva. |
+| `CONFIRMADA` | `COMPLETADA` | Sí | El estilista terminó de atender el servicio programado. |
+| `CONFIRMADA` | `CANCELADA` | Sí | El cliente o el salón cancelan la cita con anticipación. |
+| `CONFIRMADA` | `NO_ASISTIO` | Sí | La hora pasó y el cliente nunca llegó a la barbería o salón. |
+| Cualquier otra | Cualquier otra | No (409) | `COMPLETADA`, `CANCELADA` y `NO_ASISTIO` son estados finales; no se permiten regresiones (ej. `CONFIRMADA` a `PENDIENTE`). |
+
+- **Ocupan agenda**: Únicamente `PENDIENTE` y `CONFIRMADA`. `COMPLETADA`, `CANCELADA` y `NO_ASISTIO` liberan el espacio en la agenda.
+- **Permisos del estilista**: Solo puede consultar y modificar sus propias citas (cita ajena: `404`), y solo puede transicionarlas a `COMPLETADA` o `NO_ASISTIO` (otro destino: `403`). El dueño puede realizar cualquier transición permitida.
+- **Regla de cruce**: Dos intervalos se cruzan si `inicio1 < fin2 && fin1 > inicio2`. Una cita que termina a las 10:45 no se cruza con otra que empieza a las 10:45.
+
 
 ---
 
