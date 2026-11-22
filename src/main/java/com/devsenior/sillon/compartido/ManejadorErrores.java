@@ -62,6 +62,16 @@ public class ManejadorErrores {
         return responder(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
+    @ExceptionHandler(RespuestaIAInvalidaException.class)
+    public ResponseEntity<ErrorRespuesta> respuestaIaInvalida(RespuestaIAInvalidaException ex) {
+        return responder(HttpStatus.BAD_GATEWAY, ex.getMessage());
+    }
+
+    @ExceptionHandler(IaNoDisponibleException.class)
+    public ResponseEntity<ErrorRespuesta> iaNoDisponible(IaNoDisponibleException ex) {
+        return responder(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorRespuesta> validacion(MethodArgumentNotValidException ex) {
         String mensaje = ex.getBindingResult().getFieldErrors().stream()

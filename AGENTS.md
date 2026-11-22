@@ -47,6 +47,9 @@ El dueño de cada decisión es humano; el agente propone y verifica contra la SP
 
 ## IA
 - Todo proveedor de IA implementa la interfaz del paquete `ia/`. Fallback en `AsistenteIA`.
+- La configuración vive bajo el prefijo `sillon.ia`; la URL del proveedor OpenAI
+  (`sillon.ia.openai.url`) nunca se escribe fija en el código: viene de configuración
+  o de la variable de entorno `SILLON_IA_OPENAI_URL` (la cambia el calificador).
 - Las llamadas HTTP se hacen con `RestClient`. Sin SDKs de proveedores ni Spring AI.
 - Nunca escribas llaves en el código ni en `application.properties`: van en
   `secrets.properties` o variables de entorno, que no puedes leer.
