@@ -1,8 +1,6 @@
 package com.devsenior.sillon.compartido;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
@@ -102,9 +100,6 @@ public class ManejadorGlobalErrores {
     // ---------- Construccion del cuerpo ----------
 
     private ResponseEntity<ErrorRespuesta> responder(HttpStatus estado, String mensaje) {
-        // Se corta a segundos para que la fecha salga como AAAA-MM-DDTHH:mm:ss (sin fracciones).
-        LocalDateTime fecha = LocalDateTime.now(reloj).truncatedTo(ChronoUnit.SECONDS);
-        ErrorRespuesta cuerpo = new ErrorRespuesta(estado.value(), estado.getReasonPhrase(), mensaje, fecha);
-        return ResponseEntity.status(estado).body(cuerpo);
+        return ResponseEntity.status(estado).body(ErrorRespuesta.de(estado, mensaje, reloj));
     }
 }
