@@ -17,6 +17,7 @@ Registro del apoyo de inteligencia artificial utilizado durante el desarrollo de
 | 10 | Fase 8 | ChatGPT — chat del navegador | Apoyo para implementar recordatorios de WhatsApp con IA, utilizando datos verificados de las citas, prompts externos, validación de JSON y consumo de créditos. | Pruebas con Postman y un servidor local de IA simulada. |
 | 11 | Fase 9 | ChatGPT — chat del navegador | Se revisaron respuestas HTTP 200, 400, 403, 404 y 409 en Postman, protección contra cupones, escalamiento y pruebas JUnit con Mockito. |
 | 12 | Fase 10 | ChatGPT — chat del navegador | Apoyo para organizar e implementar pruebas automáticas con JUnit 5 y Mockito, siguiendo los casos exigidos en el enunciado. | Se verificaron estados de citas, reglas de agenda, permisos, planes GRATIS y PRO, webhooks de Stripe, chatbot, recordatorios y motor de IA. La ejecución completa de `./mvnw test` finalizó con 79 pruebas, 0 fallos, 0 errores y 0 omitidas. |
+| 13 | Fase 11 | ChatGPT — chat del navegador | Se verificaron 25 operaciones agrupadas en 10 categorías, el acceso a Swagger UI, los esquemas de errores y la autenticación JWT. GET /api/salon respondió HTTP 200 con el rol DUENO y GET /api/admin/salones respondió HTTP 403 con ese mismo rol. Las pruebas Maven finalizaron con BUILD SUCCESS. | Se corrigió un error 401 por ausencia de token y se identificó un error 403 causado por utilizar inicialmente una cuenta ESTILISTA. También se incorporó el endpoint de Administración que faltaba. |
 
 
 

@@ -5,6 +5,8 @@ import java.util.Map;
 
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/pagos")
+@Tag(
+    name = "Pagos",
+    description = "Suscripciones PRO, compra de créditos, webhooks y resultados de Stripe"
+)
 public class ControladorPagos {
 
     private final ServicioPagos servicioPagos;

@@ -1,34 +1,36 @@
 
 package com.devsenior.sillon.cita;
 
-import jakarta.validation.Valid;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 import com.devsenior.sillon.ia.ServicioRecordatorioIA;
 import com.devsenior.sillon.ia.RespuestaRecordatorioIA;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/citas")
+@Tag(
+    name = "Citas",
+    description = "Gestión de agenda, estados de citas y recordatorios con inteligencia artificial"
+)
 public class CitaController {
-
 
     private final CitaService citaService;
     private final ServicioRecordatorioIA servicioRecordatorioIA;
@@ -41,7 +43,6 @@ public class CitaController {
         this.servicioRecordatorioIA = servicioRecordatorioIA;
     }
 
-
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CitaResponse crear(
@@ -51,7 +52,6 @@ public class CitaController {
     ) {
         return citaService.crear(salonId, request);
     }
-
 
     @GetMapping
     public List<CitaResponse> listar(
@@ -68,7 +68,6 @@ public class CitaController {
         );
     }
 
-
     @PatchMapping("/{id}/estado")
     public CitaResponse actualizarEstado(
             @AuthenticationPrincipal UsuarioPrincipal usuario,
@@ -83,7 +82,6 @@ public class CitaController {
                 request
         );
     }
-
 
     @PostMapping("/{id}/recordatorio")
     public RespuestaRecordatorioIA generarRecordatorio(

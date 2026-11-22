@@ -12,8 +12,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/solicitudes")
+@Tag(
+    name = "Solicitudes de contacto",
+    description = "Consulta y gestión de solicitudes escaladas por el chatbot a atención humana"
+)
 public class ControladorSolicitudesContacto {
 
     private final ServicioSolicitudesContacto servicio;

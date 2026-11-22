@@ -13,10 +13,15 @@ import com.devsenior.sillon.cita.CitaRequest;
 import com.devsenior.sillon.cita.CitaResponse;
 import com.devsenior.sillon.cita.CitaService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/publico/salones")
+@Tag(
+    name = "Reservas públicas",
+    description = "Creación de reservas de citas sin autenticación"
+)
 public class ReservaPublicaController {
 
     private final CitaService citaService;
