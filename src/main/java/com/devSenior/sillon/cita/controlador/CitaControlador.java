@@ -32,7 +32,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/citas")
-@Tag(name = "Citas")
+@Tag(name = "6. Agenda")
 @SecurityRequirement(name = "bearerAuth")
 public class CitaControlador {
 

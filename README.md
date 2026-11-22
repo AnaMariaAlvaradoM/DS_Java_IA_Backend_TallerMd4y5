@@ -333,6 +333,7 @@ Código	Cuándo se usa
 403	El rol no tiene permiso o un estilista intenta una transición no permitida.
 404	No existe o pertenece a otro salón.
 409	Choca con una regla de negocio: cruce, horario, transición, correo repetido, plan ya activo.
+429	Más de 30 peticiones por minuto desde la misma IP en `/api/publico/**` o en `POST /api/auth/login`.
 502	Stripe o la IA respondieron algo inutilizable.
 503	Ningún proveedor de IA está disponible.
 ---
@@ -389,20 +390,24 @@ http://localhost:8080/swagger-ui.html
 Usa el botón Authorize con el token del dueño para probar rutas protegidas.
 ---
 14. Configuración y variables
-La configuración vive en `application.properties` (no `.yml`, sin perfiles). Cada valor secreto tiene una variable de entorno con valor de relleno para que la aplicación siempre arranque.
+La configuración vive en `application.properties` (no `.yml`, sin perfiles de Spring). Producción usa las mismas propiedades y cambia los valores con variables de entorno. No hay `application-prod.properties`.
 Categoría	Descripción
 Aplicación	`PORT` (8080 por defecto), zona horaria `America/Bogota`, URL pública de la API.
 Base de datos	URL JDBC, usuario y contraseña (`SPRING_DATASOURCE_*`); `ddl-auto=update`; `open-in-view=false`.
-Seguridad	Secreto JWT (`JWT_SECRETO`) y expiración.
+Seguridad	Secreto JWT (`JWT_SECRETO`) y expiración. Sin token de relleno: hay que definirlo en el entorno o en `secrets.properties`.
 Negocio	Créditos de registro (10), créditos PRO (300), créditos del paquete (200), límite de estilistas `GRATIS` (2).
 Stripe	Clave secreta, secreto del webhook, ids de precio PRO y de paquete, `STRIPE_URL_API` (por defecto `https://api.stripe.com`).
-IA	Llave de Gemini y `sillon.ia.openai.url` (sobrescribible con `SILLON_IA_OPENAI_URL`).
+IA	`GEMINI_LLAVE` o `SILLON_IA_GEMINI_LLAVE`, y `SILLON_IA_OPENAI_URL`.
+Límite	30 peticiones por minuto por IP en el catálogo público y en el login. El contador vive en memoria: con varias instancias no se comparte. `X-Forwarded-For` solo se lee si la conexión llega desde una IP listada en `SILLON_PROXY_DIRECCIONES`.
+Trazas	`server.error.include-stacktrace`, `include-message` e `include-binding-errors` están en `never`.
 Secretos locales	Importación opcional de `secrets.properties` desde la raíz.
 ¿Por qué dos direcciones configurables?
 El calificador automático no usa el Stripe ni el Gemini reales: usa simuladores, sin llaves y sin costo. Para eso reemplaza `STRIPE_URL_API` y `SILLON_IA_OPENAI_URL`. Nunca se escriben fijas en el código. Hacer configurable la dirección de un servicio externo es una práctica profesional: permite probar sin gastar dinero.
 Variables de entorno en Render (solo nombres)
 `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `JWT_SECRETO`, `URL_PUBLICA`, `STRIPE_CLAVE_SECRETA`, `STRIPE_PRECIO_PRO`, `STRIPE_PRECIO_CREDITOS`, `STRIPE_SECRETO_WEBHOOK`, `GEMINI_LLAVE`.
 No configurar en Render `STRIPE_URL_API` ni `SILLON_IA_OPENAI_URL`.
+La URL pública de Render todavía no existe en este repositorio. Cuando el servicio esté creado, se escribe aquí la URL completa. No se inventa un dominio.
+PostgreSQL de producción: Session Pooler de Supabase, puerto 5432. La conexión directa usa IPv6 y Render no la alcanza.
 ---
 15. Inteligencia artificial
 La IA asiste, pero no es la fuente de verdad del negocio. Las responsabilidades están separadas.

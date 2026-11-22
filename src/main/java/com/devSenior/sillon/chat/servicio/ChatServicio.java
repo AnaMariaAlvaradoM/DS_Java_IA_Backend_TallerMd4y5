@@ -1,6 +1,5 @@
 package com.devSenior.sillon.chat.servicio;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -76,12 +75,12 @@ public class ChatServicio {
 	}
 
 	private List<MensajeIa> mensajes(List<TurnoChat> historial) {
-		List<MensajeIa> mensajes = new ArrayList<>();
+		StringBuilder texto = new StringBuilder();
 		for (TurnoChat turno : historial) {
-			String rol = turno.rol() == RolConversacion.ASISTENTE ? "assistant" : "user";
-			mensajes.add(new MensajeIa(rol, turno.texto()));
+			String quien = turno.rol() == RolConversacion.ASISTENTE ? "Asistente: " : "Cliente: ";
+			texto.append(quien).append(turno.texto()).append('\n');
 		}
-		return mensajes;
+		return List.of(new MensajeIa("user", texto.toString().trim()));
 	}
 
 	private String contextoDe(SolicitudChat solicitud) {

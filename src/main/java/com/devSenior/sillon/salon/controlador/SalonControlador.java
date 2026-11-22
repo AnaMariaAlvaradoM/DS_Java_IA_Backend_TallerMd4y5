@@ -15,10 +15,14 @@ import com.devSenior.sillon.salon.dto.SolicitudSalon;
 import com.devSenior.sillon.salon.servicio.SalonServicio;
 import com.devSenior.sillon.seguridad.UsuarioPrincipal;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/salon")
+@Tag(name = "2. Mi salón")
+@SecurityRequirement(name = "bearerAuth")
 public class SalonControlador {
 
 	private final SalonServicio salonServicio;

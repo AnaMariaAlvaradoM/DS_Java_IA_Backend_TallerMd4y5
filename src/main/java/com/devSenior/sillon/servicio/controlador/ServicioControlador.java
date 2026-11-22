@@ -27,7 +27,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/servicios")
-@Tag(name = "Servicios")
+@Tag(name = "3. Servicios")
 @SecurityRequirement(name = "bearerAuth")
 public class ServicioControlador {
 

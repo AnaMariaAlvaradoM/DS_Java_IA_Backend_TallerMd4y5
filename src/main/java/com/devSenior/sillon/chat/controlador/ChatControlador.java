@@ -12,12 +12,14 @@ import com.devSenior.sillon.chat.servicio.ChatServicio;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/publico/salones/{slug}/chat")
-@Tag(name = "Chat")
+@Tag(name = "0. Público")
+@SecurityRequirements
 public class ChatControlador {
 
 	private final ChatServicio chatServicio;

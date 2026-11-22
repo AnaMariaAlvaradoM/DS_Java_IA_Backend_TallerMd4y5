@@ -1,0 +1,82 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/usuarios"
+  method: GET
+  headers:
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      [
+        {
+          "id": 9338,
+          "nombre": "string",
+          "email": "string",
+          "rol": "ADMIN",
+          "activo": true,
+          "servicios": [
+            "string",
+            "string"
+          ]
+        },
+        {
+          "id": 3069,
+          "nombre": "string",
+          "email": "string",
+          "rol": "DUENO",
+          "activo": false,
+          "servicios": [
+            "string",
+            "string"
+          ]
+        }
+      ]
+    $type: |-
+      {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "nombre": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "rol": {
+              "type": "string",
+              "enum": [
+                "DUENO",
+                "ESTILISTA",
+                "ADMIN"
+              ]
+            },
+            "activo": {
+              "type": "boolean"
+            },
+            "servicios": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+order: 1000

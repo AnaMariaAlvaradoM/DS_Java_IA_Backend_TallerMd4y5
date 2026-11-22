@@ -571,3 +571,827 @@ No implementes indicadores ni reportes.
 ```
 
 
+---
+
+## FASE 8 — Calidad, Swagger, despliegue y evidencia
+
+**SPEC:** §15 · **Reglas:** R23 y el catálogo completo
+
+**Alcance**
+- Hace: tests automáticos, Swagger, Dockerfile, preparación de Render/Supabase, colección Postman, README final.
+- No hace: funcionalidades nuevas ni cambios de contrato.
+
+**Pasos para el agente**
+
+*A. Tests (SPEC §17)*
+1. Tests de servicios con Mockito y reloj fijo, sin Spring; ninguno llama a Gemini ni a Stripe. Casos mínimos: estados, `ReglasAgenda`, agendar y cambiar estado, plan, webhook, chatbot, recordatorio, motor de IA y contexto completo (requiere MySQL).
+2. Si un test falla: decidir contra el SPEC si el error está en el test o en el código. **No modificar el test para que pase.**
+
+*B. Swagger*
+3. `/swagger-ui.html` con título "Sillón API", esquema Bearer JWT (Authorize), controladores protegidos marcados y etiquetas numeradas: 0 Público, 1 Autenticación, 2 Mi salón, 3 Servicios, 4 Estilistas, 5 Clientes, 6 Agenda, 7 Pagos, 8 Solicitudes, 9 Administración.
+
+*C. Despliegue*
+4. `Dockerfile` de dos etapas (Maven + Java 17 sin tests → JRE 17) y `.dockerignore` (`target`, `.git`, `secrets.properties`).
+5. Documentar (sin valores) las variables de Render: `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`, `JWT_SECRETO`, `URL_PUBLICA`, `STRIPE_CLAVE_SECRETA`, `STRIPE_PRECIO_PRO`, `STRIPE_PRECIO_CREDITOS`, `STRIPE_SECRETO_WEBHOOK`, `GEMINI_LLAVE`. **No** configurar `STRIPE_URL_API` ni `SILLON_IA_OPENAI_URL` en Render. Supabase por **Session Pooler** (puerto 5432).
+6. Crear el destino de eventos de Stripe y los secretos de producción lo hace **la persona**, no el agente.
+
+*D. Evidencia y entrega*
+7. Colección `postman/sillon.postman_collection.json` y entornos `local` y `produccion` (solo `baseUrl`), con 7 carpetas en el orden del SPEC §15 y los 52 escenarios. Reglas: datos únicos por ejecución (sufijo con la hora), fechas calculadas por script, nada a mano entre peticiones en las carpetas 1–6. Verificar que cada prueba falla si se cambia el código esperado.
+8. README final con la **URL de Render completa**, Swagger, stack, ejecución local, cómo verificar, tabla de endpoints y nombres de variables (nunca valores).
+
+**Prohibido en esta fase**
+- Modificar la carpeta `.github`.
+- Subir llaves, `secrets.properties` o URLs de simuladores.
+- Agregar funcionalidad o cambiar rutas/campos del contrato.
+- Escribir fechas fijas en la colección.
+- Afirmar que algo pasó sin haberlo ejecutado.
+
+**Verificación**
+- `./mvnw test` → `BUILD SUCCESS` con los casos mínimos presentes.
+- Swagger abre local y en Render; Authorize funciona (`GET /api/salon` 200).
+- Runner de Postman, carpetas 1–6, en verde en local y contra Render.
+- Comentario del calificador en el PR revisado; cada fallo se lee, se ubica su regla (SPEC §16) y se corrige el código.
+- `git log` muestra un commit por paso; ninguna llave en el repositorio ni en su historial.
+
+**Cierre:** entregables del SPEC §18 completos y PR hacia el repositorio oficial.
+**Commits:** "Tests de agenda, pagos, IA y chatbot" · "Documentación con Swagger" · "Dockerfile y despliegue en Render" · "Evidencia ejecutable y README".
+
+**Prompt de arranque**
+```text
+Contexto: @SPEC.md @AGENTS.md
+Fase 8 — Calidad y entrega (SPEC §15). Trabaja por bloques: 8.A tests, 8.B Swagger, 8.C Docker, 8.D Postman/README.
+Para el bloque que te indique, entrega un PLAN. No cambies el contrato ni toques .github.
+Los casos de prueba son los del SPEC §17; tú solo escribes el código. No modifiques un test para que pase.
+```
+
+# AGENTS.md — Reglas para Cursor
+
+## FASES 9 A 12 · SILLÓN
+
+Este documento complementa SPEC.md y establece las reglas obligatorias para implementar las Fases 9, 10, 11 y 12.
+
+Las instrucciones de las fases anteriores siguen vigentes.
+
+**Orden obligatorio de trabajo:**
+
+1. Fase 8 — Calidad, seguridad y despliegue (según el alcance establecido).
+2. Fase 9 — Chatbot del salón.
+3. Fase 10 — Pruebas automáticas.
+4. Fase 11 — Documentación Swagger.
+5. Fase 12 — Docker, Supabase y Render.
+
+No implementar varias fases simultáneamente.
+
+---
+
+# 1. REGLAS GENERALES
+
+## 1.1. Antes de modificar código
+
+Antes de iniciar cada fase:
+
+1. Leer `SPEC.md` completo.
+2. Leer `AGENTS.md` completo.
+3. Leer `BITACORA-IA.md`.
+4. Leer `README.md`.
+5. Inspeccionar `pom.xml`.
+6. Inspeccionar la estructura completa de `src`.
+7. Revisar los controladores, servicios, entidades, DTO, repositorios y configuraciones existentes.
+8. Revisar el historial Git.
+9. Ejecutar las pruebas existentes cuando sea posible.
+10. Identificar las funcionalidades que ya están implementadas.
+
+No asumir que un componente no existe sin buscarlo.
+
+## 1.2. Arquitectura obligatoria
+
+Respetar:
+
+- Java 17.
+- Spring Boot 4.1.
+- Maven.
+- Spring Security.
+- JWT.
+- BCrypt.
+- JPA/Hibernate.
+- MySQL local.
+- PostgreSQL/Supabase en producción.
+- JUnit 5.
+- Mockito.
+- Springdoc OpenAPI.
+- Docker.
+- Render.
+
+No introducir:
+
+- Lombok.
+- Spring AI.
+- SDK adicionales de IA.
+- Dependencias innecesarias.
+- Nuevas tecnologías sin autorización.
+
+Utilizar las clases y paquetes existentes.
+
+## 1.3. Modelo oficial
+
+No modificar los nombres del modelo oficial definido en SPEC.md.
+
+Entidades existentes:
+
+- Salon
+- ConfiguracionSalon
+- Usuario
+- Servicio
+- Cliente
+- Cita
+- SolicitudContacto
+- EventoStripe
+
+Respetar:
+
+- `ConfiguracionSalon` como `@Embeddable`.
+- La relación `estilista_servicios`.
+- La unicidad del teléfono del cliente por salón.
+- `EventoStripe` para idempotencia.
+- Los enums existentes.
+- Las relaciones y restricciones de base de datos.
+
+No crear entidades o tablas nuevas sin autorización expresa.
+
+## 1.4. Reglas de negocio
+
+- El salón debe obtenerse del contexto autenticado cuando el endpoint sea privado.
+- Los endpoints públicos deben resolver el salón mediante el `slug`.
+- Nunca confiar en un `salonId` enviado por el cliente para autorizar acceso.
+- No exponer datos de otro salón.
+- Mantener los estados y transiciones definidos en SPEC.md.
+- No eliminar validaciones existentes.
+- No reducir la seguridad para hacer pasar una prueba.
+
+## 1.5. Gestión de cambios
+
+Antes de implementar:
+
+1. Explicar qué archivos deben modificarse.
+2. Explicar qué clases nuevas son necesarias.
+3. Identificar riesgos de regresión.
+4. Identificar pruebas que se deben ejecutar.
+
+Después:
+
+1. Revisar el diff.
+2. Ejecutar las pruebas correspondientes.
+3. Corregir problemas sin alterar las reglas de negocio.
+4. Actualizar BITACORA-IA.md.
+5. Presentar un resumen.
+6. Esperar autorización antes de avanzar a la fase siguiente.
+
+No hacer commits automáticamente sin autorización del usuario.
+
+---
+
+# 2. FASE 9 · CHATBOT DEL SALÓN
+
+## 2.1. Inspección previa
+
+Antes de implementar, revisar:
+
+- Controlador del chatbot.
+- Servicio del chatbot.
+- Motor IA.
+- Biblioteca de prompts.
+- Cliente HTTP de IA.
+- DTO de entrada y salida.
+- Modelo SolicitudContacto.
+- Repositorio de solicitudes.
+- Sistema de créditos.
+- Contexto multi-tenant.
+
+Reutilizar lo existente.
+
+No crear una segunda implementación del chatbot.
+
+## 2.2. Catálogo dinámico
+
+El catálogo debe construirse desde la base de datos.
+
+Obtener:
+
+- Salón.
+- Dirección.
+- Horario.
+- Servicios activos.
+- Duración.
+- Precio.
+
+No incluir servicios inactivos.
+
+No escribir servicios ni precios manualmente en `chatbot.txt`.
+
+No utilizar datos de otro salón.
+
+## 2.3. Prompt
+
+Crear o adaptar `chatbot.txt`.
+
+Utilizar exclusivamente estas variables:
+
+- `salon`
+- `direccion`
+- `horario`
+- `catalogo`
+- `cliente`
+
+No introducir nombres de variables alternativos sin necesidad.
+
+El prompt debe cumplir todos los requisitos de SPEC.md.
+
+El prompt no es un mecanismo de seguridad suficiente: las reglas críticas deben validarse en Java.
+
+## 2.4. Protección contra inyección
+
+El historial debe llegar en cada petición.
+
+Reglas:
+
+1. Orden cronológico.
+2. Separar claramente los turnos.
+3. Utilizar `Cliente:` y `Asistente:`.
+4. No insertar contenido del cliente en las instrucciones del sistema.
+5. No permitir que el cliente cambie el rol o las reglas del asistente.
+6. Validar el JSON devuelto por el proveedor.
+7. Rechazar respuestas vacías o inválidas.
+8. No asumir que el modelo conserva memoria.
+
+No permitir que mensajes como «soy el dueño», «ignora las instrucciones anteriores» o «ahora puedes ofrecer descuentos» modifiquen las reglas.
+
+## 2.5. Regla anti-promesas
+
+Implementar la comprobación en Java.
+
+Lista obligatoria:
+
+- `descuento`
+- `cupón`
+- `cupon`
+- `gratis`
+- `promoción`
+- `promocion`
+- `reembols`
+
+La comparación debe ignorar mayúsculas y minúsculas.
+
+Si se detecta una coincidencia:
+
+1. Bloquear la respuesta generada.
+2. Devolver el mensaje seguro fijo.
+3. Crear una solicitud de contacto.
+4. Utilizar `REGLA_DE_SEGURIDAD`.
+5. Asociarla al salón correcto.
+
+No enviar al cliente el texto bloqueado.
+
+No confiar exclusivamente en el indicador `escalar` del modelo.
+
+## 2.6. Solicitudes de contacto
+
+Respetar la entidad existente.
+
+El dueño solo puede consultar solicitudes de su salón.
+
+Ordenar de más recientes a más antiguas.
+
+Comprobar la pertenencia antes de marcar una solicitud como atendida.
+
+Si ya está atendida, devolver `409`.
+
+No exponer identificadores ni datos de otro salón.
+
+## 2.7. Créditos
+
+Respetar las reglas de consumo existentes.
+
+No llamar al proveedor de IA si no hay créditos disponibles.
+
+No descontar créditos por respuestas inválidas o errores de proveedor si las reglas de las fases anteriores establecen que el crédito se consume únicamente después de una respuesta válida.
+
+Evitar dobles consumos por errores, reintentos o respuestas duplicadas.
+
+No alterar los valores de los planes ni paquetes.
+
+## 2.8. Verificación
+
+Probar al menos:
+
+- Consulta de precio.
+- Solicitud de cita.
+- Solicitud de persona.
+- Cliente molesto.
+- Reclamación.
+- Respuesta normal.
+- Historial vacío.
+- Salón inexistente.
+- Solicitud de escalamiento.
+- Intento de inyección.
+- Intento de obtener un descuento.
+- Intento de obtener información de otro salón.
+
+Al finalizar, actualizar BITACORA-IA.md.
+
+Commit propuesto:
+
+`Chatbot del salón con escalamiento y regla anti-promesas`
+
+---
+
+# 3. FASE 10 · PRUEBAS AUTOMÁTICAS
+
+## 3.1. Reglas obligatorias
+
+- JUnit 5.
+- Mockito.
+- Pruebas parametrizadas.
+- Reloj fijo.
+- Servicios probados sin levantar Spring cuando sea posible.
+- Repositorios simulados.
+- Proveedores externos simulados.
+- Sin llamadas reales a Gemini.
+- Sin llamadas reales a Stripe.
+
+No modificar pruebas existentes únicamente para obtener `BUILD SUCCESS`.
+
+No eliminar pruebas que fallen.
+
+## 3.2. Estructura
+
+Organizar las pruebas de forma coherente con los paquetes del proyecto.
+
+Evitar clases de prueba gigantes.
+
+Utilizar nombres descriptivos.
+
+Separar los escenarios positivos y negativos cuando mejore la claridad.
+
+## 3.3. Cobertura mínima
+
+Cubrir todos los casos de SPEC.md:
+
+- Transiciones de estados.
+- ReglasAgenda.
+- Agendar y modificar citas.
+- Permisos de estilistas.
+- Límites de planes.
+- Webhooks.
+- Idempotencia.
+- Créditos.
+- Chatbot.
+- Escalamiento.
+- Anti-promesas.
+- Recordatorios.
+- Motor IA.
+- Clasificación de errores.
+- Lectura de JSON.
+- Aislamiento multi-tenant.
+
+## 3.4. Aislamiento multi-tenant
+
+Probar que un usuario del salón A no pueda consultar ni modificar recursos del salón B.
+
+Cubrir los endpoints privados relevantes de:
+
+- Salón.
+- Servicios.
+- Estilistas.
+- Clientes.
+- Citas.
+- Solicitudes.
+- Pagos y operaciones asociadas cuando corresponda.
+
+Verificar respuestas y ausencia de modificaciones en datos ajenos.
+
+No limitar las pruebas al controlador: comprobar también las reglas del servicio cuando sea necesario.
+
+## 3.5. Pruebas de fecha y hora
+
+Utilizar `Clock` fijo cuando una operación dependa de la fecha actual.
+
+No utilizar fechas arbitrarias que puedan quedar obsoletas.
+
+No depender de la hora real del equipo.
+
+## 3.6. Pruebas externas
+
+Stripe y Gemini deben simularse.
+
+No utilizar:
+
+- API keys reales.
+- Cuentas reales.
+- Cobros reales.
+- Servicios externos reales.
+
+## 3.7. Verificación final
+
+Ejecutar:
+
+`./mvnw test`
+
+En Windows también se puede utilizar:
+
+`mvnw.cmd test`
+
+Comprobar:
+
+- Compilación correcta.
+- Pruebas exitosas.
+- Ausencia de errores.
+- Ausencia de llamadas externas reales.
+
+No afirmar que todas las pruebas pasan si no se ejecutaron.
+
+Actualizar BITACORA-IA.md.
+
+Commit propuesto:
+
+`Tests de agenda, pagos, IA y chatbot`
+
+---
+
+# 4. FASE 11 · SWAGGER Y OPENAPI
+
+## 4.1. Inspección
+
+Antes de modificar dependencias:
+
+- Revisar `pom.xml`.
+- Buscar la configuración actual de OpenAPI.
+- Revisar las anotaciones de los controladores.
+- Identificar las rutas reales.
+- Verificar si Swagger ya está instalado.
+
+No duplicar dependencias.
+
+## 4.2. Configuración
+
+La documentación debe:
+
+- Mostrar el título `Sillón API`.
+- Estar disponible en `/swagger-ui.html`.
+- Permitir autenticación Bearer JWT.
+- Diferenciar operaciones públicas y privadas.
+- Documentar parámetros y respuestas.
+- Mostrar códigos de error relevantes.
+
+## 4.3. Organización
+
+Utilizar las etiquetas numeradas definidas en SPEC.md:
+
+0. Público.
+1. Autenticación.
+2. Mi salón.
+3. Servicios.
+4. Estilistas.
+5. Clientes.
+6. Agenda.
+7. Pagos.
+8. Solicitudes.
+9. Administración.
+
+No inventar controladores ni rutas.
+
+## 4.4. Seguridad
+
+- No exponer credenciales.
+- No incluir tokens reales en ejemplos.
+- No documentar endpoints privados como públicos.
+- No eliminar las reglas de Spring Security para facilitar el acceso a Swagger.
+- Mantener Swagger accesible según la configuración de seguridad definida para el proyecto.
+
+## 4.5. Verificación
+
+Comprobar:
+
+1. Swagger abre.
+2. Se visualiza `Sillón API`.
+3. Aparece `Authorize`.
+4. Se acepta Bearer JWT.
+5. Un token válido de dueño permite ejecutar `GET /api/salon`.
+6. La respuesta es `200`.
+7. Los endpoints públicos funcionan sin token.
+8. Las operaciones están agrupadas correctamente.
+
+Actualizar BITACORA-IA.md.
+
+Commit propuesto:
+
+`Documentación con Swagger`
+
+---
+
+# 5. FASE 12 · DOCKER, SUPABASE Y RENDER
+
+## 5.1. Dockerfile
+
+Crear un Dockerfile multietapa.
+
+Etapa de compilación:
+
+- Maven.
+- Java 17.
+- Construcción del JAR.
+- Sin ejecutar pruebas durante la construcción.
+
+Etapa de ejecución:
+
+- JRE 17.
+- Copiar el JAR.
+- Configurar ejecución.
+- Respetar `PORT`.
+
+No introducir archivos secretos en ninguna etapa.
+
+## 5.2. .dockerignore
+
+Excluir como mínimo:
+
+- `target`
+- `.git`
+- `secrets.properties`
+
+No modificar `.github`.
+
+No incluir archivos personales o de configuración local innecesarios.
+
+## 5.3. Supabase
+
+Utilizar PostgreSQL y Session Pooler en el puerto `5432`.
+
+Configurar:
+
+- URL JDBC.
+- Usuario.
+- Contraseña.
+
+Mantener la compatibilidad con el entorno MySQL local.
+
+No modificar entidades JPA para corregir errores de conexión.
+
+No alterar nombres de tablas, columnas o relaciones.
+
+## 5.4. Render
+
+Preparar el servicio para ejecutar el JAR dentro del contenedor.
+
+La aplicación debe respetar:
+
+`server.port=${PORT:8080}`
+
+Utilizar variables de entorno.
+
+Variables requeridas:
+
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `JWT_SECRETO`
+- `URL_PUBLICA`
+- `STRIPE_CLAVE_SECRETA`
+- `STRIPE_PRECIO_PRO`
+- `STRIPE_PRECIO_CREDITOS`
+- `STRIPE_SECRETO_WEBHOOK`
+- `GEMINI_LLAVE`
+
+No incluir valores reales en el repositorio.
+
+No configurar en Render:
+
+- `STRIPE_URL_API`
+- `SILLON_IA_OPENAI_URL`
+
+No inventar valores para ninguna variable.
+
+## 5.5. Stripe
+
+Documentar el procedimiento para:
+
+1. Crear el endpoint de webhook en Stripe.
+2. Configurar la URL de producción.
+3. Seleccionar los eventos requeridos.
+4. Obtener el secreto de firma.
+5. Guardarlo en Render.
+
+Eventos:
+
+- `checkout.session.completed`
+- `customer.subscription.deleted`
+
+No realizar cambios en cuentas reales del usuario.
+
+No solicitar ni almacenar secretos en el código.
+
+No utilizar Stripe CLI como solución de producción.
+
+## 5.6. README
+
+Actualizar el README con instrucciones verificadas.
+
+Debe incluir:
+
+- Arquitectura.
+- Tecnologías.
+- Instalación.
+- Configuración local.
+- Variables de entorno.
+- MySQL.
+- Supabase.
+- Docker.
+- Render.
+- Stripe.
+- Pruebas.
+- Swagger.
+- URLs reales.
+
+No inventar URLs.
+
+No incluir secretos ni credenciales.
+
+## 5.7. Verificación
+
+Comprobar:
+
+- Docker build.
+- Inicio de aplicación.
+- Java 17.
+- Puerto dinámico.
+- Conexión a Supabase.
+- Swagger de producción.
+- Registro.
+- Login.
+- JWT.
+- Endpoint protegido.
+- Webhook firmado.
+- Activación de plan PRO mediante pago de prueba.
+
+No afirmar que Render está desplegado si el usuario no ha realizado el despliegue o no existe evidencia verificable.
+
+Actualizar BITACORA-IA.md.
+
+Commit propuesto:
+
+`Dockerfile y despliegue en Render`
+
+---
+
+# 6. GIT Y CONTROL DE VERSIONES
+
+Antes de iniciar una fase:
+
+`git status`
+
+`git log --oneline -5`
+
+Después de completar una fase:
+
+`git diff --check`
+
+`git diff --stat`
+
+Revisar todos los archivos modificados.
+
+No ejecutar:
+
+- `git reset --hard`
+- `git clean -fd`
+- `git push --force`
+- comandos destructivos equivalentes.
+
+No eliminar modificaciones previas del usuario.
+
+No sobrescribir archivos de configuración sin revisar su contenido.
+
+No modificar `.github`.
+
+No subir:
+
+- `secrets.properties`
+- `.env`
+- API keys
+- JWT secrets
+- contraseñas
+- tokens
+- credenciales de Supabase
+- credenciales de Stripe.
+
+Antes de cualquier commit, presentar los cambios para revisión del usuario.
+
+Los commits deben seguir el orden de las fases.
+
+---
+
+# 7. BITACORA-IA.md
+
+Actualizar la bitácora al completar cada fase.
+
+Registrar:
+
+- Fecha.
+- Fase.
+- Objetivo.
+- Archivos creados.
+- Archivos modificados.
+- Decisiones tomadas.
+- Pruebas ejecutadas.
+- Resultado real.
+- Problemas encontrados.
+- Soluciones aplicadas.
+- Uso de IA.
+- Código generado, corregido o rechazado.
+
+Debe existir al menos una entrada de IA por fase.
+
+Registrar también los errores importantes y las correcciones.
+
+No inventar pruebas, resultados ni actividades.
+
+No borrar entradas históricas.
+
+---
+
+# 8. PROTOCOLO OBLIGATORIO DE TRABAJO EN CURSOR
+
+Para cada fase, seguir este procedimiento:
+
+### PASO 1 — Inspección
+
+Leer los documentos y analizar el código existente.
+
+### PASO 2 — Diagnóstico
+
+Explicar:
+
+- Qué existe.
+- Qué falta.
+- Qué debe modificarse.
+- Qué riesgos existen.
+- Qué pruebas se necesitan.
+
+### PASO 3 — Plan
+
+Presentar una lista ordenada de implementación.
+
+### PASO 4 — Autorización
+
+Esperar la autorización del usuario antes de modificar código.
+
+### PASO 5 — Implementación
+
+Implementar únicamente la fase autorizada.
+
+No adelantar funcionalidades de fases posteriores.
+
+### PASO 6 — Verificación
+
+Ejecutar las pruebas correspondientes y analizar los resultados.
+
+### PASO 7 — Revisión
+
+Inspeccionar el diff y comprobar que no se hayan alterado contratos o reglas anteriores.
+
+### PASO 8 — Documentación
+
+Actualizar BITACORA-IA.md y README.md cuando corresponda.
+
+### PASO 9 — Entrega
+
+Presentar:
+
+- Archivos creados.
+- Archivos modificados.
+- Funcionalidades implementadas.
+- Pruebas ejecutadas.
+- Resultado real.
+- Problemas pendientes.
+- Commit recomendado.
+
+Esperar autorización antes de continuar con la siguiente fase.
+
+---
+
+# 9. REGLA FINAL
+
+**La prioridad absoluta es mantener la fidelidad a SPEC.md, el modelo oficial, las reglas de negocio y la seguridad multi-tenant.**
+
+No se debe implementar una funcionalidad simplemente porque sea técnicamente conveniente.
+
+No se deben inventar requisitos, tablas, rutas, respuestas ni decisiones comerciales.
+
+Cuando exista una contradicción entre el código actual y SPEC.md:
+
+1. Identificar la contradicción.
+2. Explicar su impacto.
+3. Proponer una solución.
+4. Esperar autorización si la solución modifica el contrato o el modelo.
+
+La implementación debe ser incremental, verificable y segura.
+
+No avanzar automáticamente entre fases.

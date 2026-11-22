@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/registro"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "salonNombre": "Salon {{sufijo}}",
+      "ciudad": "Bogota",
+      "direccion": "Calle 1",
+      "telefono": "3001112233",
+      "nombre": "Ana",
+      "email": "ana-{{sufijo}}@sillon.test",
+      "password": "clave1234"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('201', () => pm.response.to.have.status(201));
+      const cuerpo = pm.response.json();
+      pm.collectionVariables.set('token', cuerpo.token);
+      pm.collectionVariables.set('salonSlug', cuerpo.salonSlug);
+    language: text/javascript
+order: 1000

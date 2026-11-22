@@ -24,7 +24,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/estilistas")
-@Tag(name = "Estilistas")
+@Tag(name = "4. Estilistas")
 @SecurityRequirement(name = "bearerAuth")
 public class EstilistaControlador {
 

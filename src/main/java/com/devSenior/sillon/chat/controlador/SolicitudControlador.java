@@ -22,7 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/solicitudes")
-@Tag(name = "Solicitudes")
+@Tag(name = "8. Solicitudes")
 @SecurityRequirement(name = "bearerAuth")
 public class SolicitudControlador {
 

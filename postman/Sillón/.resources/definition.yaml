@@ -1,0 +1,15 @@
+$kind: collection
+description: ""
+variables:
+  baseUrl: http://localhost:8080
+scripts:
+  - type: http:beforeRequest
+    code: |-
+      const ahora = new Date();
+      pm.collectionVariables.set('sufijo', String(ahora.getTime()));
+      const cita = new Date(ahora.getTime() + 2 * 24 * 60 * 60 * 1000);
+      while (cita.getDay() === 0) { cita.setDate(cita.getDate() + 1); }
+      const mes = String(cita.getMonth() + 1).padStart(2, '0');
+      const dia = String(cita.getDate()).padStart(2, '0');
+      pm.collectionVariables.set('inicioCita', cita.getFullYear() + '-' + mes + '-' + dia + 'T10:00:00');
+    language: text/javascript

@@ -1,0 +1,76 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/usuarios/:id/servicios"
+  method: PUT
+  headers:
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  pathVariables:
+    id: "3299"
+  body:
+    type: json
+    content: |-
+      {
+        "servicioIds": [
+          9848,
+          2336
+        ]
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "id": 4435,
+        "nombre": "string",
+        "email": "string",
+        "rol": "DUENO",
+        "activo": false,
+        "servicios": [
+          "string",
+          "string"
+        ]
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "rol": {
+            "type": "string",
+            "enum": [
+              "DUENO",
+              "ESTILISTA",
+              "ADMIN"
+            ]
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "servicios": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+order: 2000

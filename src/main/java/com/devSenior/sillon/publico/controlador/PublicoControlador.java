@@ -20,12 +20,14 @@ import com.devSenior.sillon.publico.servicio.PublicoServicio;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/publico/salones")
-@Tag(name = "Público")
+@Tag(name = "0. Público")
+@SecurityRequirements
 public class PublicoControlador {
 
 	private final PublicoServicio publicoServicio;
