@@ -1,5 +1,6 @@
 package com.devsenior.sillon.usuario;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -15,4 +16,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    @EntityGraph(attributePaths = "servicios")
+    List<Usuario> findBySalonIdAndRol(Long salonId, Rol rol);
+
+    long countBySalonIdAndRol(Long salonId, Rol rol);
+
+    @EntityGraph(attributePaths = "servicios")
+    Optional<Usuario> findByIdAndSalonIdAndRol(Long id, Long salonId, Rol rol);
 }
+

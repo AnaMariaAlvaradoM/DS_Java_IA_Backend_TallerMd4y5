@@ -1,6 +1,28 @@
-# SPEC · Centralización de mensajes de clientes (Chatbot y Solicitudes de contacto) · Sillón
+# SPEC · Especificación del Sistema · Sillón
 
-> Alcance: dominios `chat` e `ia` de Sillón (Fases 7 y 9), más el consumo de créditos. Todo respeta el contrato de la sección 4 del documento del proyecto: no se agregan ni renombran rutas ni campos.
+> Alcance general: SaaS multi-inquilino de agenda inteligente para barberías y salones de belleza.
+> Fase 3: Catálogo y equipo (servicios, estilistas y clientes).
+> Fases 7 y 9: Dominios `chat` e `ia`, más el consumo de créditos. Todo respeta el contrato de la sección 4 del documento del proyecto.
+
+## 0. Catálogo y equipo (Fase 3)
+
+### Entidades y Relaciones
+- **Servicio** (`servicios`): `id`, `nombre` (máx. 80), `descripcion` (máx. 300, opcional), `duracionMinutos` (15 a 480), `precio` (entero > 0), `activo`, `salon` (ManyToOne).
+- **Usuario (Estilista)**: Relación ManyToMany con `Servicio` a través de tabla intermedia `estilista_servicios`.
+- **Cliente** (`clientes`): `id`, `nombre` (máx. 100), `telefono` (máx. 30, normalizado con dígitos y +), `salon` (ManyToOne). Restricción única `(salon_id, telefono)`.
+
+### Reglas de Negocio y Orden de Validación al Crear Estilista
+Al invocar `POST /api/estilistas`, se aplican las validaciones en este orden estricto:
+1. **Límite del plan (402 Payment Required)**:
+   Si el salón está en plan `GRATIS`, no puede tener más de 2 estilistas (el 3° se bloquea con 402). En plan `PRO` no hay límite.
+   *¿Por qué el límite del plan va primero?*
+   Porque es una restricción comercial y de licenciamiento del inquilino (política de fail-fast de monetización). Si el salón no cuenta con el cupo permitido en su suscripción, se rechaza inmediatamente la operación sin incurrir en costos de procesamiento adicionales (como normalizar y consultar si el correo existe globalmente o verificar la existencia de los servicios en la base de datos).
+2. **Correo único (409 Conflict)**:
+   El correo se normaliza (minúsculas y sin espacios) y no puede existir previamente en ningún usuario de la plataforma.
+3. **Servicios pertenecientes al salón (404 Not Found)**:
+   Todos los `servicioIds` proporcionados deben existir y pertenecer al salón autenticado. Si alguno pertenece a otro salón o no existe, se responde 404 (ocultando información entre salones).
+
+---
 
 ## 1. Problema
 

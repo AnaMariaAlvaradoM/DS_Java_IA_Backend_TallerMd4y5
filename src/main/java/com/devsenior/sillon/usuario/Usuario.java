@@ -1,6 +1,10 @@
 package com.devsenior.sillon.usuario;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.devsenior.sillon.salon.Salon;
+import com.devsenior.sillon.servicio.Servicio;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +15,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -50,8 +56,21 @@ public class Usuario {
     @JoinColumn(name = "salon_id", nullable = false)
     private Salon salon;
 
+    /** Relacion muchos a muchos con Servicio (tabla estilista_servicios). */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "estilista_servicios",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "servicio_id")
+    )
+    private Set<Servicio> servicios = new HashSet<>();
+
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getNombre() {
@@ -100,5 +119,27 @@ public class Usuario {
 
     public void setSalon(Salon salon) {
         this.salon = salon;
+    }
+
+    public Set<Servicio> getServicios() {
+        return servicios;
+    }
+
+    public void setServicios(Set<Servicio> servicios) {
+        this.servicios = servicios;
+    }
+
+    public boolean ofreceServicio(Long servicioId) {
+        if (servicios == null || servicioId == null) {
+            return false;
+        }
+        return servicios.stream().anyMatch(s -> servicioId.equals(s.getId()));
+    }
+
+    public boolean ofreceServicio(Servicio servicio) {
+        if (servicio == null) {
+            return false;
+        }
+        return ofreceServicio(servicio.getId());
     }
 }
