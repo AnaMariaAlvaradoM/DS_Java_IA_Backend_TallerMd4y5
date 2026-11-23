@@ -21,6 +21,7 @@ Registro del apoyo de inteligencia artificial utilizado durante el desarrollo de
 
 
 
+
 ## Observaciones
 
 - Las reglas funcionales se mantienen documentadas en SPEC.md.

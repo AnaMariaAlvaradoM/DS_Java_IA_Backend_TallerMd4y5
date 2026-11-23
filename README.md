@@ -318,3 +318,33 @@ para comprobar el rechazo de MySQL.
 - Implementar y probar la gestión de citas.
 - Completar las siguientes fases del proyecto.
 - Exportar la colección de Postman.
+
+## Despliegue en producción
+
+La API de Sillón está desplegada en Render mediante Docker,
+con una base de datos PostgreSQL alojada en Supabase.
+
+### Enlaces
+
+- API: https://sillon-api-548o.onrender.com
+- Swagger: https://sillon-api-548o.onrender.com/swagger-ui/index.html
+- OpenAPI: https://sillon-api-548o.onrender.com/v3/api-docs
+
+### Verificaciones realizadas
+
+- Construcción de imagen Docker: correcta.
+- Despliegue de Spring Boot en Render: correcto.
+- Conexión a PostgreSQL en Supabase: correcta.
+- Registro de usuario en producción: HTTP 201.
+- Inicio de sesión en producción: HTTP 200.
+- Creación de sesión de pago Stripe: HTTP 200.
+- Pago de prueba completado.
+- Consulta del salón: HTTP 200 y 310 créditos.
+
+### Configuración
+
+Las credenciales y claves privadas se administran mediante
+variables de entorno en Render. No se incluyen en el repositorio.
+
+El servicio utiliza el plan gratuito de Render, por lo que
+puede tardar en responder después de un periodo de inactividad.
