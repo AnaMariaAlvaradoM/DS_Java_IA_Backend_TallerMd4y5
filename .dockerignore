@@ -1,0 +1,21 @@
+
+# Archivos generados por Maven
+target/
+
+# Git
+.git/
+.github/
+
+# Credenciales y variables locales
+secrets.properties
+**/secrets.properties
+.env
+.env.*
+
+# Configuración del editor
+.vscode/
+.idea/
+
+# Archivos temporales
+*.log
+*.tmp
