@@ -1,0 +1,680 @@
+{
+  "info": {
+    "_postman_id": "b7a63256-b62c-4c66-805c-abf15ad99d01",
+    "name": "Sillon - fase 5 Acceso público",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "45707915",
+    "_collection_link": "https://go.postman.co/collection/45707915-b7a63256-b62c-4c66-805c-abf15ad99d01?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01 - Consultar catálogo público del salón",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Catálogo público responde HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "",
+              "pm.test(\"El catálogo no expone correos electrónicos\", function () {",
+              "    pm.expect(pm.response.text()).not.to.include(\"@\");",
+              "});",
+              "",
+              "",
+              "pm.test(\"El catálogo contiene 2 servicios y 2 estilistas\", function () {",
+              "    const catalogo = pm.response.json();",
+              "",
+              "    pm.expect(catalogo.servicios).to.be.an(\"array\");",
+              "    pm.expect(catalogo.servicios).to.have.lengthOf(2);",
+              "",
+              "    pm.expect(catalogo.estilistas).to.be.an(\"array\");",
+              "    pm.expect(catalogo.estilistas).to.have.lengthOf(2);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-la-navaja",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-la-navaja"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Consultar salón inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Salón inexistente responde HTTP 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(404);",
+              "    pm.expect(respuesta.error).to.eql(\"Not Found\");",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\");",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-inexistente",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-inexistente"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Consultar disponibilidad pública",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Disponibilidad responde HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"La disponibilidad contiene los datos correctos\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.fecha).to.eql(\"2026-12-04\");",
+              "    pm.expect(respuesta.servicio).to.eql(\"Corte clásico\");",
+              "    pm.expect(respuesta.estilista).to.eql(\"Mateo Gil\");",
+              "    pm.expect(respuesta.duracionMinutos).to.eql(45);",
+              "    pm.expect(respuesta.horariosLibres).to.be.an(\"array\");",
+              "});",
+              "",
+              "pm.test(\"No se exponen datos privados\", function () {",
+              "    pm.expect(pm.response.text()).not.to.include(\"@\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-la-navaja/disponibilidad?servicioId=1&estilistaId=3&fecha=2026-12-04",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-la-navaja",
+            "disponibilidad"
+          ],
+          "query": [
+            {
+              "key": "servicioId",
+              "value": "1"
+            },
+            {
+              "key": "estilistaId",
+              "value": "3"
+            },
+            {
+              "key": "fecha",
+              "value": "2026-12-04"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Crear reserva pública",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Valentina López\",\n  \"clienteTelefono\": \"3004567890\",\n  \"servicioId\": 1,\n  \"estilistaId\": 3,\n  \"inicio\": \"2026-12-04T10:00:00\",\n  \"nota\": \"Primera reserva en línea\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-la-navaja/reservas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-la-navaja",
+            "reservas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Verificar disponibilidad después de reservar",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Disponibilidad responde HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"La reserva bloquea horarios cruzados\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    const inicioReserva = 10 * 60;",
+              "    const finReserva = 10 * 60 + 45;",
+              "",
+              "    respuesta.horariosLibres.forEach(hora => {",
+              "        const partes = hora.split(\":\");",
+              "        const inicio = Number(partes[0]) * 60",
+              "                     + Number(partes[1]);",
+              "",
+              "        const fin = inicio + respuesta.duracionMinutos;",
+              "",
+              "        const seCruza = inicio < finReserva",
+              "                     && fin > inicioReserva;",
+              "",
+              "        pm.expect(seCruza).to.eql(false);",
+              "    });",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-la-navaja/disponibilidad?servicioId=1&estilistaId=3&fecha=2026-12-04",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-la-navaja",
+            "disponibilidad"
+          ],
+          "query": [
+            {
+              "key": "servicioId",
+              "value": "1"
+            },
+            {
+              "key": "estilistaId",
+              "value": "3"
+            },
+            {
+              "key": "fecha",
+              "value": "2026-12-04"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Rechazar reserva pública cruzada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Reserva cruzada responde HTTP 409\", function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "",
+              "pm.test(\"El error cumple el contrato de la API\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(409);",
+              "    pm.expect(respuesta.error).to.eql(\"Conflict\");",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\");",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"El sistema informa el conflicto de horario\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.mensaje.toLowerCase())",
+              "        .to.include(\"cita\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Carlos Rodríguez\",\n  \"clienteTelefono\": \"3009876543\",\n  \"servicioId\": 1,\n  \"estilistaId\": 3,\n  \"inicio\": \"2026-12-04T10:00:00\",\n  \"nota\": \"Prueba de horario ocupado\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-la-navaja/reservas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-la-navaja",
+            "reservas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "07 - Rechazar servicio no ofrecido por estilista",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Servicio no ofrecido responde HTTP 409\", function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "",
+              "pm.test(\"El error cumple el contrato\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(409);",
+              "    pm.expect(respuesta.error).to.eql(\"Conflict\");",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\");",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"El sistema rechaza el servicio no ofrecido\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.mensaje.toLowerCase())",
+              "        .to.include(\"no ofrece\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Andrés Martínez\",\n  \"clienteTelefono\": \"3014567890\",\n  \"servicioId\": 2,\n  \"estilistaId\": 4,\n  \"inicio\": \"2026-12-04T11:00:00\",\n  \"nota\": \"Prueba de servicio no ofrecido\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-la-navaja/reservas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-la-navaja",
+            "reservas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "08 - Rechazar reserva fuera del horario",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Reserva fuera del horario responde HTTP 409\", function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "",
+              "pm.test(\"El error cumple el contrato de la API\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(409);",
+              "    pm.expect(respuesta.error).to.eql(\"Conflict\");",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\");",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"El sistema informa el problema de horario\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.mensaje.toLowerCase())",
+              "        .to.include(\"horario\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Laura Gómez\",\n  \"clienteTelefono\": \"3024567890\",\n  \"servicioId\": 1,\n  \"estilistaId\": 3,\n  \"inicio\": \"2026-12-04T17:30:00\",\n  \"nota\": \"Prueba de reserva fuera del horario\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-la-navaja/reservas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-la-navaja",
+            "reservas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "09 - Rechazar reserva en fecha pasada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Fecha pasada responde HTTP 409\", function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "",
+              "pm.test(\"El error cumple el contrato de la API\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(409);",
+              "    pm.expect(respuesta.error).to.eql(\"Conflict\");",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\");",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"El sistema rechaza fechas pasadas\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.mensaje.toLowerCase())",
+              "        .to.include(\"pasadas\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Daniel Pérez\",\n  \"clienteTelefono\": \"3034567890\",\n  \"servicioId\": 1,\n  \"estilistaId\": 3,\n  \"inicio\": \"2026-11-10T10:00:00\",\n  \"nota\": \"Prueba de reserva en fecha pasada\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-la-navaja/reservas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-la-navaja",
+            "reservas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10 - Rechazar servicio de otro salón",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Servicio de otro salón responde HTTP 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"El error cumple el contrato de la API\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.codigo).to.eql(404);",
+              "    pm.expect(respuesta.error).to.eql(\"Not Found\");",
+              "    pm.expect(respuesta.mensaje).to.be.a(\"string\");",
+              "    pm.expect(respuesta.fecha).to.exist;",
+              "});",
+              "",
+              "pm.test(\"El servicio no pertenece al salón\", function () {",
+              "    const respuesta = pm.response.json();",
+              "",
+              "    pm.expect(respuesta.mensaje.toLowerCase())",
+              "        .to.include(\"servicio\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"clienteNombre\": \"Felipe Torres\",\n  \"clienteTelefono\": \"3045678901\",\n  \"servicioId\": 1,\n  \"estilistaId\": 3,\n  \"inicio\": \"2026-12-05T10:00:00\",\n  \"nota\": \"Prueba de aislamiento entre salones\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/publico/salones/barberia-el-estilo/reservas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "publico",
+            "salones",
+            "barberia-el-estilo",
+            "reservas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11 - Verificar reservas concurrentes",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_1bv3}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/citas?fecha=2026-12-18",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "citas"
+          ],
+          "query": [
+            {
+              "key": "fecha",
+              "value": "2026-12-18"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_1bv3",
+      "secret": true
+    }
+  ]
+}

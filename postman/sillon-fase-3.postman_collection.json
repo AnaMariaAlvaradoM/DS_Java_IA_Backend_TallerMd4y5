@@ -1,0 +1,2068 @@
+{
+  "info": {
+    "_postman_id": "a9074f72-36c1-4484-9154-e1d05eba9ec9",
+    "name": "Fase 3 Catálogo y equipo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "45707915",
+    "_collection_link": "https://go.postman.co/collection/45707915-a9074f72-36c1-4484-9154-e1d05eba9ec9?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01 - Crear Corte clásico",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Servicio creado correctamente\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.nombre).to.eql(\"Corte clásico\");",
+              "    pm.expect(data.duracionMinutos).to.eql(45);",
+              "    pm.expect(data.precio).to.eql(35000);",
+              "    pm.expect(data.activo).to.eql(true);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos obligatorios\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"id\",",
+              "        \"nombre\",",
+              "        \"descripcion\",",
+              "        \"duracionMinutos\",",
+              "        \"precio\",",
+              "        \"activo\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"Identificador generado correctamente\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.id).to.be.a(\"number\");",
+              "    pm.expect(data.id).to.be.above(0);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_07b1}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Corte clásico\",\n  \"descripcion\": \"Corte de cabello tradicional\",\n  \"duracionMinutos\": 45,\n  \"precio\": 35000,\n  \"activo\": true\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/servicios",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "16 - Rechazar creación de servicios como estilista",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 403\", function () {",
+              "    pm.response.to.have.status(403);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos de error\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"codigo\",",
+              "        \"error\",",
+              "        \"mensaje\",",
+              "        \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El código de error es 403\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.codigo).to.eql(403);",
+              "});",
+              "",
+              "pm.test(\"El acceso fue denegado\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.mensaje).to.be.a(\"string\");",
+              "    pm.expect(data.mensaje.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test(\"No devuelve un servicio creado\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.not.have.property(\"id\");",
+              "    pm.expect(data).to.not.have.property(\"precio\");",
+              "    pm.expect(data).to.not.have.property(\"duracionMinutos\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtMateo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Corte clásico\",\n  \"descripcion\": \"Corte de cabello tradicional\",\n  \"duracionMinutos\": 45,\n  \"precio\": 35000,\n  \"activo\": true\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/servicios",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Crear Arreglo de barba",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Servicio creado correctamente\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.nombre).to.eql(\"Arreglo de barba\");",
+              "    pm.expect(data.duracionMinutos).to.eql(30);",
+              "    pm.expect(data.precio).to.eql(20000);",
+              "    pm.expect(data.activo).to.eql(true);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos obligatorios\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"id\",",
+              "        \"nombre\",",
+              "        \"descripcion\",",
+              "        \"duracionMinutos\",",
+              "        \"precio\",",
+              "        \"activo\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"Identificador generado correctamente\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.id).to.be.a(\"number\");",
+              "    pm.expect(data.id).to.be.above(0);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_07b1}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Arreglo de barba\",\n  \"descripcion\": \"Perfilado y arreglo de barba\",\n  \"duracionMinutos\": 30,\n  \"precio\": 20000,\n  \"activo\": true\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/servicios",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Rechazar duración inválida",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos de error\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"codigo\",",
+              "        \"error\",",
+              "        \"mensaje\",",
+              "        \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El código de error es 400\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.codigo).to.eql(400);",
+              "});",
+              "",
+              "pm.test(\"El mensaje identifica la duración inválida\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.mensaje).to.include(\"duracionMinutos\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_07b1}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Servicio duración inválida\",\n  \"descripcion\": \"Prueba de validación de duración\",\n  \"duracionMinutos\": 5,\n  \"precio\": 15000,\n  \"activo\": true\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/servicios",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Rechazar precio negativo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos de error\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"codigo\",",
+              "        \"error\",",
+              "        \"mensaje\",",
+              "        \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El código de error es 400\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.codigo).to.eql(400);",
+              "});",
+              "",
+              "pm.test(\"El mensaje identifica el precio inválido\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.mensaje).to.include(\"precio\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_07b1}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Servicio precio inválido\",\n  \"descripcion\": \"Prueba de validación de precio negativo\",\n  \"duracionMinutos\": 30,\n  \"precio\": -15000,\n  \"activo\": true\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/servicios",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Consultar servicios",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"La respuesta es una lista de servicios\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.be.an(\"array\");",
+              "});",
+              "",
+              "pm.test(\"Contiene Corte clásico\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    const corte = data.find(",
+              "        servicio => servicio.nombre === \"Corte clásico\"",
+              "    );",
+              "",
+              "    pm.expect(corte).to.exist;",
+              "    pm.expect(corte.duracionMinutos).to.eql(45);",
+              "    pm.expect(corte.precio).to.eql(40000);",
+              "});",
+              "",
+              "pm.test(\"Contiene Arreglo de barba\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    const barba = data.find(",
+              "        servicio => servicio.nombre === \"Arreglo de barba\"",
+              "    );",
+              "",
+              "    pm.expect(barba).to.exist;",
+              "    pm.expect(barba.duracionMinutos).to.eql(30);",
+              "    pm.expect(barba.precio).to.eql(20000);",
+              "});",
+              "",
+              "pm.test(\"Los servicios tienen los campos correctos\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    data.forEach(servicio => {",
+              "        pm.expect(servicio).to.have.all.keys(",
+              "            \"id\",",
+              "            \"nombre\",",
+              "            \"descripcion\",",
+              "            \"duracionMinutos\",",
+              "            \"precio\",",
+              "            \"activo\"",
+              "        );",
+              "    });",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_07b1}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/servicios",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "14 - Consultar servicios como estilista",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"La respuesta es una lista de servicios\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.be.an(\"array\");",
+              "});",
+              "",
+              "pm.test(\"Contiene Corte clásico\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    const corte = data.find(",
+              "        servicio => servicio.nombre === \"Corte clásico\"",
+              "    );",
+              "",
+              "    pm.expect(corte).to.exist;",
+              "    pm.expect(corte.duracionMinutos).to.eql(45);",
+              "    pm.expect(corte.precio).to.eql(40000);",
+              "});",
+              "",
+              "pm.test(\"Contiene Arreglo de barba\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    const barba = data.find(",
+              "        servicio => servicio.nombre === \"Arreglo de barba\"",
+              "    );",
+              "",
+              "    pm.expect(barba).to.exist;",
+              "    pm.expect(barba.duracionMinutos).to.eql(30);",
+              "    pm.expect(barba.precio).to.eql(20000);",
+              "});",
+              "",
+              "pm.test(\"Los servicios tienen los campos correctos\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    data.forEach(servicio => {",
+              "        pm.expect(servicio).to.have.all.keys(",
+              "            \"id\",",
+              "            \"nombre\",",
+              "            \"descripcion\",",
+              "            \"duracionMinutos\",",
+              "            \"precio\",",
+              "            \"activo\"",
+              "        );",
+              "    });",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtMateo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/servicios",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Actualizar Corte clásico",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Precio actualizado correctamente\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.precio).to.eql(40000);",
+              "    pm.expect(data.duracionMinutos).to.eql(45);",
+              "});",
+              "",
+              "pm.test(\"Se mantiene el identificador del servicio\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.id).to.eql(1);",
+              "    pm.expect(data.nombre).to.eql(\"Corte clásico\");",
+              "});",
+              "",
+              "pm.test(\"Descripción actualizada correctamente\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.descripcion).to.eql(",
+              "        \"Corte de cabello tradicional actualizado\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos del contrato\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"id\",",
+              "        \"nombre\",",
+              "        \"descripcion\",",
+              "        \"duracionMinutos\",",
+              "        \"precio\",",
+              "        \"activo\"",
+              "    );",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_07b1}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Corte clásico\",\n  \"descripcion\": \"Corte de cabello tradicional actualizado\",\n  \"duracionMinutos\": 45,\n  \"precio\": 40000,\n  \"activo\": true\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/servicios/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "15 - Rechazar actualización como estilista",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 403\", function () {",
+              "    pm.response.to.have.status(403);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos de error\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"codigo\",",
+              "        \"error\",",
+              "        \"mensaje\",",
+              "        \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El código de error es 403\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.codigo).to.eql(403);",
+              "});",
+              "",
+              "pm.test(\"El acceso fue denegado\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.mensaje).to.be.a(\"string\");",
+              "    pm.expect(data.mensaje.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test(\"No devuelve información del servicio\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.not.have.property(\"precio\");",
+              "    pm.expect(data).to.not.have.property(\"duracionMinutos\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtMateo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Corte clásico\",\n  \"descripcion\": \"Corte de cabello tradicional actualizado\",\n  \"duracionMinutos\": 45,\n  \"precio\": 40000,\n  \"activo\": true\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/servicios/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "07 - Aislamiento entre salones",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"La respuesta es una lista\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.be.an(\"array\");",
+              "});",
+              "",
+              "pm.test(\"El segundo salón no tiene servicios\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.be.empty;",
+              "});",
+              "",
+              "pm.test(\"No muestra servicios de Barbería La Navaja\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    const nombres = data.map(servicio => servicio.nombre);",
+              "",
+              "    pm.expect(nombres).to.not.include(\"Corte clásico\");",
+              "    pm.expect(nombres).to.not.include(\"Arreglo de barba\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtSalonEstilo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/servicios",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "08 - Rechazar modificación de otro salón",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos de error\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"codigo\",",
+              "        \"error\",",
+              "        \"mensaje\",",
+              "        \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El código de error es 404\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.codigo).to.eql(404);",
+              "});",
+              "",
+              "pm.test(\"No revela información de otro salón\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.mensaje).to.be.a(\"string\");",
+              "    pm.expect(data.mensaje).to.not.include(\"Barbería La Navaja\");",
+              "    pm.expect(data.mensaje).to.not.include(\"Corte clásico\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtSalonEstilo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Corte modificado sin autorización\",\n  \"descripcion\": \"Prueba de aislamiento entre salones\",\n  \"duracionMinutos\": 45,\n  \"precio\": 10000,\n  \"activo\": true\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/servicios/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicios",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "09 - Crear estilista Mateo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Mateo fue registrado correctamente\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.nombre).to.eql(\"Mateo Gil\");",
+              "    pm.expect(data.email).to.eql(\"mateo@example.com\");",
+              "    pm.expect(data.activo).to.eql(true);",
+              "});",
+              "",
+              "pm.test(\"Los dos servicios están asociados\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.servicios).to.be.an(\"array\");",
+              "    pm.expect(data.servicios).to.have.lengthOf(2);",
+              "    pm.expect(data.servicios).to.have.members([",
+              "        \"Corte clásico\",",
+              "        \"Arreglo de barba\"",
+              "    ]);",
+              "});",
+              "",
+              "pm.test(\"La respuesta contiene los campos correctos\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"id\",",
+              "        \"nombre\",",
+              "        \"email\",",
+              "        \"activo\",",
+              "        \"servicios\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"No expone la contraseña\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.not.have.property(\"password\");",
+              "});",
+              "",
+              "pm.test(\"El identificador es válido\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.id).to.be.a(\"number\");",
+              "    pm.expect(data.id).to.be.above(0);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0max}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Mateo Gil\",\n  \"email\": \"mateo@example.com\",\n  \"password\": \"Mateo12345\",\n  \"servicioIds\": [1, 2]\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/estilistas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "estilistas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "20 - Rechazar creación de estilista por ESTILISTA",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 403\", function () {",
+              "    pm.response.to.have.status(403);",
+              "});",
+              "",
+              "pm.test(\"El acceso es rechazado\", function () {",
+              "    pm.expect(pm.response.code).to.eql(403);",
+              "});",
+              "",
+              "pm.test(\"No se devuelve un estilista creado\", function () {",
+              "    const body = pm.response.text();",
+              "",
+              "    if (body.trim() !== \"\") {",
+              "        const data = pm.response.json();",
+              "",
+              "        pm.expect(data).to.not.have.property(\"id\");",
+              "        pm.expect(data).to.not.have.property(\"servicios\");",
+              "    }",
+              "});",
+              "",
+              "pm.test(\"La respuesta no expone contraseñas\", function () {",
+              "    pm.expect(pm.response.text().toLowerCase())",
+              "        .to.not.include(\"password\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtMateo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Mateo Gil\",\n  \"email\": \"mateo@example.com\",\n  \"password\": \"Mateo12345\",\n  \"servicioIds\": [1, 2]\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/estilistas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "estilistas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "17 - Rechazar correo duplicado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 409\", function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos de error\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"codigo\",",
+              "        \"error\",",
+              "        \"mensaje\",",
+              "        \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El código de error es 409\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.codigo).to.eql(409);",
+              "});",
+              "",
+              "pm.test(\"El mensaje informa que el correo ya existe\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.mensaje).to.include(",
+              "        \"El correo ya está registrado\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"No devuelve un estilista registrado\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.not.have.property(\"id\");",
+              "    pm.expect(data).to.not.have.property(\"servicios\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtSalonEstilo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Mateo Duplicado\",\n  \"email\": \"mateo@example.com\",\n  \"password\": \"Prueba12345\",\n  \"servicioIds\": [1]\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/estilistas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "estilistas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "18 - Rechazar servicios de otro salón",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos de error\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"codigo\",",
+              "        \"error\",",
+              "        \"mensaje\",",
+              "        \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El código de error es 404\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.codigo).to.eql(404);",
+              "});",
+              "",
+              "pm.test(\"El mensaje identifica el servicio no encontrado\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.mensaje).to.include(\"Servicio no encontrado\");",
+              "});",
+              "",
+              "pm.test(\"No revela información de otro salón\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.mensaje).to.not.include(\"Barbería La Navaja\");",
+              "    pm.expect(data.mensaje).to.not.include(\"Corte clásico\");",
+              "});",
+              "",
+              "pm.test(\"No devuelve un estilista registrado\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.not.have.property(\"id\");",
+              "    pm.expect(data).to.not.have.property(\"servicios\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtSalonEstilo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Carlos Ramírez\",\n  \"email\": \"carlos.estilo@example.com\",\n  \"password\": \"Carlos12345\",\n  \"servicioIds\": [1]\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/estilistas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "estilistas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10 - Crear estilista Sara",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Sara fue registrada correctamente\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.nombre).to.eql(\"Sara Mejía\");",
+              "    pm.expect(data.email).to.eql(\"sara@example.com\");",
+              "    pm.expect(data.activo).to.eql(true);",
+              "});",
+              "",
+              "pm.test(\"Sara tiene únicamente Corte clásico\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.servicios).to.be.an(\"array\");",
+              "    pm.expect(data.servicios).to.have.lengthOf(1);",
+              "    pm.expect(data.servicios).to.have.members([",
+              "        \"Corte clásico\"",
+              "    ]);",
+              "});",
+              "",
+              "pm.test(\"La respuesta contiene los campos correctos\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"id\",",
+              "        \"nombre\",",
+              "        \"email\",",
+              "        \"activo\",",
+              "        \"servicios\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"No expone la contraseña\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.not.have.property(\"password\");",
+              "});",
+              "",
+              "pm.test(\"El identificador es válido\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.id).to.be.a(\"number\");",
+              "    pm.expect(data.id).to.be.above(0);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0max}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Sara Mejía\",\n  \"email\": \"sara@example.com\",\n  \"password\": \"Sara12345\",\n  \"servicioIds\": [1]\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/estilistas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "estilistas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11 - Rechazar tercer estilista plan GRATIS",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 402\", function () {",
+              "    pm.response.to.have.status(402);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos de error\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"codigo\",",
+              "        \"error\",",
+              "        \"mensaje\",",
+              "        \"fecha\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"El código de error es 402\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.codigo).to.eql(402);",
+              "});",
+              "",
+              "pm.test(\"El mensaje informa el límite del plan\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.mensaje).to.include(\"plan GRATIS\");",
+              "    pm.expect(data.mensaje).to.include(\"2 estilistas\");",
+              "});",
+              "",
+              "pm.test(\"No devuelve un estilista registrado\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.not.have.property(\"id\");",
+              "    pm.expect(data).to.not.have.property(\"servicios\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0max}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"nombre\": \"Andrés López\",\n  \"email\": \"andres@example.com\",\n  \"password\": \"Andres12345\",\n  \"servicioIds\": [1]\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/estilistas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "estilistas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12 - Consultar estilistas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"La respuesta es una lista\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.be.an(\"array\");",
+              "});",
+              "",
+              "pm.test(\"El salón tiene exactamente dos estilistas\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.lengthOf(2);",
+              "});",
+              "",
+              "pm.test(\"Mateo tiene los dos servicios\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    const mateo = data.find(",
+              "        estilista => estilista.nombre === \"Mateo Gil\"",
+              "    );",
+              "",
+              "    pm.expect(mateo).to.exist;",
+              "    pm.expect(mateo.servicios).to.have.members([",
+              "        \"Corte clásico\",",
+              "        \"Arreglo de barba\"",
+              "    ]);",
+              "});",
+              "",
+              "pm.test(\"Sara tiene únicamente Corte clásico\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    const sara = data.find(",
+              "        estilista => estilista.nombre === \"Sara Mejía\"",
+              "    );",
+              "",
+              "    pm.expect(sara).to.exist;",
+              "    pm.expect(sara.servicios).to.have.members([",
+              "        \"Corte clásico\"",
+              "    ]);",
+              "});",
+              "",
+              "pm.test(\"Andrés no fue registrado\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    const andres = data.find(",
+              "        estilista => estilista.email === \"andres@example.com\"",
+              "    );",
+              "",
+              "    pm.expect(andres).to.not.exist;",
+              "});",
+              "",
+              "pm.test(\"No se exponen contraseñas\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    data.forEach(estilista => {",
+              "        pm.expect(estilista).to.not.have.property(\"password\");",
+              "    });",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0max}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/estilistas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "estilistas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "13 - Login estilista Mateo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Login de Mateo correcto\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.nombre).to.eql(\"Mateo Gil\");",
+              "    pm.expect(data.rol).to.eql(\"ESTILISTA\");",
+              "    pm.expect(data.salonSlug).to.eql(\"barberia-la-navaja\");",
+              "});",
+              "",
+              "pm.test(\"Devuelve un token JWT válido en formato\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data.token).to.be.a(\"string\");",
+              "    pm.expect(data.token.split(\".\")).to.have.lengthOf(3);",
+              "    pm.expect(data.tipo).to.eql(\"Bearer\");",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene los campos del contrato\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.have.all.keys(",
+              "        \"token\",",
+              "        \"tipo\",",
+              "        \"expiraEnMinutos\",",
+              "        \"usuarioId\",",
+              "        \"nombre\",",
+              "        \"rol\",",
+              "        \"salonId\",",
+              "        \"salonSlug\"",
+              "    );",
+              "});",
+              "",
+              "pm.test(\"No expone la contraseña\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.not.have.property(\"password\");",
+              "});",
+              "",
+              "",
+              "if (pm.response.code === 200) {",
+              "    const data = pm.response.json();",
+              "",
+              "    if (data.rol === \"ESTILISTA\" && data.token) {",
+              "        pm.collectionVariables.set(\"jwtMateo\", data.token);",
+              "    }",
+              "}",
+              "",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"email\": \"mateo@example.com\",\n  \"password\": \"Mateo12345\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "19 - Verificar estilistas de El Estilo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"La respuesta es un arreglo\", function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data).to.be.an(\"array\");",
+              "});",
+              "",
+              "pm.test(\"El salón no tiene estilistas registrados\", function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data).to.have.lengthOf(0);",
+              "});",
+              "",
+              "pm.test(\"Carlos Ramírez no fue registrado\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    const existeCarlos = data.some(estilista =>",
+              "        estilista.email === \"carlos.estilo@example.com\"",
+              "    );",
+              "",
+              "    pm.expect(existeCarlos).to.be.false;",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtSalonEstilo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/estilistas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "estilistas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "21 - Rechazar consulta de estilistas por ESTILISTA",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 403\", function () {",
+              "    pm.response.to.have.status(403);",
+              "});",
+              "",
+              "pm.test(\"El acceso a la lista está prohibido\", function () {",
+              "    pm.expect(pm.response.code).to.eql(403);",
+              "});",
+              "",
+              "pm.test(\"No se devuelve un listado de estilistas\", function () {",
+              "    const body = pm.response.text().trim();",
+              "",
+              "    if (body !== \"\") {",
+              "        const data = pm.response.json();",
+              "        pm.expect(data).to.not.be.an(\"array\");",
+              "    }",
+              "});",
+              "",
+              "pm.test(\"La respuesta no expone datos de estilistas\", function () {",
+              "    const body = pm.response.text();",
+              "",
+              "    pm.expect(body).to.not.include(\"mateo@example.com\");",
+              "    pm.expect(body).to.not.include(\"sara@example.com\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtMateo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/estilistas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "estilistas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "22 - Consultar clientes del salón",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"La respuesta es un arreglo\", function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data).to.be.an(\"array\");",
+              "});",
+              "",
+              "pm.test(\"El salón todavía no tiene clientes\", function () {",
+              "    const data = pm.response.json();",
+              "    pm.expect(data).to.have.lengthOf(0);",
+              "});",
+              "",
+              "pm.test(\"La respuesta no contiene errores\", function () {",
+              "    const data = pm.response.json();",
+              "",
+              "    pm.expect(data).to.not.have.property(\"error\");",
+              "    pm.expect(data).to.not.have.property(\"mensaje\");",
+              "});",
+              ""
+            ],
+            "packages": {},
+            "requests": {},
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{json_web_token_101u}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/clientes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "clientes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "23 - Rechazar consulta de clientes por ESTILISTA",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 403\", function () {",
+              "    pm.response.to.have.status(403);",
+              "});",
+              "",
+              "pm.test(\"El acceso a clientes está prohibido\", function () {",
+              "    pm.expect(pm.response.code).to.eql(403);",
+              "});",
+              "",
+              "pm.test(\"No se devuelve un listado de clientes\", function () {",
+              "    const body = pm.response.text().trim();",
+              "",
+              "    if (body !== \"\") {",
+              "        const data = pm.response.json();",
+              "        pm.expect(data).to.not.be.an(\"array\");",
+              "    }",
+              "});",
+              "",
+              "pm.test(\"La respuesta no expone datos de clientes\", function () {",
+              "    const body = pm.response.text().trim();",
+              "",
+              "    if (body !== \"\") {",
+              "        const data = pm.response.json();",
+              "",
+              "        pm.expect(data).to.not.have.property(\"telefono\");",
+              "        pm.expect(data).to.not.have.property(\"nombre\");",
+              "    }",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwtMateo}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/clientes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "clientes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "24 - Rechazar consulta de clientes sin autorización",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "",
+              "pm.test(\"Código HTTP 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "pm.test(\"El acceso sin autenticación es rechazado\", function () {",
+              "    pm.expect(pm.response.code).to.eql(401);",
+              "});",
+              "",
+              "pm.test(\"No se devuelve un listado de clientes\", function () {",
+              "    const body = pm.response.text().trim();",
+              "",
+              "    if (body !== \"\") {",
+              "        const data = pm.response.json();",
+              "        pm.expect(data).to.not.be.an(\"array\");",
+              "    }",
+              "});",
+              "",
+              "pm.test(\"La respuesta no expone datos de clientes\", function () {",
+              "    const body = pm.response.text();",
+              "",
+              "    pm.expect(body).to.not.include(\"3105551234\");",
+              "    pm.expect(body).to.not.include(\"Juan Pérez\");",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/clientes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "clientes"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_07b1",
+      "secret": true
+    },
+    {
+      "key": "jwtSalonEstilo",
+      "secret": true
+    },
+    {
+      "key": "auth_secret_0max",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_07rw",
+      "secret": true
+    },
+    {
+      "key": "jwtMateo",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_04ta",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_101u",
+      "secret": true
+    }
+  ]
+}

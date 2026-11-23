@@ -277,3 +277,91 @@ git config --global user.email "tu-correo@ejemplo.com"
 ---
 
 <small>© 2026 Ana Alvarado · Educadora Tech & Desarrolladora Full Stack · Todos los derechos reservados · linkedin.com/in/ana-alvarado-instructora-full-stack</small>
+
+
+---
+
+## Avance del proyecto Sillón
+
+### Fases desarrolladas
+
+- Fase 0: configuración inicial.
+- Fase 1: entidades y estructura base.
+- Fase 2: autenticación y seguridad.
+- Fase 3: servicios, estilistas y clientes.
+
+### Pruebas realizadas — Fase 3
+
+Se ejecutaron 24 solicitudes en Postman para
+comprobar el funcionamiento de los módulos
+de servicios, estilistas y clientes.
+
+Se verificaron:
+
+- Creación, consulta y actualización de servicios.
+- Validaciones de duración y precio.
+- Registro de estilistas y límite del plan GRATIS.
+- Rechazo de correos duplicados.
+- Aislamiento de información entre salones.
+- Restricciones de acceso según el rol.
+- Consulta de clientes y protección del endpoint.
+
+### Pruebas unitarias
+
+- TelefonoUtilsTest: 4 pruebas aprobadas.
+- ClienteServiceTest: 2 pruebas aprobadas.
+
+Comando de verificación:
+
+    ./mvnw test
+
+Resultado: BUILD SUCCESS.
+
+### Base de datos
+
+Se verificó en MySQL la tabla `clientes`
+dentro de la base de datos `sillon_db`.
+
+Se confirmó la existencia del índice único
+`uk_cliente_salon_telefono`, compuesto por
+las columnas `salon_id` y `telefono`.
+
+No se realizó una inserción duplicada real
+para comprobar el rechazo de MySQL.
+
+### Pendientes
+
+- Integrar la creación de clientes con las reservas.
+- Implementar y probar la gestión de citas.
+- Completar las siguientes fases del proyecto.
+- Exportar la colección de Postman.
+
+## Despliegue en producción
+
+La API de Sillón está desplegada en Render mediante Docker,
+con una base de datos PostgreSQL alojada en Supabase.
+
+### Enlaces
+
+- API: https://sillon-api-548o.onrender.com
+- Swagger: https://sillon-api-548o.onrender.com/swagger-ui/index.html
+- OpenAPI: https://sillon-api-548o.onrender.com/v3/api-docs
+
+### Verificaciones realizadas
+
+- Construcción de imagen Docker: correcta.
+- Despliegue de Spring Boot en Render: correcto.
+- Conexión a PostgreSQL en Supabase: correcta.
+- Registro de usuario en producción: HTTP 201.
+- Inicio de sesión en producción: HTTP 200.
+- Creación de sesión de pago Stripe: HTTP 200.
+- Pago de prueba completado.
+- Consulta del salón: HTTP 200 y 310 créditos.
+
+### Configuración
+
+Las credenciales y claves privadas se administran mediante
+variables de entorno en Render. No se incluyen en el repositorio.
+
+El servicio utiliza el plan gratuito de Render, por lo que
+puede tardar en responder después de un periodo de inactividad.
