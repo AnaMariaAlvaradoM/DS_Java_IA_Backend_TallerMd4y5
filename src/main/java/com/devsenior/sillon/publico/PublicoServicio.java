@@ -6,6 +6,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -39,6 +40,7 @@ public class PublicoServicio {
     private static final String MENSAJE_SALON_NO_ENCONTRADO = "Salón no encontrado";
     private static final String MENSAJE_SERVICIO_NO_ENCONTRADO = "Servicio no encontrado";
     private static final String MENSAJE_ESTILISTA_NO_ENCONTRADO = "Estilista no encontrado";
+    private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final SalonRepository salonRepository;
     private final ServicioRepository servicioRepository;
@@ -124,7 +126,7 @@ public class PublicoServicio {
                 .calcularHorariosLibres(configuracion, fecha, servicio.getDuracionMinutos(),
                         ocupadas, ahora)
                 .stream()
-                .map(inicio -> inicio.toLocalTime().toString())
+                .map(inicio -> inicio.toLocalTime().format(FORMATO_HORA))
                 .toList();
         return new DisponibilidadRespuesta(fecha, servicio.getNombre(), estilista.getNombre(),
                 servicio.getDuracionMinutos(), horariosLibres);
