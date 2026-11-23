@@ -1,5 +1,6 @@
 package com.devsenior.sillon.publico;
 
+import java.text.NumberFormat;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -8,6 +9,8 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -131,6 +134,27 @@ public class PublicoServicio {
     public CitaRespuesta reservar(String slug, CitaSolicitud solicitud) {
         Salon salon = buscarSalon(slug);
         return citaServicio.reservarEnLinea(salon.getId(), solicitud);
+    }
+
+    @Transactional(readOnly = true)
+    public String textoCatalogo(String slug) {
+        Salon salon = buscarSalon(slug);
+        return servicioRepository.findBySalonId(salon.getId()).stream()
+                .filter(Servicio::isActivo)
+                .sorted(Comparator.comparing(Servicio::getId))
+                .map(servicio -> servicio.getNombre() + " ("
+                        + servicio.getDuracionMinutos() + " minutos) - "
+                        + formatearValor(servicio.getPrecio()))
+                .collect(Collectors.joining("\n"));
+    }
+
+    @Transactional(readOnly = true)
+    public String textoHorario(String slug) {
+        return textoHorario(buscarSalon(slug).getConfiguracion());
+    }
+
+    private static String formatearValor(long precio) {
+        return "$" + NumberFormat.getIntegerInstance(Locale.forLanguageTag("es-CO")).format(precio);
     }
 
     private Salon buscarSalon(String slug) {
