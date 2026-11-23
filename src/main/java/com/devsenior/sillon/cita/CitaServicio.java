@@ -1,10 +1,13 @@
 package com.devsenior.sillon.cita;
 
+import java.text.NumberFormat;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,6 +100,40 @@ public class CitaServicio {
         cita.setFechaActualizacion(LocalDateTime.now(reloj));
         cita = citaRepository.saveAndFlush(cita);
         return aRespuesta(cita);
+    }
+
+    @Transactional(readOnly = true)
+    public DatosRecordatorio datosVerificados(Long salonId, Long citaId) {
+        Cita cita = citaRepository.findByIdAndSalonId(citaId, salonId)
+                .orElseThrow(() -> new NoEncontradoException(MENSAJE_CITA_NO_ENCONTRADA));
+        if (cita.getEstado() != EstadoCita.PENDIENTE && cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new ReglaNegocioException(
+                    "El recordatorio solo está disponible para citas PENDIENTE o CONFIRMADA");
+        }
+        String texto = "Servicio: " + cita.getServicio().getNombre() + " ("
+                + cita.getServicio().getDuracionMinutos() + " minutos)\n"
+                + "Estilista: " + cita.getEstilista().getNombre() + "\n"
+                + "Fecha: " + formatearFecha(cita.getInicio()) + "\n"
+                + "Hora: " + formatearHora(cita.getInicio()) + "\n"
+                + "Valor: " + formatearValor(cita.getPrecio()) + "\n"
+                + "Dirección: " + cita.getSalon().getDireccion() + ", " + cita.getSalon().getCiudad();
+        return new DatosRecordatorio(cita.getSalon().getNombre(), cita.getCliente().getNombre(),
+                cita.getCliente().getTelefono(), texto);
+    }
+
+    private static String formatearFecha(LocalDateTime momento) {
+        return momento.format(
+                DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale.forLanguageTag("es-CO")));
+    }
+
+    private static String formatearHora(LocalDateTime momento) {
+        String hora = momento.format(
+                DateTimeFormatter.ofPattern("h:mm a", Locale.forLanguageTag("es-CO")));
+        return hora.replace('\u00A0', ' ').replace('\u202F', ' ');
+    }
+
+    private static String formatearValor(long precio) {
+        return "$" + NumberFormat.getIntegerInstance(Locale.forLanguageTag("es-CO")).format(precio);
     }
 
     private CitaRespuesta agendar(Long salonId, CitaSolicitud solicitud, OrigenCita origen,

@@ -25,10 +25,13 @@ import jakarta.validation.Valid;
 public class CitaController {
 
     private final CitaServicio citaServicio;
+    private final RecordatorioServicio recordatorioServicio;
     private final Clock reloj;
 
-    public CitaController(CitaServicio citaServicio, Clock reloj) {
+    public CitaController(CitaServicio citaServicio, RecordatorioServicio recordatorioServicio,
+            Clock reloj) {
         this.citaServicio = citaServicio;
+        this.recordatorioServicio = recordatorioServicio;
         this.reloj = reloj;
     }
 
@@ -55,5 +58,12 @@ public class CitaController {
             @Valid @RequestBody EstadoSolicitud solicitud) {
         return ResponseEntity.ok(citaServicio.cambiarEstado(principal.getSalonId(), principal, id,
                 solicitud.estado()));
+    }
+
+    @PostMapping("/{id}/recordatorio")
+    public ResponseEntity<RecordatorioRespuesta> recordatorio(
+            @AuthenticationPrincipal UsuarioPrincipal principal,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(recordatorioServicio.generar(principal.getSalonId(), id));
     }
 }
