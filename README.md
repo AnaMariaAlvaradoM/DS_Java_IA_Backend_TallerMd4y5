@@ -1,322 +1,643 @@
-Sillón — Agenda inteligente para barberías y salones de belleza
-Proyecto integrador · Java AI Engineer · Dev Senior Code
-Sillón es una plataforma SaaS desarrollada con Java y Spring Boot para la gestión de barberías y salones de belleza. Centraliza la administración de salones, usuarios, estilistas, servicios, clientes y citas, y ofrece herramientas para organizar agendas, gestionar reservas en línea y mejorar la atención al cliente mediante inteligencia artificial (recordatorios y chatbot).
-El sistema utiliza una arquitectura multi-tenant: múltiples salones comparten la misma plataforma y la misma base de datos, manteniendo aislada la información de cada negocio.
-> **Fuente de verdad:** [`SPEC.md`](SPEC.md) define el modelo, las reglas de negocio y el contrato de la API. Si este README y el SPEC difieren, prevalece el SPEC.
----
-Tabla de contenido
-Descripción del proyecto
-Producción
-Funcionalidades del sistema
-Arquitectura del sistema
-Modelo de dominio
-Convenciones de nombres
-Tecnologías
-Usuarios, roles y permisos
-Planes y créditos
-Reglas de negocio principales
-API REST
-Formato de errores HTTP
-Instalación y ejecución local
-Configuración y variables
-Inteligencia artificial
-Pagos y suscripciones
-Pruebas y verificación
-Despliegue
-Fases de desarrollo
-Documentación del repositorio
-Entregables y calificación
-Errores frecuentes
-Criterios de evolución técnica
-Autor y propósito académico
----
-1. Descripción del proyecto
-Muchas barberías y salones administran sus citas por WhatsApp, llamadas, cuadernos o de memoria. Eso provoca:
-Citas cruzadas y reservas duplicadas del mismo estilista.
-Pérdida de clientes por falta de respuesta.
-Horarios desorganizados.
-Ausencias de clientes y sillas vacías (una hora que ya no se recupera).
-Imposibilidad de consultar precios y disponibilidad fuera del horario laboral.
-Sillón propone una solución digital centralizada: cada salón se registra, configura su horario, servicios y equipo, y desde ese momento sus clientes reservan en línea viendo solo horarios realmente libres, el sistema impide citas cruzadas o fuera de horario, el dueño genera recordatorios con IA y un asistente virtual atiende consultas y escala a una persona lo que no puede resolver.
-Objetivos principales
-Administrar múltiples salones desde una misma plataforma.
-Proteger los datos de cada negocio mediante aislamiento multi-tenant en el backend.
-Gestionar usuarios, estilistas y servicios.
-Registrar clientes automáticamente al agendar.
-Controlar citas, estados y disponibilidad.
-Incorporar IA para recordatorios (borrador que una persona aprueba) y chatbot con escalamiento.
-Registrar solicitudes de contacto y escalamientos.
-Integrar Stripe (modo prueba) para suscripción PRO y paquetes de créditos de IA.
-Ofrecer una API documentada con Swagger y desplegada en Render.
-Fuera de alcance
-Envío real de mensajes por WhatsApp o correo.
-Recordatorios automáticos programados y reportes o indicadores.
-Pagos del cliente final al salón (requeriría Stripe Connect).
-Interfaz gráfica: el cliente de la API es Postman (o, en la vida real, una app web o móvil).
-Cobros reales con Stripe: el proyecto permanece en modo prueba.
----
-2. Producción
-> Reemplaza estas direcciones por las reales (completas, con `https://`) cuando el despliegue esté hecho y verificado. El calificador automático lee la URL de Render de esta sección.
-```text
-API:     https://TU-SERVICIO.onrender.com
-Swagger: https://TU-SERVICIO.onrender.com/swagger-ui.html
-```
-El plan gratuito de Render "duerme" el servicio cuando no se usa: la primera petición puede tardar mientras despierta. No es un error.
----
-3. Funcionalidades del sistema
-Módulo	Funcionalidad
-Salones	Registro del salón junto con su dueño; slug público único.
-Configuración	Horario de apertura y cierre, domingos e intervalo de agenda (15 a 60 min).
-Usuarios y seguridad	Cuentas con roles `DUENO`, `ESTILISTA` y `ADMIN`; autenticación JWT; acceso por rol.
-Servicios	Catálogo del salón con duración (15–480 min) y precio entero en COP.
-Estilistas	Asociación de estilistas con los servicios que ofrecen; límite de 2 en plan `GRATIS`.
-Clientes	Creados automáticamente al agendar; únicos por teléfono dentro del salón.
-Agenda	Creación, consulta por día y cambio de estado de citas, sin cruces ni fuera de horario.
-Disponibilidad	Horarios libres calculados en Java según configuración, duración del servicio y citas ocupadas.
-Cara pública	Catálogo del salón, disponibilidad y reservas en línea sin iniciar sesión.
-Recordatorio con IA	Borrador de mensaje para WhatsApp con datos verificados por Java; una persona lo aprueba.
-Chatbot	Asistente que responde con el catálogo real del salón y escala cuando corresponde.
-Solicitudes de contacto	Registro y seguimiento de escalamientos (`PEDIDO_POR_IA`, `REGLA_DE_SEGURIDAD`).
-Créditos de IA	Un crédito por respuesta de la IA; control por salón.
-Stripe	Suscripción PRO y paquetes de créditos con webhook idempotente.
-Administración	`ADMIN` lista todos los salones de la plataforma.
----
-4. Arquitectura del sistema
-Backend organizado por dominios de negocio y por capas. Paquete base: `com.devsenior.sillon`.
-Paquete raíz
-```text
-com.devsenior.sillon
-│
-├── compartido      Formato de error, manejador global, Clock, configuración de Swagger
-├── seguridad       JWT, filtro de autenticación, reglas de acceso por rol
-├── auth            Registro del salón con su dueño, login
-├── salon           Salón (inquilino), plan, créditos y configuración
-├── usuario         Usuarios, roles y estilistas
-├── servicio        Catálogo de servicios
-├── cliente         Clientes finales del salón
-├── cita            Citas, estados, reglas de agenda, disponibilidad y recordatorio
-├── publico         Lo que ve el cliente final sin iniciar sesión
-├── pago            Sesiones de pago y webhook de Stripe
-├── chat            Chatbot del salón y solicitudes de contacto
-└── ia              Proveedores de IA, fallback, prompts, lector de JSON y factura
-```
-Dentro de cada dominio se usan las capas `entidad`, `repositorio`, `servicio`, `controlador` y `dto`.
-La estructura definitiva debe respetar los paquetes que existan realmente en el repositorio. No se crean paquetes duplicados ni se reorganiza el proyecto sin justificación.
-Responsabilidad de las capas
-Capa	Responsabilidad
-Entidad	Representar los datos persistidos y sus relaciones.
-Repositorio	Acceso a la base de datos.
-Servicio	Implementar las reglas de negocio.
-Controlador	Exponer los endpoints REST, sin reglas de negocio.
-DTO	Datos de entrada y salida de la API (`record`).
-Configuración	Seguridad, proveedores y componentes técnicos.
-Las entidades JPA nunca se exponen directamente en las respuestas HTTP.
-Arquitectura multi-tenant
-Cada salón administra sus propios usuarios, servicios, clientes, citas y solicitudes.
-El `salonId` se obtiene siempre del usuario autenticado (JWT, `UsuarioPrincipal`), nunca de la URL ni del cuerpo.
-Toda búsqueda por id se hace por id y salón.
-Acceder a datos de otro salón responde 404, como si no existieran (así no se revela que existen).
-Regla fundamental: ningún usuario consulta ni modifica información de otro salón. El aislamiento se implementa en el backend.
-Flujo de una petición privada
-```text
-Cliente (Postman) ──► Filtro JWT ──► Reglas de acceso por rol ──► Controlador
-        ──► Servicio (con salonId del usuario) ──► Repositorio ──► Base de datos
-```
----
-5. Modelo de dominio
-Entidad Java	Tabla	Responsabilidad
-`Salon`	`salones`	Salón o barbería registrado; plan, créditos y configuración.
-`Usuario`	`usuarios`	Cuenta del salón (dueño, estilista o administrador).
-`Servicio`	`servicios`	Servicio ofrecido por el salón.
-`Cliente`	`clientes`	Cliente final del salón.
-`Cita`	`citas`	Reserva de un cliente con un estilista y un servicio.
-`SolicitudContacto`	`solicitudes_contacto`	Solicitudes de atención humana o escalamiento.
-`EventoStripe`	`eventos_stripe`	Eventos de Stripe procesados (idempotencia).
-5.1 Atributos por entidad
-Entidad	Atributos
-`Salon`	`id`, `nombre`, `slug` (único), `ciudad`, `direccion`, `telefono`, `plan`, `creditosIa`, `stripeSuscripcionId`, `configuracion`, `fechaCreacion`
-`Usuario`	`id`, `nombre`, `email` (único), `password` (BCrypt), `rol`, `activo`
-`Servicio`	`id`, `nombre`, `descripcion`, `duracionMinutos`, `precio`, `activo`
-`Cliente`	`id`, `nombre`, `telefono`
-`Cita`	`id`, `inicio`, `fin`, `precio`, `estado`, `origen`, `nota`, `fechaCreacion`, `fechaActualizacion`
-`SolicitudContacto`	`id`, `clienteNombre`, `clienteContacto`, `mensajes`, `motivo`, `estado`, `fechaCreacion`
-`EventoStripe`	`id` (id del evento de Stripe), `tipo`, `fechaProcesado`
-Solo `Cita` tiene `fechaActualizacion`; `Salon` solo tiene `fechaCreacion`.
-5.2 Configuración del salón
-`ConfiguracionSalon` es un objeto `@Embeddable` dentro de `Salon` (no es entidad ni tiene tabla propia). Contiene `horaApertura`, `horaCierre`, `abreDomingos` e `intervaloMinutos`.
-Valores por defecto al registrarse: 08:00 a 19:00, sin domingos, intervalo de 30 minutos.
-5.3 Relaciones entre entidades
-Relación	Descripción
-`Salon` 1–N `Usuario`	Un salón tiene varios usuarios.
-`Salon` 1–N `Servicio`	Un salón tiene varios servicios.
-`Salon` 1–N `Cliente`	Un salón registra varios clientes.
-`Salon` 1–N `Cita`	Un salón administra varias citas.
-`Salon` 1–N `SolicitudContacto`	Un salón registra varias solicitudes.
-`Usuario` N–N `Servicio`	Mediante la tabla `estilista_servicios`.
-`Cita` N–1 `Cliente`, `Usuario` (estilista), `Servicio`	Cada cita pertenece a uno de cada uno.
-`EventoStripe` no tiene relaciones con otras entidades.
-5.4 Enumeraciones
-Se guardan como texto (`EnumType.STRING`) y sin tildes.
-Enumeración	Valores
-`Plan`	`GRATIS`, `PRO`
-`Rol`	`DUENO`, `ESTILISTA`, `ADMIN`
-`EstadoCita`	`PENDIENTE`, `CONFIRMADA`, `COMPLETADA`, `CANCELADA`, `NO_ASISTIO`
-`OrigenCita`	`SALON`, `EN_LINEA`
-`TipoCompra`	`SUSCRIPCION_PRO`, `PAQUETE_CREDITOS`
-`MotivoSolicitud`	`PEDIDO_POR_IA`, `REGLA_DE_SEGURIDAD`
-`EstadoSolicitud`	`PENDIENTE`, `ATENDIDA`
-5.5 Restricciones
-`salones.slug` único.
-`usuarios.email` único en toda la plataforma (incluye estilistas).
-`clientes`: único por (`salon_id`, `telefono`). Un mismo número puede existir en salones distintos.
-Las contraseñas se guardan con BCrypt y nunca se devuelven en respuestas.
-No se agregan entidades ni campos sin decisión documentada en el SPEC.
-5.6 Estados de la cita
-Desde	Transiciones permitidas
-`PENDIENTE`	`CONFIRMADA`, `CANCELADA`
-`CONFIRMADA`	`COMPLETADA`, `CANCELADA`, `NO_ASISTIO`
-`COMPLETADA`, `CANCELADA`, `NO_ASISTIO`	Ninguna (estados finales)
-Ocupan agenda solo `PENDIENTE` y `CONFIRMADA`. Cualquier otra transición responde 409.
----
-6. Convenciones de nombres
-Los nombres técnicos del dominio se escriben en español: entidades, tablas, atributos y columnas, enumeraciones, DTO, repositorios, servicios, controladores, excepciones y métodos del dominio. Tecnologías, frameworks, protocolos y contratos externos pueden conservarse en inglés.
-Los atributos Java usan `camelCase` y las columnas SQL `snake_case`.
-Concepto	Atributo Java	Columna SQL
-Créditos de IA	`creditosIa`	`creditos_ia`
-Identificador de suscripción Stripe	`stripeSuscripcionId`	`stripe_suscripcion_id`
-Fecha de creación	`fechaCreacion`	`fecha_creacion`
-Fecha de actualización	`fechaActualizacion`	`fecha_actualizacion`
-Duración en minutos	`duracionMinutos`	`duracion_minutos`
-Hora de apertura	`horaApertura`	`hora_apertura`
-Hora de cierre	`horaCierre`	`hora_cierre`
-Intervalo en minutos	`intervaloMinutos`	`intervalo_minutos`
-Inicio / fin de cita	`inicio` / `fin`	`inicio` / `fin`
-No se renombran campos del modelo sin documentar y aprobar el cambio en el SPEC.
----
-7. Tecnologías
-Verifica siempre las versiones exactas contra el `pom.xml`.
-Tecnología	Utilización
-Java 17	Lenguaje.
-Spring Boot 4.1.x	Framework backend.
-Maven (con Maven Wrapper)	Dependencias y construcción.
-Spring Web	API REST.
-Spring Data JPA / Hibernate	Persistencia y ORM.
-MySQL	Base de datos local (`sillon_db`).
-PostgreSQL (Supabase)	Base de datos de producción.
-Spring Security	Seguridad y autorización por rol.
-JWT (jjwt)	Autenticación stateless.
-BCrypt	Hash de contraseñas.
-Jakarta Validation	Validación de datos.
-Spring RestClient (HTTP Client)	Llamadas HTTP a proveedores de IA.
-Gemini (formato OpenAI)	Proveedor principal de IA, con respaldo en formato Claude y fallback.
-Stripe (`stripe-java`)	Pagos en modo prueba.
-springdoc-openapi 3.x	Swagger / OpenAPI.
-JUnit 5 + Mockito	Pruebas automatizadas.
-Postman	Pruebas de API (colección con scripts).
-Docker	Contenerización.
-Render + Supabase	Despliegue.
-GitHub Actions	Calificador automático (no se modifica).
-No se usan: Lombok, Spring AI ni SDKs de IA (getters y setters explícitos; la IA se consume por HTTP con `RestClient`). Jackson 3: el `ObjectMapper` vive en `tools.jackson.databind`; solo las anotaciones siguen en `com.fasterxml.jackson.annotation`.
-No se agregan dependencias sin justificación técnica y sin respetar `AGENTS.md`.
----
-8. Usuarios, roles y permisos
-Rol técnico	Responsabilidad
-`DUENO`	Propietario del salón: configura, administra equipo, agenda y paga.
-`ESTILISTA`	Presta servicios: ve su agenda y marca sus citas.
-`ADMIN`	Administrador de la plataforma: ve todos los salones.
+# Sillón 💈
+## Agenda inteligente para barberías y salones de belleza
 
-Acción	Público	DUENO	ESTILISTA	ADMIN
-Registrarse, iniciar sesión	Sí	Sí	Sí	Sí
-Ver catálogo, disponibilidad, reservar, chatear	Sí	Sí	Sí	Sí
-Ver y configurar su salón	No	Sí	No	No
-Crear y editar servicios	No	Sí	No	No
-Ver servicios del salón	No	Sí	Sí	No
-Crear y ver estilistas, ver clientes	No	Sí	No	No
-Crear citas, pedir recordatorios con IA	No	Sí	No	No
-Ver la agenda	No	Todas las del salón	Solo las suyas	No
-Cambiar estado de una cita	No	Cualquier transición válida	Solo las suyas, a `COMPLETADA` o `NO_ASISTIO`	No
-Pagar PRO o créditos, ver solicitudes	No	Sí	No	No
-Ver todos los salones	No	No	No	Sí
-El primer `ADMIN` se crea registrando una cuenta normal y cambiando su rol a `ADMIN` directamente en la base de datos.
+**Proyecto integrador · Java AI Engineer · Dev Senior Code**
+
+Sillón es una plataforma SaaS desarrollada con Java y Spring Boot que permite administrar barberías y salones de belleza desde una API REST centralizada.
+
+El sistema facilita la gestión de salones, usuarios, estilistas, servicios, clientes, citas, solicitudes de contacto y pagos. Incorpora inteligencia artificial para generar recordatorios y atender consultas mediante un chatbot, con capacidad de escalar solicitudes a una persona cuando sea necesario.
+
+Su arquitectura multi-tenant permite que múltiples salones compartan una misma plataforma y una misma base de datos, manteniendo aislada la información de cada negocio mediante controles de seguridad implementados en el backend.
+
+Sillón integra autenticación JWT, autorización por roles, gestión de disponibilidad, prevención de reservas duplicadas, control de créditos de IA y procesamiento de pagos mediante Stripe.
+
+> **Fuente de verdad:** `SPEC.md` contiene los requisitos funcionales, el modelo de dominio, las reglas de negocio y el contrato oficial de la API. Si existe alguna diferencia entre este README y `SPEC.md`, prevalece siempre `SPEC.md`.
+
 ---
-9. Planes y créditos
-Producto	Pago en Stripe	Qué da al salón
-Plan `GRATIS`	Ninguno (al registrarse)	Máximo 2 estilistas y 10 créditos de IA de cortesía
-Plan `PRO`	Suscripción mensual (15 USD)	Estilistas sin límite y +300 créditos al activarse
-Paquete de créditos	Pago único (5 USD)	+200 créditos
-Un crédito = una respuesta de la IA. Cada respuesta cuesta tokens a la plataforma; los créditos evitan que un salón use la IA sin límite.
+
+# Tabla de contenido
+
+1. [Descripción del proyecto](#1-descripción-del-proyecto)
+2. [Objetivos](#2-objetivos-del-proyecto)
+3. [Funcionalidades principales](#3-funcionalidades-principales)
+4. [Arquitectura del sistema](#4-arquitectura-del-sistema)
+5. [Modelo de dominio](#5-modelo-de-dominio)
+6. [Tecnologías utilizadas](#6-tecnologías-utilizadas)
+7. [Usuarios, roles y permisos](#7-usuarios-roles-y-permisos)
+8. [Planes y créditos de IA](#8-planes-y-créditos-de-ia)
+9. [Reglas de negocio principales](#9-reglas-de-negocio-principales)
+10. [API REST](#10-api-rest)
+11. [Formato de respuestas y errores HTTP](#11-formato-de-respuestas-y-errores-http)
+12. [Instalación y ejecución local](#12-instalación-y-ejecución-local)
+13. [Configuración y variables de entorno](#13-configuración-y-variables-de-entorno)
+14. [Inteligencia artificial](#14-inteligencia-artificial)
+15. [Pagos y suscripciones con Stripe](#15-pagos-y-suscripciones-con-stripe)
+16. [Pruebas automatizadas](#16-pruebas-automatizadas)
+17. [Documentación Swagger / OpenAPI](#17-documentación-swagger--openapi)
+18. [Contenerización con Docker](#18-contenerización-con-docker)
+19. [Base de datos de producción: Supabase](#19-base-de-datos-de-producción-supabase)
+20. [Despliegue en Render](#20-despliegue-en-render)
+21. [Estructura del repositorio](#21-estructura-del-repositorio)
+22. [Fases de desarrollo](#22-fases-de-desarrollo)
+23. [Seguridad del proyecto](#23-seguridad-del-proyecto)
+24. [Verificación y evaluación académica](#24-verificación-y-evaluación-académica)
+25. [Consideraciones técnicas y evolución](#25-consideraciones-técnicas-y-evolución)
+26. [Autor y propósito académico](#26-autor-y-propósito-académico)
+27. [Licencia](#27-licencia)
+
 ---
-10. Reglas de negocio principales
-Las reglas oficiales y completas están en `SPEC.md`. Resumen:
-Salones y usuarios
-Todo dato pertenece a un salón; datos de otro salón → 404.
-Registro: crea salón y dueño en una sola transacción, plan `GRATIS`, 10 créditos y horario por defecto.
-Correo único en toda la plataforma (409); se guarda en minúsculas y sin espacios.
-Slug generado desde el nombre (minúsculas, sin tildes ni espacios); si existe se agrega `-2`, `-3`…
-Horario: apertura anterior al cierre (409); intervalo de 15 a 60 minutos (400).
-Servicios y estilistas
-Servicio: 15 a 480 minutos; precio entero mayor que cero (400 si no).
-Un estilista ofrece uno o más servicios de su mismo salón (servicio ajeno → 404).
-Plan `GRATIS`: el 3.er estilista responde 402. Orden de validación: límite del plan, correo único, servicios del salón.
-Los servicios inactivos no se ofrecen para nuevas reservas.
-Clientes
-Pertenecen a un salón; el teléfono es único dentro de él y se guarda solo con dígitos y `+`.
-Nacen al agendar o con `POST /api/clientes`. El teléfono repetido en el mismo salón responde 409. `GET /api/clientes?q=` busca por nombre o teléfono.
-Citas
-La cita dura exactamente lo que dura su servicio; Java calcula el fin.
-Conserva el precio del servicio al momento de agendar.
-No se agenda en el pasado, con más de 90 días de anticipación, fuera de horario, en domingo si el salón no abre, ni con un inicio que no cae en el intervalo (400). El estilista que no ofrece el servicio y el solapamiento responden 409.
-Cruce: dos citas se cruzan si `inicioA < finB` y `finA > inicioB`. Una cita que termina a las 10:45 no se cruza con otra que empieza a las 10:45. Solo cuentan `PENDIENTE` y `CONFIRMADA`.
-Cita del personal: `PENDIENTE` / `SALON`. Reserva en línea: `PENDIENTE` / `EN_LINEA`.
-Disponibilidad: la calcula Java, nunca la IA.
-Zona horaria: "hoy" y "ahora" usan `America/Bogota` mediante un bean `Clock`, aunque el servidor esté en UTC.
-Un estilista solo cambia sus citas (ajena → 404) y solo a `COMPLETADA` o `NO_ASISTIO` (otro destino → 403).
-Inteligencia artificial
-Un crédito por respuesta; se verifica antes de llamar (0 créditos → 402, sin llamar a la IA) y se consume cuando la IA responde.
-Java calcula y redacta los datos verificados; la IA solo redacta el mensaje.
-El chatbot no agenda, cambia ni cancela citas: escala y crea una solicitud de contacto.
-Regla anti-promesas en Java: descuentos, cupones, gratis, promociones o reembolsos se bloquean con un mensaje seguro y motivo `REGLA_DE_SEGURIDAD`.
-Respuestas de la IA en JSON validado: inválido → 502; sin proveedores → 503.
-Stripe
-El backend decide el precio; el cliente nunca envía importes ni ids de precio.
-Salón ya `PRO` pidiendo suscripción → 409.
-Webhook con firma verificada (400 si falla) y procesamiento idempotente por id de evento.
-Pago PRO: plan `PRO`, guarda la suscripción y suma 300 créditos. Paquete: suma 200. Suscripción cancelada: vuelve a `GRATIS` conservando créditos.
+
+# 1. Descripción del proyecto
+
+Muchas barberías y salones de belleza administran sus reservas mediante WhatsApp, llamadas telefónicas, cuadernos o registros manuales.
+
+Estos métodos pueden provocar problemas como:
+
+- Reservas duplicadas para un mismo estilista.
+- Desorganización de los horarios de atención.
+- Pérdida de clientes por falta de respuesta.
+- Ausencias de clientes y espacios de agenda desaprovechados.
+- Dificultad para consultar servicios, precios y disponibilidad.
+- Falta de control sobre el personal y los servicios ofrecidos.
+- Ausencia de herramientas para atender consultas fuera del horario laboral.
+
+Sillón propone una solución digital que centraliza estos procesos en una plataforma SaaS.
+
+Cada salón puede registrarse, configurar su información, administrar sus servicios y estilistas, organizar su agenda y permitir que sus clientes consulten la disponibilidad y realicen reservas en línea.
+
+Además, incorpora herramientas de inteligencia artificial para generar borradores de recordatorios y responder consultas mediante un chatbot conectado al catálogo real del negocio.
+
+La plataforma también permite contratar un plan PRO y adquirir paquetes adicionales de créditos de inteligencia artificial mediante Stripe.
+
+## Alcance funcional
+
+Sillón contempla:
+
+- Administración multi-tenant de salones.
+- Registro y autenticación de usuarios.
+- Administración de estilistas y servicios.
+- Gestión de clientes.
+- Gestión de citas y disponibilidad.
+- Reservas públicas en línea.
+- Recordatorios asistidos por IA.
+- Chatbot con escalamiento a atención humana.
+- Gestión de solicitudes de contacto.
+- Suscripciones y paquetes de créditos.
+- Administración global de salones.
+- Documentación de API mediante Swagger.
+- Pruebas automatizadas y despliegue con Docker.
+
+## Funcionalidades fuera del alcance
+
+Las siguientes funcionalidades no forman parte del alcance actual:
+
+- Envío automático de mensajes por WhatsApp o correo electrónico.
+- Programación automática de recordatorios.
+- Aplicación gráfica web o móvil.
+- Procesamiento de pagos de los clientes finales a los salones mediante Stripe Connect.
+- Sistema completo de indicadores y reportes operativos.
+- Cobros reales de producción: la integración académica con Stripe se mantiene en modo de prueba.
+
 ---
-11. API REST
-Todas las rutas privadas reciben `Authorization: Bearer <token>`. Campos, validaciones y respuestas completas: `SPEC.md` §6 y Swagger.
-Formatos: fecha `AAAA-MM-DD`; fecha y hora `AAAA-MM-DDTHH:mm:ss`; horas `HH:mm`; precios enteros en pesos (`35000`).
-Grupo	Método y ruta	Acceso	Respuestas
-Autenticación	`POST /api/auth/registro`	Público	201 · 400 · 409
-	`POST /api/auth/login`	Público	200 · 401
-Mi salón	`GET /api/salon`	DUENO	200
-	`PUT /api/salon/configuracion`	DUENO	200 · 400 · 409
-Servicios	`POST /api/servicios`	DUENO	201 · 400
-	`GET /api/servicios`	DUENO, ESTILISTA	200
-	`PUT /api/servicios/{id}`	DUENO	200 · 400 · 404
-Estilistas	`POST /api/estilistas`	DUENO	201 · 400 · 402 · 404 · 409
-	`GET /api/estilistas`	DUENO	200
-Clientes	`GET /api/clientes`	DUENO	200
-Agenda	`POST /api/citas`	DUENO	201 · 400 · 404 · 409
-	`GET /api/citas?fecha=`	DUENO, ESTILISTA	200
-	`PATCH /api/citas/{id}/estado`	DUENO, ESTILISTA	200 · 400 · 403 · 404 · 409
-	`POST /api/citas/{id}/recordatorio`	DUENO	200 · 402 · 404 · 409 · 502 · 503
-Público	`GET /api/publico/salones/{slug}`	Público	200 · 404
-	`GET /api/publico/salones/{slug}/disponibilidad?servicioId=&estilistaId=&fecha=`	Público	200 · 400 · 404 · 409
-	`POST /api/publico/salones/{slug}/reservas`	Público	201 · 400 · 404 · 409
-	`POST /api/publico/salones/{slug}/chat`	Público	200 · 400 · 402 · 404 · 502 · 503
-Solicitudes	`GET /api/solicitudes`	DUENO	200
-	`PATCH /api/solicitudes/{id}/atendida`	DUENO	200 · 404 · 409
-Pagos	`POST /api/pagos/suscripcion`	DUENO	200 · 409 · 502
-	`POST /api/pagos/creditos`	DUENO	200 · 502
-	`POST /api/pagos/webhook`	Stripe (firma)	200 · 400
-	`GET /api/pagos/resultado?estado=`	Público	200
-Administración	`GET /api/admin/salones`	ADMIN	200 · 403
-Rutas públicas de seguridad: `/api/auth/**`, `/api/publico/**`, webhook y resultado de pago, Swagger y `/error`.
-Los nombres de rutas son contratos HTTP: se respetan al pie de la letra.
+
+# 2. Objetivos del proyecto
+
+## Objetivo general
+
+Desarrollar una plataforma backend SaaS multi-tenant que digitalice la administración de barberías y salones de belleza mediante herramientas de gestión, automatización e inteligencia artificial.
+
+## Objetivos específicos
+
+1. Centralizar la administración de múltiples salones en una misma plataforma.
+2. Implementar aislamiento de datos entre negocios.
+3. Gestionar usuarios, roles, estilistas y servicios.
+4. Registrar clientes y administrar sus reservas.
+5. Controlar la disponibilidad y evitar conflictos en las agendas.
+6. Incorporar inteligencia artificial para mejorar la atención al cliente.
+7. Implementar un sistema de créditos para controlar el consumo de IA.
+8. Integrar Stripe para gestionar suscripciones y paquetes de créditos.
+9. Proteger los recursos mediante JWT y Spring Security.
+10. Documentar y probar los endpoints de la API REST.
+11. Preparar el sistema para su despliegue en infraestructura cloud.
+
 ---
-12. Formato de errores HTTP
-Todas las respuestas de error (incluidos 401 y 403) usan el mismo formato:
+
+# 3. Funcionalidades principales
+
+| Módulo | Funcionalidades |
+|---|---|
+| Salones | Registro, configuración y administración de negocios. |
+| Autenticación | Registro, inicio de sesión y generación de JWT. |
+| Usuarios | Administración de dueños, estilistas y administradores. |
+| Servicios | Catálogo, precios, duración y estado de servicios. |
+| Estilistas | Asociación de personal con los servicios que ofrece. |
+| Clientes | Registro y consulta de clientes por salón. |
+| Agenda | Creación, consulta y gestión del estado de citas. |
+| Disponibilidad | Cálculo de horarios libres y prevención de cruces. |
+| Reservas públicas | Consulta del catálogo y reservas sin autenticación. |
+| Recordatorios IA | Generación de borradores de mensajes para WhatsApp. |
+| Chatbot IA | Atención de consultas con información real del salón. |
+| Solicitudes | Registro y seguimiento de escalamientos a personas. |
+| Créditos | Control del consumo de inteligencia artificial. |
+| Stripe | Suscripciones PRO y compra de paquetes de créditos. |
+| Administración | Consulta global de salones mediante el rol ADMIN. |
+| Documentación | Swagger y OpenAPI. |
+
+---
+
+# 4. Arquitectura del sistema
+
+Sillón utiliza una arquitectura backend organizada por dominios de negocio y separación de responsabilidades.
+
+El diseño busca mantener independientes las reglas de negocio, la persistencia, la exposición de endpoints y las integraciones externas.
+
+## 4.1. Arquitectura por capas
+
+| Capa | Responsabilidad |
+|---|---|
+| Entidad | Representación de los datos persistidos y sus relaciones. |
+| Repositorio | Acceso y operaciones sobre la base de datos. |
+| Servicio | Implementación de las reglas de negocio. |
+| Controlador | Exposición de los endpoints REST. |
+| DTO | Modelos de entrada y salida de la API. |
+| Configuración | Configuración técnica, seguridad e integraciones. |
+
+Las entidades JPA no se exponen directamente en las respuestas HTTP. Se utilizan DTO para controlar los datos recibidos y enviados.
+
+## 4.2. Organización por dominios
+
+Paquete base del proyecto:
+
+`com.devSenior.sillon`
+
+Estructura lógica:
+
+```text
+com.devSenior.sillon
+│
+├── compartido/
+│   ├── configuracion/
+│   ├── excepcion/
+│   └── respuesta/
+│
+├── seguridad/
+│   ├── jwt/
+│   ├── filtro/
+│   └── configuracion/
+│
+├── auth/
+│   ├── controlador/
+│   ├── servicio/
+│   └── dto/
+│
+├── salon/
+│   ├── entidad/
+│   ├── repositorio/
+│   ├── servicio/
+│   ├── controlador/
+│   └── dto/
+│
+├── usuario/
+├── servicio/
+├── cliente/
+├── cita/
+├── publico/
+├── pago/
+├── chat/
+└── ia/
+```
+
+La estructura anterior representa la organización lógica. La estructura definitiva debe coincidir con los paquetes realmente existentes en el repositorio.
+
+## 4.3. Arquitectura multi-tenant
+
+Sillón implementa un modelo multi-tenant compartido.
+
+Esto significa que varios salones utilizan:
+
+- La misma aplicación backend.
+- La misma infraestructura.
+- La misma base de datos.
+- Las mismas tablas principales.
+
+Sin embargo, cada negocio mantiene sus propios recursos.
+
+El aislamiento se realiza mediante el identificador del salón (`salonId`).
+
+Reglas fundamentales:
+
+- El `salonId` de una operación privada se obtiene del usuario autenticado.
+- Nunca se confía en un identificador de salón enviado por el cliente para autorizar operaciones.
+- Las consultas privadas filtran por identificador del recurso e identificador del salón.
+- Los usuarios no pueden acceder a recursos de otros negocios.
+- Un recurso perteneciente a otro salón responde 404.
+
+### Flujo de una petición privada
+
+```text
+Cliente (Postman)
+       |
+       v
+Filtro de autenticación JWT
+       |
+       v
+Spring Security
+       |
+       v
+Controlador REST
+       |
+       v
+Servicio de negocio
+       |
+       v
+Repositorio JPA
+       |
+       v
+Base de datos
+```
+
+El aislamiento multi-tenant se implementa en el backend, no en el cliente.
+
+---
+
+# 5. Modelo de dominio
+
+El modelo principal está compuesto por las siguientes entidades:
+
+| Entidad | Tabla | Responsabilidad |
+|---|---|---|
+| `Salon` | `salones` | Representa un salón registrado. |
+| `Usuario` | `usuarios` | Usuarios, dueños, estilistas y administradores. |
+| `Servicio` | `servicios` | Servicios ofrecidos por un salón. |
+| `Cliente` | `clientes` | Clientes finales de cada negocio. |
+| `Cita` | `citas` | Reservas y agenda de atención. |
+| `SolicitudContacto` | `solicitudes_contacto` | Solicitudes de atención humana. |
+| `EventoStripe` | `eventos_stripe` | Control de eventos procesados por Stripe. |
+
+## 5.1. Relaciones principales
+
+- Un salón tiene múltiples usuarios.
+- Un salón administra múltiples servicios.
+- Un salón registra múltiples clientes.
+- Un salón administra múltiples citas.
+- Un salón registra múltiples solicitudes de contacto.
+- Un usuario puede ofrecer varios servicios.
+- Un servicio puede estar asociado con varios estilistas.
+- Una cita pertenece a un cliente.
+- Una cita pertenece a un estilista.
+- Una cita utiliza un servicio.
+
+La relación entre estilistas y servicios se implementa mediante la tabla `estilista_servicios`.
+
+`ConfiguracionSalon` es un objeto embebido (`@Embeddable`) dentro de `Salon`, no una entidad independiente.
+
+## 5.2. Enumeraciones principales
+
+Las enumeraciones se almacenan como texto mediante `EnumType.STRING`.
+
+| Enumeración | Valores |
+|---|---|
+| `Plan` | `GRATIS`, `PRO` |
+| `Rol` | `DUENO`, `ESTILISTA`, `ADMIN` |
+| `EstadoCita` | `PENDIENTE`, `CONFIRMADA`, `COMPLETADA`, `CANCELADA`, `NO_ASISTIO` |
+| `OrigenCita` | `SALON`, `EN_LINEA` |
+| `TipoCompra` | `SUSCRIPCION_PRO`, `PAQUETE_CREDITOS` |
+| `MotivoSolicitud` | `PEDIDO_POR_IA`, `REGLA_DE_SEGURIDAD` |
+| `EstadoSolicitud` | `PENDIENTE`, `ATENDIDA` |
+
+## 5.3. Restricciones de integridad
+
+- El slug de un salón es único.
+- El correo de usuario es único en toda la plataforma.
+- El teléfono del cliente es único dentro de cada salón.
+- Las contraseñas se almacenan utilizando BCrypt.
+- Los enums se almacenan sin tildes.
+- No se agregan entidades ni atributos fuera de lo establecido en `SPEC.md`.
+
+---
+
+# 6. Tecnologías utilizadas
+
+Las versiones exactas deben verificarse en `pom.xml`.
+
+| Tecnología | Utilización |
+|---|---|
+| Java 17 | Lenguaje de programación. |
+| Spring Boot 4.1.x | Framework principal del backend. |
+| Maven | Gestión de dependencias y construcción. |
+| Maven Wrapper | Ejecución reproducible de Maven. |
+| Spring Web | Desarrollo de API REST. |
+| Spring Data JPA | Persistencia de datos. |
+| Hibernate | ORM. |
+| Spring Security | Autenticación y autorización. |
+| JWT (JJWT) | Autenticación mediante tokens. |
+| BCrypt | Hash de contraseñas. |
+| Jakarta Validation | Validación de datos. |
+| MySQL | Base de datos del entorno local. |
+| PostgreSQL | Base de datos de producción. |
+| Supabase | Servicio administrado de PostgreSQL. |
+| Spring RestClient | Comunicación HTTP con proveedores externos. |
+| Gemini | Proveedor principal de inteligencia artificial. |
+| Claude | Proveedor de respaldo de inteligencia artificial. |
+| Stripe | Pagos, suscripciones y paquetes de créditos. |
+| Springdoc OpenAPI | Documentación de la API. |
+| JUnit 5 | Pruebas automatizadas. |
+| Mockito | Simulación de dependencias. |
+| Postman | Pruebas funcionales de endpoints. |
+| Docker | Contenerización. |
+| Render | Despliegue de la aplicación. |
+| GitHub Actions | Calificación y automatización del proyecto. |
+
+### Decisiones técnicas
+
+- No se utiliza Lombok.
+- No se utiliza Spring AI.
+- La integración con IA se realiza mediante HTTP utilizando `RestClient`.
+- Los getters y setters se implementan explícitamente.
+- Los enums se almacenan mediante `EnumType.STRING`.
+- Jackson 3 utiliza `tools.jackson.databind`; las anotaciones mantienen `com.fasterxml.jackson.annotation`.
+
+No se agregan dependencias sin justificación técnica y sin respetar las instrucciones de `AGENTS.md`.
+
+---
+
+# 7. Usuarios, roles y permisos
+
+Sillón implementa autorización basada en roles.
+
+## 7.1. Roles
+
+| Rol | Responsabilidad |
+|---|---|
+| `DUENO` | Propietario y administrador de su salón. |
+| `ESTILISTA` | Profesional encargado de atender citas. |
+| `ADMIN` | Administrador global de la plataforma. |
+
+## 7.2. Permisos generales
+
+| Operación | Público | DUENO | ESTILISTA | ADMIN |
+|---|---|---|---|---|
+| Registro e inicio de sesión | Sí | Sí | Sí | Sí |
+| Consultar catálogo público | Sí | Sí | Sí | Sí |
+| Consultar disponibilidad pública | Sí | Sí | Sí | Sí |
+| Realizar reservas públicas | Sí | Sí | Sí | Sí |
+| Consultar su salón | No | Sí | No | No |
+| Configurar salón | No | Sí | No | No |
+| Crear y editar servicios | No | Sí | No | No |
+| Consultar servicios | No | Sí | Sí | No |
+| Crear estilistas | No | Sí | No | No |
+| Consultar clientes | No | Sí | No | No |
+| Crear citas internas | No | Sí | No | No |
+| Consultar agenda | No | Todas las del salón | Solo las propias | No |
+| Cambiar estado de citas | No | Sí | Solo transiciones permitidas | No |
+| Generar recordatorios | No | Sí | No | No |
+| Consultar solicitudes | No | Sí | No | No |
+| Comprar PRO y créditos | No | Sí | No | No |
+| Consultar todos los salones | No | No | No | Sí |
+
+El primer administrador se crea mediante una cuenta registrada normalmente y una asignación controlada del rol `ADMIN` directamente en la base de datos.
+
+---
+
+# 8. Planes y créditos de IA
+
+Sillón utiliza un sistema de planes y créditos para controlar las funcionalidades de inteligencia artificial.
+
+| Producto | Precio de referencia | Beneficios |
+|---|---:|---|
+| GRATIS | Sin costo | Máximo 2 estilistas y 10 créditos de IA. |
+| PRO | 15 USD mensuales | Estilistas sin límite y 300 créditos adicionales al activarse. |
+| Paquete de créditos | 5 USD | 200 créditos adicionales. |
+
+## Reglas de consumo
+
+- Cada respuesta válida de IA consume un crédito.
+- Los créditos pertenecen al salón.
+- El sistema verifica los créditos antes de llamar al proveedor.
+- Si no hay créditos, responde 402.
+- Una respuesta inválida de IA no consume créditos.
+- Si ningún proveedor está disponible, responde 503 sin descontar créditos.
+- El consumo se realiza mediante una actualización atómica para evitar saldos negativos.
+
+El objetivo es controlar los costos de los proveedores externos y evitar el uso ilimitado de inteligencia artificial.
+
+---
+
+# 9. Reglas de negocio principales
+
+Las reglas completas están documentadas en `SPEC.md`.
+
+## 9.1. Registro y salones
+
+Al registrarse:
+
+- Se crea el salón.
+- Se crea el usuario dueño.
+- Se asigna el plan `GRATIS`.
+- Se otorgan 10 créditos de IA.
+- Se configura el horario predeterminado de 08:00 a 19:00.
+- El salón no abre los domingos por defecto.
+- El intervalo de agenda predeterminado es de 30 minutos.
+
+El registro se realiza dentro de una misma transacción.
+
+El correo se normaliza a minúsculas y sin espacios.
+
+El slug se genera en minúsculas, sin tildes ni espacios. Si ya existe, se agrega un sufijo numérico.
+
+## 9.2. Servicios y estilistas
+
+- Duración permitida: entre 15 y 480 minutos.
+- El precio debe ser un entero mayor que cero.
+- Un estilista debe estar asociado a servicios de su propio salón.
+- Los servicios inactivos no pueden utilizarse en nuevas reservas.
+- El plan GRATIS permite un máximo de dos estilistas.
+- El tercer estilista en plan GRATIS responde 402.
+
+## 9.3. Clientes
+
+- Los clientes pertenecen a un salón.
+- El teléfono es único dentro de cada salón.
+- El teléfono se normaliza conservando únicamente dígitos y el signo `+`.
+- Los clientes pueden crearse al realizar una reserva o mediante el endpoint correspondiente.
+- El teléfono repetido en el mismo salón responde 409.
+
+## 9.4. Citas
+
+El sistema valida:
+
+- Que la fecha no esté en el pasado.
+- Que no supere los 90 días de anticipación.
+- Que el horario esté dentro de la jornada del salón.
+- Que el salón esté abierto ese día.
+- Que el inicio corresponda al intervalo configurado.
+- Que el estilista ofrezca el servicio seleccionado.
+- Que no exista otra cita que ocupe el mismo horario.
+
+La duración de la cita se calcula a partir del servicio.
+
+El precio se conserva según el valor del servicio al momento de agendar.
+
+### Prevención de solapamientos
+
+Dos citas se consideran cruzadas cuando:
+
+```text
+inicioA < finB && finA > inicioB
+```
+
+Una cita que termina a las 10:45 no se cruza con otra que comienza exactamente a las 10:45.
+
+Solo las citas `PENDIENTE` y `CONFIRMADA` ocupan disponibilidad.
+
+### Estados de las citas
+
+| Estado actual | Transiciones permitidas |
+|---|---|
+| PENDIENTE | CONFIRMADA, CANCELADA |
+| CONFIRMADA | COMPLETADA, CANCELADA, NO_ASISTIO |
+| COMPLETADA | Ninguna |
+| CANCELADA | Ninguna |
+| NO_ASISTIO | Ninguna |
+
+Las transiciones no permitidas responden 409.
+
+Los estilistas solamente pueden cambiar sus propias citas a `COMPLETADA` o `NO_ASISTIO`.
+
+## 9.5. Zona horaria
+
+El sistema utiliza:
+
+`America/Bogota`
+
+Las operaciones relacionadas con fechas y horarios deben utilizar el bean `Clock` configurado para esta zona horaria.
+
+Esto evita diferencias entre la hora local del negocio y la hora UTC del servidor.
+
+## 9.6. Inteligencia artificial
+
+- Java proporciona los datos reales del salón.
+- La IA no determina disponibilidad.
+- La IA no modifica citas.
+- El chatbot no realiza reservas.
+- El chatbot no cancela ni confirma citas.
+- Las solicitudes que requieren atención humana se escalan.
+- Las promesas comerciales prohibidas se bloquean mediante reglas Java.
+
+## 9.7. Stripe
+
+- El backend determina los precios.
+- El cliente no envía importes ni identificadores de precios.
+- Los webhooks verifican su firma.
+- Los eventos se procesan de manera idempotente.
+- Una suscripción cancelada devuelve el salón al plan GRATIS, conservando sus créditos.
+
+---
+
+# 10. API REST
+
+Sillón expone sus funcionalidades mediante endpoints REST.
+
+Las rutas privadas requieren autenticación mediante:
+
+```http
+Authorization: Bearer <token>
+```
+
+## 10.1. Autenticación
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| POST | `/api/auth/registro` | Público |
+| POST | `/api/auth/login` | Público |
+
+## 10.2. Salón
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| GET | `/api/salon` | DUENO |
+| PUT | `/api/salon/configuracion` | DUENO |
+
+## 10.3. Servicios
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| POST | `/api/servicios` | DUENO |
+| GET | `/api/servicios` | DUENO, ESTILISTA |
+| PUT | `/api/servicios/{id}` | DUENO |
+
+## 10.4. Estilistas
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| POST | `/api/estilistas` | DUENO |
+| GET | `/api/estilistas` | DUENO |
+
+## 10.5. Clientes
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| POST | `/api/clientes` | DUENO |
+| GET | `/api/clientes` | DUENO |
+
+## 10.6. Agenda
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| POST | `/api/citas` | DUENO |
+| GET | `/api/citas?fecha=` | DUENO, ESTILISTA |
+| PATCH | `/api/citas/{id}/estado` | DUENO, ESTILISTA |
+| POST | `/api/citas/{id}/recordatorio` | DUENO |
+
+## 10.7. Funcionalidades públicas
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| GET | `/api/publico/salones/{slug}` | Público |
+| GET | `/api/publico/salones/{slug}/disponibilidad` | Público |
+| POST | `/api/publico/salones/{slug}/reservas` | Público |
+| POST | `/api/publico/salones/{slug}/chat` | Público |
+
+La consulta de disponibilidad utiliza:
+
+```text
+servicioId
+estilistaId
+fecha
+```
+
+## 10.8. Solicitudes de contacto
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| GET | `/api/solicitudes` | DUENO |
+| PATCH | `/api/solicitudes/{id}/atendida` | DUENO |
+
+## 10.9. Pagos
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| POST | `/api/pagos/suscripcion` | DUENO |
+| POST | `/api/pagos/creditos` | DUENO |
+| POST | `/api/pagos/webhook` | Stripe |
+| GET | `/api/pagos/resultado?estado=` | Público |
+
+## 10.10. Administración
+
+| Método | Endpoint | Acceso |
+|---|---|---|
+| GET | `/api/admin/salones` | ADMIN |
+
+**Importante:** los endpoints, métodos, parámetros, cuerpos y respuestas son contratos de la API. Su implementación debe respetar exactamente lo definido en `SPEC.md`.
+
+---
+
+# 11. Formato de respuestas y errores HTTP
+
+Los errores utilizan un formato JSON uniforme.
+
+Ejemplo:
+
 ```json
 {
   "codigo": 409,
@@ -325,217 +646,732 @@ Todas las respuestas de error (incluidos 401 y 403) usan el mismo formato:
   "fecha": "2026-11-06T10:30:00"
 }
 ```
-En errores de validación, `mensaje` lista los campos que fallaron con su mensaje, separados por punto y coma.
-Código	Cuándo se usa
-400	Datos inválidos, JSON mal formado, parámetro faltante, firma de webhook inválida.
-401	Sin token, token inválido o credenciales incorrectas.
-402	Límite del plan `GRATIS` o salón sin créditos de IA.
-403	El rol no tiene permiso o un estilista intenta una transición no permitida.
-404	No existe o pertenece a otro salón.
-409	Choca con una regla de negocio: cruce, horario, transición, correo repetido, plan ya activo.
-429	Más de 30 peticiones por minuto desde la misma IP en `/api/publico/**` o en `POST /api/auth/login`.
-502	Stripe o la IA respondieron algo inutilizable.
-503	Ningún proveedor de IA está disponible.
+
+## Códigos HTTP principales
+
+| Código | Descripción |
+|---|---|
+| 200 | Operación exitosa. |
+| 201 | Recurso creado. |
+| 400 | Datos inválidos o petición incorrecta. |
+| 401 | Falta autenticación o token inválido. |
+| 402 | Límite del plan o créditos insuficientes. |
+| 403 | Operación no autorizada. |
+| 404 | Recurso inexistente o perteneciente a otro salón. |
+| 409 | Conflicto con una regla de negocio. |
+| 429 | Límite de solicitudes excedido. |
+| 502 | Respuesta inutilizable de un proveedor externo. |
+| 503 | Ningún proveedor de IA disponible. |
+
+Las respuestas de error deben mantener la estructura establecida en `SPEC.md`, incluyendo los errores de autenticación y autorización.
+
 ---
-13. Instalación y ejecución local
-Requisitos previos
-JDK 17.
-IntelliJ IDEA, Cursor u otro IDE compatible.
-MySQL en ejecución.
-Git.
-Postman.
-Stripe CLI (para probar webhooks en local).
-Docker (para el despliegue).
-13.1. Clonar el repositorio
+
+# 12. Instalación y ejecución local
+
+## 12.1. Requisitos previos
+
+Para trabajar con Sillón se recomienda disponer de:
+
+- JDK 17.
+- IntelliJ IDEA, Cursor o Visual Studio Code.
+- MySQL.
+- Git.
+- Postman.
+- Docker.
+- Stripe CLI para pruebas locales de webhooks.
+
+## 12.2. Clonar el repositorio
+
 ```bash
-git clone URL_DE_TU_FORK
-cd sillon
+git clone <URL_DEL_REPOSITORIO>
 ```
-El proyecto vive en la raíz del fork: el `pom.xml` queda junto al README.
-13.2. Base de datos
-La aplicación usa MySQL local con la base `sillon_db` y la crea automáticamente. Si prefieres crearla a mano:
+
+Entrar en el proyecto:
+
+```bash
+cd DS_Java_IA_Backend_TallerMd4y5
+```
+
+El proyecto debe encontrarse en la raíz del repositorio, con `pom.xml` junto a `README.md`.
+
+## 12.3. Configurar MySQL
+
+Crear la base de datos:
+
 ```sql
 CREATE DATABASE sillon_db;
 ```
-13.3. Secretos
-Copia `secrets.example.properties` a `secrets.properties` en la raíz.
-Completa tus valores reales: clave secreta de Stripe de prueba, ids de los dos precios, secreto del webhook, llave de Gemini y secreto JWT.
-`secrets.properties` está en `.gitignore`: nunca se sube. La aplicación arranca aunque no exista.
-Nunca deben publicarse contraseñas de bases de datos, secretos JWT, llaves de IA, claves privadas de Stripe ni tokens de servicios externos.
-13.4. Compilar
+
+Configurar el usuario y contraseña correspondientes en el entorno local.
+
+La aplicación utiliza MySQL para el desarrollo local.
+
+## 12.4. Configurar los secretos
+
+Copiar:
+
+```text
+secrets.example.properties
+```
+
+Como:
+
+```text
+secrets.properties
+```
+
+Completar los valores correspondientes.
+
+El archivo `secrets.properties` está excluido del repositorio mediante `.gitignore`.
+
+No se deben publicar credenciales reales.
+
+## 12.5. Compilar el proyecto
+
+Windows PowerShell:
+
+```powershell
+.\mvnw.cmd clean compile
+```
+
+Linux/macOS:
+
 ```bash
 ./mvnw clean compile
 ```
-En Windows PowerShell: `.\mvnw.cmd clean compile`.
-13.5. Ejecutar las pruebas
+
+## 12.6. Ejecutar las pruebas
+
+Windows:
+
+```powershell
+.\mvnw.cmd test
+```
+
+Linux/macOS:
+
 ```bash
 ./mvnw test
 ```
-El test que levanta el contexto completo requiere MySQL encendido.
-13.6. Webhooks de Stripe en local
-En una terminal aparte:
-```bash
-stripe listen --forward-to localhost:8080/api/pagos/webhook
+
+## 12.7. Ejecutar la aplicación
+
+Windows:
+
+```powershell
+.\mvnw.cmd spring-boot:run
 ```
-Copia el secreto `whsec_…` que imprime en `secrets.properties` y reinicia la aplicación.
-13.7. Iniciar la aplicación
+
+Linux/macOS:
+
 ```bash
 ./mvnw spring-boot:run
 ```
-El puerto se lee de la variable `PORT` (8080 por defecto).
-13.8. Swagger
+
+La aplicación utiliza el puerto configurado en:
+
+```properties
+server.port=${PORT:8080}
+```
+
+Por defecto:
+
+```text
+http://localhost:8080
+```
+
+---
+
+# 13. Configuración y variables de entorno
+
+La configuración principal se encuentra en:
+
+```text
+src/main/resources/application.properties
+```
+
+El proyecto utiliza las mismas propiedades en desarrollo y producción, modificando sus valores mediante variables de entorno.
+
+## Variables principales
+
+| Variable | Descripción |
+|---|---|
+| `PORT` | Puerto de ejecución. |
+| `SPRING_DATASOURCE_URL` | URL JDBC de conexión. |
+| `SPRING_DATASOURCE_USERNAME` | Usuario de base de datos. |
+| `SPRING_DATASOURCE_PASSWORD` | Contraseña de base de datos. |
+| `JWT_SECRETO` | Secreto de firma JWT. |
+| `URL_PUBLICA` | URL pública de la aplicación. |
+| `STRIPE_CLAVE_SECRETA` | Clave privada de Stripe. |
+| `STRIPE_PRECIO_PRO` | Identificador del precio PRO. |
+| `STRIPE_PRECIO_CREDITOS` | Identificador del paquete de créditos. |
+| `STRIPE_SECRETO_WEBHOOK` | Secreto de verificación del webhook. |
+| `GEMINI_LLAVE` | Credencial del proveedor Gemini. |
+
+## Configuración adicional
+
+También existen propiedades relacionadas con:
+
+- Expiración de JWT.
+- Créditos iniciales.
+- Créditos del plan PRO.
+- Créditos de paquetes adicionales.
+- Límite de estilistas.
+- URL configurable de Stripe.
+- URL configurable del proveedor de IA.
+- Tiempos máximos de espera.
+- Configuración de proxies.
+- Límites de solicitudes.
+
+El calificador automático utiliza simuladores de Stripe e IA. Por este motivo, las URLs de proveedores externos deben mantenerse configurables.
+
+No se deben introducir direcciones fijas de proveedores externos en el código.
+
+En Render no se deben configurar `STRIPE_URL_API` ni `SILLON_IA_OPENAI_URL`, de acuerdo con la configuración de producción definida para el proyecto.
+
+---
+
+# 14. Inteligencia artificial
+
+El módulo de inteligencia artificial permite mejorar la comunicación entre los salones y sus clientes.
+
+La IA se integra mediante peticiones HTTP utilizando `RestClient`.
+
+La arquitectura contempla un proveedor principal compatible con el formato OpenAI (Gemini), un proveedor de respaldo con formato Claude y un mecanismo de fallback.
+
+## 14.1. Responsabilidades de Java
+
+El backend es responsable de:
+
+- Consultar información real de la base de datos.
+- Validar servicios y precios.
+- Calcular disponibilidad.
+- Verificar citas.
+- Controlar créditos.
+- Aplicar reglas de negocio.
+- Registrar solicitudes de contacto.
+- Validar respuestas JSON.
+- Controlar errores y tiempos de espera.
+
+La IA solamente interpreta consultas y redacta respuestas utilizando el contexto proporcionado por Java.
+
+## 14.2. Recordatorios inteligentes
+
+Endpoint:
+
+```http
+POST /api/citas/{id}/recordatorio
+```
+
+El sistema genera un borrador de mensaje para WhatsApp.
+
+Java proporciona información verificada:
+
+- Nombre del cliente.
+- Servicio contratado.
+- Duración.
+- Estilista.
+- Fecha.
+- Hora.
+- Precio.
+- Dirección del salón.
+
+La IA redacta el mensaje en formato JSON:
+
+```json
+{
+  "mensaje": "Hola, te recordamos tu cita..."
+}
+```
+
+El mensaje tiene un máximo de 700 caracteres.
+
+**Importante:** Sillón no envía automáticamente el mensaje. Una persona debe revisarlo y aprobarlo.
+
+## 14.3. Chatbot del salón
+
+Endpoint:
+
+```http
+POST /api/publico/salones/{slug}/chat
+```
+
+El chatbot responde preguntas utilizando el catálogo real del salón.
+
+Puede proporcionar información sobre:
+
+- Servicios.
+- Precios.
+- Duración.
+- Información del negocio.
+- Disponibilidad proporcionada por Java.
+
+El historial de conversación se envía en cada petición.
+
+El chatbot no tiene memoria persistente propia.
+
+El cliente nunca debe introducir instrucciones directamente dentro del prompt del sistema.
+
+## 14.4. Escalamiento a atención humana
+
+Cuando una consulta requiere intervención de una persona, el chatbot puede activar el escalamiento.
+
+Se crea una entidad `SolicitudContacto` con el motivo:
+
+```text
+PEDIDO_POR_IA
+```
+
+El dueño del salón puede consultar las solicitudes y marcarlas como atendidas.
+
+## 14.5. Protección anti-promesas comerciales
+
+Java aplica una regla de seguridad independiente del prompt.
+
+Se bloquean respuestas que contengan términos relacionados con:
+
+- Descuentos.
+- Cupones.
+- Servicios gratis.
+- Promociones.
+- Reembolsos.
+
+Cuando se detecta una promesa comercial no autorizada:
+
+1. Se sustituye la respuesta por un mensaje seguro.
+2. Se crea una solicitud de contacto.
+3. Se registra el motivo `REGLA_DE_SEGURIDAD`.
+
+La protección se implementa en código porque las instrucciones del prompt, por sí solas, no garantizan el cumplimiento de las reglas.
+
+## 14.6. Consumo de créditos
+
+El flujo de una operación de IA es:
+
+```text
+Validar solicitud
+       |
+       v
+Verificar créditos
+       |
+       v
+Consultar proveedor de IA
+       |
+       v
+Validar respuesta JSON
+       |
+       v
+Aplicar reglas de negocio
+       |
+       v
+Consumir un crédito
+       |
+       v
+Responder al cliente
+```
+
+Errores:
+
+- Créditos insuficientes: 402.
+- JSON inválido: 502.
+- Ningún proveedor disponible: 503.
+
+Las llamadas externas no deben ejecutarse dentro de una transacción de base de datos.
+
+---
+
+# 15. Pagos y suscripciones con Stripe
+
+Sillón integra Stripe para gestionar las compras realizadas por los dueños de los salones.
+
+La integración se mantiene en modo de prueba.
+
+## 15.1. Productos
+
+| Producto | Modalidad | Precio |
+|---|---|---:|
+| Sillón PRO | Suscripción mensual | 15 USD |
+| Paquete de 200 créditos | Pago único | 5 USD |
+
+## 15.2. Flujo de pago
+
+1. El dueño solicita una suscripción o un paquete de créditos.
+2. El backend determina el precio.
+3. Stripe crea una sesión de Checkout.
+4. El backend devuelve la URL de pago.
+5. El dueño completa el proceso en Stripe.
+6. Stripe notifica el resultado mediante webhook.
+7. El backend verifica la firma.
+8. El sistema procesa el evento y actualiza el salón.
+
+El cliente no puede determinar el precio ni enviar identificadores de precios arbitrarios.
+
+## 15.3. Webhook
+
+Endpoint:
+
+```http
+POST /api/pagos/webhook
+```
+
+Eventos contemplados:
+
+```text
+checkout.session.completed
+customer.subscription.deleted
+```
+
+El webhook verifica la firma de Stripe mediante `Stripe-Signature`.
+
+La entidad `EventoStripe` permite registrar los eventos procesados y evitar operaciones duplicadas.
+
+### Comportamiento
+
+| Evento | Resultado |
+|---|---|
+| Compra PRO confirmada | Activa PRO y suma 300 créditos. |
+| Compra de paquete confirmada | Suma 200 créditos. |
+| Evento repetido | No vuelve a aplicar la compra. |
+| Suscripción cancelada | Devuelve el salón a GRATIS y conserva sus créditos. |
+
+El procesamiento de la compra y el registro del evento deben realizarse dentro de una misma transacción.
+
+## 15.4. Pruebas de Stripe
+
+Tarjeta de prueba habitual:
+
+```text
+4242 4242 4242 4242
+```
+
+Utilizar una fecha futura y un CVC válido de prueba.
+
+Para simular un pago rechazado:
+
+```text
+4000 0000 0000 0002
+```
+
+Para probar webhooks localmente:
+
+```bash
+stripe listen --forward-to localhost:8080/api/pagos/webhook
+```
+
+El secreto generado por Stripe CLI debe configurarse en el entorno local.
+
+No utilizar credenciales de prueba en un entorno de cobros reales.
+
+---
+
+# 16. Pruebas automatizadas
+
+El proyecto utiliza JUnit 5 y Mockito para verificar el comportamiento del sistema.
+
+Las pruebas deben validar las reglas de negocio y evitar depender de servicios externos reales.
+
+## Áreas principales de pruebas
+
+| Área | Validaciones |
+|---|---|
+| Citas | Estados permitidos y transiciones bloqueadas. |
+| Agenda | Horarios, disponibilidad y solapamientos. |
+| Reservas | Fechas, servicios, estilistas y conflictos. |
+| Seguridad | Roles, permisos y aislamiento multi-tenant. |
+| Planes | Límites de estilistas y créditos. |
+| Chatbot | Respuestas, escalamiento y reglas anti-promesas. |
+| Recordatorios | JSON válido y consumo de créditos. |
+| IA | Fallback, errores y lectura de respuestas. |
+| Stripe | Firma, idempotencia y actualización de planes. |
+| Aplicación | Integración y carga del contexto Spring. |
+
+## Ejecutar todas las pruebas
+
+Windows:
+
+```powershell
+.\mvnw.cmd test
+```
+
+Linux/macOS:
+
+```bash
+./mvnw test
+```
+
+## Ejecutar una prueba específica
+
+```bash
+./mvnw -Dtest=NombreDeLaClaseTest test
+```
+
+Los tests unitarios no deben realizar llamadas reales a Gemini, Claude ni Stripe.
+
+El test de contexto completo puede requerir una base de datos disponible.
+
+**Criterio de calidad:** no se modifican los tests oficiales para hacerlos pasar. Los resultados deben corresponder a ejecuciones reales.
+
+---
+
+# 17. Documentación Swagger / OpenAPI
+
+Sillón utiliza Springdoc OpenAPI para documentar la API REST.
+
+Con la aplicación ejecutándose localmente:
+
+**Swagger UI**
+
 ```text
 http://localhost:8080/swagger-ui.html
 ```
-Usa el botón Authorize con el token del dueño para probar rutas protegidas.
----
-14. Configuración y variables
-La configuración vive en `application.properties` (no `.yml`, sin perfiles de Spring). Producción usa las mismas propiedades y cambia los valores con variables de entorno. No hay `application-prod.properties`.
-Categoría	Descripción
-Aplicación	`PORT` (8080 por defecto), zona horaria `America/Bogota`, URL pública de la API.
-Base de datos	URL JDBC, usuario y contraseña (`SPRING_DATASOURCE_*`); `ddl-auto=update`; `open-in-view=false`.
-Seguridad	Secreto JWT (`JWT_SECRETO`) y expiración. Sin token de relleno: hay que definirlo en el entorno o en `secrets.properties`.
-Negocio	Créditos de registro (10), créditos PRO (300), créditos del paquete (200), límite de estilistas `GRATIS` (2).
-Stripe	Clave secreta, secreto del webhook, ids de precio PRO y de paquete, `STRIPE_URL_API` (por defecto `https://api.stripe.com`).
-IA	`GEMINI_LLAVE` o `SILLON_IA_GEMINI_LLAVE`, y `SILLON_IA_OPENAI_URL`.
-Límite	30 peticiones por minuto por IP en el catálogo público y en el login. El contador vive en memoria: con varias instancias no se comparte. `X-Forwarded-For` solo se lee si la conexión llega desde una IP listada en `SILLON_PROXY_DIRECCIONES`.
-Trazas	`server.error.include-stacktrace`, `include-message` e `include-binding-errors` están en `never`.
-Secretos locales	Importación opcional de `secrets.properties` desde la raíz.
-¿Por qué dos direcciones configurables?
-El calificador automático no usa el Stripe ni el Gemini reales: usa simuladores, sin llaves y sin costo. Para eso reemplaza `STRIPE_URL_API` y `SILLON_IA_OPENAI_URL`. Nunca se escriben fijas en el código. Hacer configurable la dirección de un servicio externo es una práctica profesional: permite probar sin gastar dinero.
-Variables de entorno en Render (solo nombres)
-`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `JWT_SECRETO`, `URL_PUBLICA`, `STRIPE_CLAVE_SECRETA`, `STRIPE_PRECIO_PRO`, `STRIPE_PRECIO_CREDITOS`, `STRIPE_SECRETO_WEBHOOK`, `GEMINI_LLAVE`.
-No configurar en Render `STRIPE_URL_API` ni `SILLON_IA_OPENAI_URL`.
-La URL pública de Render todavía no existe en este repositorio. Cuando el servicio esté creado, se escribe aquí la URL completa. No se inventa un dominio.
-PostgreSQL de producción: Session Pooler de Supabase, puerto 5432. La conexión directa usa IPv6 y Render no la alcanza.
----
-15. Inteligencia artificial
-La IA asiste, pero no es la fuente de verdad del negocio. Las responsabilidades están separadas.
-El backend (Java) es responsable de:
-Obtener información real del salón desde la base de datos.
-Validar servicios, precios y disponibilidad.
-Controlar los créditos de IA.
-Registrar solicitudes de contacto.
-Aplicar las reglas de seguridad (anti-promesas).
-Gestionar errores y tiempos de espera.
-La IA solo interpreta consultas y redacta respuestas con los datos que Java le entrega.
-Motor de IA (paquete `ia`)
-Interfaz de proveedor; proveedor con formato OpenAI (Gemini); proveedor de respaldo con formato Claude; asistente con fallback entre proveedores; configuración tipada; fábrica HTTP con tiempo máximo; biblioteca de prompts; lector de JSON; y factura (`proveedor`, `modelo`, `tokensEntrada`, `tokensSalida`, `costoEstimadoUsd`, `milisegundos`).
-Orden de cada funcionalidad con IA
-Validar lo que no depende de la IA (que exista la cita o el salón).
-Verificar créditos (402 si no hay; la IA no se llama).
-Cargar el prompt y llamar a la IA.
-Leer y validar el JSON (inválido → 502, sin descontar).
-Aplicar reglas de negocio.
-Consumir el crédito (una sola actualización atómica; nunca queda negativo). Ningún proveedor → 503, sin descontar.
-Responder.
-Ninguna llamada a la IA va dentro de una transacción de base de datos.
-Recordatorio de cita
-`POST /api/citas/{id}/recordatorio` — solo citas `PENDIENTE` o `CONFIRMADA` (otra → 409, sin gastar créditos). Java arma los datos verificados (servicio y duración, estilista, fecha en español, hora tipo `10:30 a. m.`, valor `$35.000`, dirección). La IA redacta un borrador para WhatsApp en JSON con la clave `mensaje` (máximo 700 caracteres). Una persona lo aprueba: Sillón no envía mensajes.
-Chatbot del salón
-`POST /api/publico/salones/{slug}/chat` — responde con el catálogo real del salón; no agenda, cambia ni cancela citas. El historial completo llega en cada petición (1 a 20 turnos) porque el modelo no tiene memoria; el texto del cliente nunca va dentro de las instrucciones del prompt. Respuesta JSON con `respuesta` y `escalar`.
-Si escala: se crea una `SolicitudContacto` con motivo `PEDIDO_POR_IA`.
-Regla anti-promesas: si la respuesta contiene `descuento`, `cupón`/`cupon`, `gratis`, `promoción`/`promocion` o `reembols` (sin importar mayúsculas), el cliente recibe un mensaje seguro fijo y se crea la solicitud con motivo `REGLA_DE_SEGURIDAD`. Se acepta el falso positivo a propósito. Un prompt pide; solo el código garantiza.
-Prompts
-Viven en `src/main/resources/prompts/` (`recordatorio.txt` y `chatbot.txt`), nunca incrustados en el código. Piden las claves exactas: `mensaje`; `respuesta` y `escalar`.
-Errores de la IA
-JSON inválido o incompleto → 502. Ningún proveedor disponible → 503. En los logs, `ERROR` indica configuración y `WARN` un problema temporal.
----
-16. Pagos y suscripciones
-Integración con Stripe en modo prueba (Stripe no permite cobros reales a negocios con sede en Colombia).
-Productos a crear en Stripe:
-Producto	Precio	Qué copiar
-Sillón PRO	Recurrente mensual, 15 USD	Id del precio (`price_…`)
-Paquete de 200 créditos de IA	Pago único, 5 USD	Id del precio (`price_…`)
-Flujo
-El dueño llama a `POST /api/pagos/suscripcion` o `POST /api/pagos/creditos`.
-El backend elige el precio (modo suscripción para PRO, modo pago para el paquete) y crea una sesión de Checkout con el correo del dueño, URLs de éxito/cancelación, el id del salón como referencia y metadata (salón y tipo de compra).
-El dueño abre `urlPago` y paga. Tarjeta de prueba: `4242 4242 4242 4242`, cualquier fecha futura y cualquier CVC. Pago rechazado: `4000 0000 0000 0002`.
-Stripe notifica al webhook `POST /api/pagos/webhook`.
-Webhook
-Recibe el cuerpo como texto plano y la cabecera `Stripe-Signature`; sin firma o falsa → 400.
-Si el id del evento ya existe en `eventos_stripe`, responde `procesado: false` y no toca nada (idempotencia).
-`checkout.session.completed` (estado `paid`): aplica la compra según la metadata. `customer.subscription.deleted`: devuelve el salón a `GRATIS` (conserva créditos).
-Aplicar el cambio y guardar el evento ocurre en una sola transacción.
-Para probar la cancelación: en el Dashboard de Stripe, cancela la suscripción de inmediato; llegará `customer.subscription.deleted`.
-El backend nunca confía en importes enviados por el cliente.
----
-17. Pruebas y verificación
-La evidencia es ejecutable, no pantallazos.
-17.1 Tests JUnit 5 + Mockito
-Los tests de servicios no levantan Spring: usan mocks de repositorios e IA, y un reloj fijo. Ninguno llama a Gemini ni a Stripe. Casos mínimos:
-Área	Casos
-Estados de la cita	5 transiciones permitidas y al menos 6 bloqueadas (parametrizado)
-Reglas de agenda	Dentro de horario, termina tras cierre, empieza antes de abrir, domingo cerrado, horarios libres sin cruces, día cerrado, hoy sin horas pasadas
-Agendar y estado	Cita válida `CONFIRMADA` con precio del servicio, pasado, cruce, estilista sin el servicio, cita ajena (404), estilista cancelando (403), transición inválida
-Plan	3.er estilista en `GRATIS` (402); en `PRO` sí se crea
-Webhook	PRO activa plan y suma, paquete suma, evento repetido ignorado, cancelación a `GRATIS`, firma falsa
-Chatbot	Sin créditos no llama a la IA, pregunta normal consume 1 crédito, escalamiento crea solicitud, cupón prometido → mensaje seguro
-Recordatorio	Respuesta válida con créditos restantes; JSON sin `mensaje` → 502
-Motor de IA	Fallback, clasificación de errores, biblioteca de prompts, lector de JSON
-Aplicación	Test de contexto completo (requiere MySQL)
-Nunca se modifica un test para que pase. No se afirma que una prueba pasó sin haberla ejecutado.
-17.2 Colección de Postman
-En `postman/`: `sillon.postman_collection.json` y los entornos `local` y `produccion` (cada uno con la variable `baseUrl`).
-Siete carpetas, en este orden:
-Registro, login y configuración
-Catálogo y equipo
-Agenda: reservas, cruces y estados
-Aislamiento entre salones y roles
-IA: recordatorio y chatbot
-Pagos con Stripe (modo prueba)
-Después de pagar (manual)
-Reglas para poder correrla muchas veces: datos únicos por ejecución (sufijo con la hora), fechas calculadas por script (nunca fijas) y nada a mano entre peticiones en las carpetas 1 a 6.
-17.3 Cómo verificar
-Importa la colección y el entorno `local`.
-Run collection con las carpetas 1 a 6, de arriba abajo. Todas las pruebas en verde.
-Paga el plan PRO con la tarjeta `4242 4242 4242 4242` y ejecuta la carpeta 7 (manual).
-Cambia al entorno `produccion` y repite contra Render.
-Revisa el comentario del calificador automático en el Pull Request.
-17.4 Calificador automático (GitHub Actions)
-En cada push a tu fork, el calificador compila el proyecto, corre tus tests, arranca tu API con MySQL y simuladores de Stripe e IA, corre la colección oficial (más de 100 pruebas), revisa el repositorio y prueba tu API desplegada en la URL de Render del README. Deja la nota en el Pull Request. No se modifica la carpeta `.github`.
----
-18. Despliegue
-Docker: Dockerfile de dos etapas (Maven + Java 17 compila el jar sin tests; imagen final solo con JRE 17). `.dockerignore` excluye `target`, `.git` y `secrets.properties`.
-Base de datos: Supabase (PostgreSQL) con la cadena del Session Pooler (puerto 5432); la conexión directa usa IPv6 y Render no la alcanza. No cambian las entidades.
-Servicio web: Render, entorno Docker, conectado al repositorio, con las variables de entorno de la sección 14.
-Webhook de producción: en el Dashboard de Stripe (Workbench → Webhooks) apuntando a `/api/pagos/webhook` de tu URL de Render, con los eventos `checkout.session.completed` y `customer.subscription.deleted`. Su secreto va en `STRIPE_SECRETO_WEBHOOK`. En producción no se usa la Stripe CLI.
-Zona horaria: Render trabaja en UTC; Sillón usa el `Clock` con `America/Bogota`.
-Si la aplicación no arranca, lee los logs de Render de abajo hacia arriba y busca la primera línea con la causa (casi siempre una variable de entorno mal escrita o la conexión a Supabase).
-No se ejecutan migraciones destructivas ni se eliminan datos de producción sin autorización expresa.
----
-19. Fases de desarrollo
-El desarrollo se organiza en 14 fases (0 a 13). Cada fase deja la aplicación funcionando y termina con un commit.
-Fase	Alcance
-0	Terreno: fork, proyecto Initializr, configuración, secretos, SPEC, AGENTS y bitácora.
-1	Base SaaS: formato de error, manejador global, `Clock`, salón, slug y usuarios.
-2	Seguridad: JWT, roles, registro, login y respuestas 401/403.
-3	Catálogo y equipo: servicios, estilistas, clientes y límite del plan.
-4	Agenda: citas, reglas de horario, cruces, estados y disponibilidad.
-5	Cara pública: catálogo, disponibilidad y reservas en línea.
-6	Pagos con Stripe: plan PRO, créditos y webhook idempotente.
-7	Motor de IA: proveedores, fallback y créditos.
-8	Recordatorio con IA y datos verificados.
-9	Chatbot con escalamiento y regla anti-promesas.
-10	Tests automáticos.
-11	Swagger.
-12	Despliegue en Render con Supabase.
-13	Evidencia ejecutable (Postman) y entrega.
-Cada fase se cierra con implementación revisada, pruebas ejecutadas, resultados documentados, pendientes identificados, documentación actualizada y un commit descriptivo. El historial de commits también se revisa.
----
-20. Documentación del repositorio
+
+**OpenAPI JSON**
+
 ```text
-sillon/
+http://localhost:8080/v3/api-docs
+```
+
+La documentación permite consultar:
+
+- Endpoints disponibles.
+- Métodos HTTP.
+- Parámetros.
+- DTO de entrada.
+- DTO de salida.
+- Respuestas HTTP.
+- Autenticación JWT.
+- Operaciones públicas y privadas.
+
+## Autenticación en Swagger
+
+1. Ejecutar el endpoint de login.
+2. Copiar el token JWT recibido.
+3. Pulsar el botón `Authorize`.
+4. Introducir el token Bearer.
+5. Ejecutar los endpoints protegidos.
+
+El endpoint:
+
+```http
+GET /api/salon
+```
+
+permite verificar el acceso del dueño autenticado.
+
+---
+
+# 18. Contenerización con Docker
+
+Sillón utiliza Docker para preparar una imagen ejecutable del backend.
+
+El proyecto contempla un Dockerfile multietapa.
+
+## Etapa de construcción
+
+Utiliza Maven y Java 17 para compilar la aplicación y generar el archivo JAR.
+
+## Etapa de ejecución
+
+Utiliza una imagen JRE 17 para ejecutar la aplicación sin incluir herramientas innecesarias de compilación.
+
+## Construir la imagen
+
+```bash
+docker build -t sillon-api .
+```
+
+## Ejecutar el contenedor
+
+```bash
+docker run -p 8080:8080 sillon-api
+```
+
+La ejecución requiere las variables de entorno correspondientes a la base de datos y a los servicios externos.
+
+## Exclusiones de Docker
+
+El archivo `.dockerignore` debe excluir como mínimo:
+
+```text
+target
+.git
+secrets.properties
+```
+
+Nunca se deben incorporar credenciales privadas dentro de la imagen.
+
+---
+
+# 19. Base de datos de producción: Supabase
+
+El entorno de producción utiliza PostgreSQL administrado mediante Supabase.
+
+La configuración de conexión se realiza mediante variables de entorno.
+
+## Configuración de conexión
+
+Se utiliza el Session Pooler de Supabase.
+
+Puerto:
+
+```text
+5432
+```
+
+Variables:
+
+```text
+SPRING_DATASOURCE_URL
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+```
+
+La URL JDBC debe corresponder a la cadena de conexión proporcionada por Supabase.
+
+La conexión directa puede presentar problemas de compatibilidad de red debido al uso de IPv6. Por ello, el proyecto utiliza Session Pooler para la conexión desde Render.
+
+MySQL continúa siendo la base de datos del entorno local.
+
+No se deben modificar las entidades, tablas ni relaciones para solucionar problemas de conectividad.
+
+---
+
+# 20. Despliegue en Render
+
+Sillón está preparado para ejecutarse como Web Service en Render mediante Docker.
+
+La base de datos de producción se aloja en Supabase.
+
+## 20.1. Configuración del servicio
+
+1. Crear un servicio Web Service en Render.
+2. Conectar el repositorio de GitHub.
+3. Seleccionar el entorno Docker.
+4. Configurar las variables de entorno.
+5. Iniciar el proceso de construcción.
+6. Verificar los logs de despliegue.
+7. Comprobar la conexión con Supabase.
+8. Verificar el acceso a Swagger.
+
+## 20.2. Variables de entorno en Render
+
+| Variable | Descripción |
+|---|---|
+| `SPRING_DATASOURCE_URL` | Conexión JDBC de Supabase. |
+| `SPRING_DATASOURCE_USERNAME` | Usuario PostgreSQL. |
+| `SPRING_DATASOURCE_PASSWORD` | Contraseña PostgreSQL. |
+| `JWT_SECRETO` | Secreto JWT. |
+| `URL_PUBLICA` | URL pública de Render. |
+| `STRIPE_CLAVE_SECRETA` | Clave de Stripe. |
+| `STRIPE_PRECIO_PRO` | Precio de suscripción PRO. |
+| `STRIPE_PRECIO_CREDITOS` | Precio del paquete de créditos. |
+| `STRIPE_SECRETO_WEBHOOK` | Secreto del webhook. |
+| `GEMINI_LLAVE` | Clave del proveedor Gemini. |
+
+No configurar `STRIPE_URL_API` ni `SILLON_IA_OPENAI_URL` en Render, de acuerdo con la configuración establecida para producción y el calificador automático.
+
+## 20.3. Puerto de ejecución
+
+La aplicación utiliza:
+
+```properties
+server.port=${PORT:8080}
+```
+
+Esto permite que Render proporcione el puerto mediante la variable `PORT`.
+
+## 20.4. Webhook de Stripe en producción
+
+En el Dashboard de Stripe se configura el endpoint:
+
+```text
+https://TU-SERVICIO.onrender.com/api/pagos/webhook
+```
+
+Eventos:
+
+```text
+checkout.session.completed
+customer.subscription.deleted
+```
+
+El secreto del endpoint debe configurarse en:
+
+```text
+STRIPE_SECRETO_WEBHOOK
+```
+
+En producción no se utiliza Stripe CLI.
+
+## 20.5. URLs de producción
+
+Las siguientes direcciones deben actualizarse después de verificar el despliegue.
+
+| Recurso | Dirección |
+|---|---|
+| API de producción | https://sillon-6rqb.onrender.com|
+| Swagger UI | 	https://sillon-6rqb.onrender.com/swagger-ui/index.html|
+| OpenAPI JSON | https://sillon-6rqb.onrender.com/v3/api-docs |
+
+Cuando Render proporcione la dirección definitiva, se debe sustituir el marcador por la URL completa.
+
+**Importante:** el calificador automático utiliza la URL de Render indicada en este README para realizar pruebas contra la API desplegada.
+
+No dejar los marcadores de producción en la versión final que se entregue para calificación.
+
+## 20.6. Consideraciones de Render
+
+Los servicios gratuitos pueden suspenderse después de períodos de inactividad.
+
+La primera petición posterior puede tardar mientras el servicio vuelve a estar disponible.
+
+La aplicación utiliza `America/Bogota` para las operaciones de agenda, independientemente de que el servidor trabaje en UTC.
+
+---
+
+# 21. Estructura del repositorio
+
+La estructura general del proyecto es:
+
+```text
+DS_Java_IA_Backend_TallerMd4y5/
 │
-├── .github/                      (calificador: no se modifica)
+├── .github/
+│   └── workflows/                 # Calificador automático
+│
 ├── .mvn/
+│
 ├── postman/
 │   ├── sillon.postman_collection.json
 │   ├── local.postman_environment.json
 │   └── produccion.postman_environment.json
+│
 ├── src/
-│   ├── main/resources/prompts/   (recordatorio.txt, chatbot.txt)
-│   └── test/java/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/devSenior/sillon/
+│   │   │       ├── compartido/
+│   │   │       ├── seguridad/
+│   │   │       ├── auth/
+│   │   │       ├── salon/
+│   │   │       ├── usuario/
+│   │   │       ├── servicio/
+│   │   │       ├── cliente/
+│   │   │       ├── cita/
+│   │   │       ├── publico/
+│   │   │       ├── pago/
+│   │   │       ├── chat/
+│   │   │       └── ia/
+│   │   │
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       └── prompts/
+│   │           ├── recordatorio.txt
+│   │           └── chatbot.txt
+│   │
+│   └── test/
+│       └── java/
 │
 ├── .cursorignore
 ├── .dockerignore
@@ -548,85 +1384,312 @@ sillon/
 ├── mvnw
 ├── mvnw.cmd
 ├── pom.xml
-└── secrets.example.properties   (secrets.properties NO se sube)
+└── secrets.example.properties
 ```
-Documento	Responsabilidad
-`README.md`	Presentación, tecnologías, instalación, ejecución y verificación.
-`SPEC.md`	Requisitos, modelo, reglas de negocio y contrato de la API (fuente de verdad).
-`AGENTS.md`	Instrucciones y convenciones para agentes de IA (Cursor).
-`BITACORA-IA.md`	Registro de usos de IA: qué se revisó y qué se rechazó o corrigió.
-Antes de modificar reglas de negocio o entidades, consulta `SPEC.md`.
+
+Los archivos y paquetes deben corresponder con la estructura real del repositorio.
+
+## Documentos principales
+
+| Archivo | Responsabilidad |
+|---|---|
+| `README.md` | Presentación, instalación, configuración y despliegue. |
+| `SPEC.md` | Requisitos, reglas de negocio y contrato oficial de API. |
+| `AGENTS.md` | Instrucciones para agentes de IA y convenciones de desarrollo. |
+| `BITACORA-IA.md` | Registro de actividades, decisiones, revisiones y correcciones asistidas por IA. |
+| `pom.xml` | Dependencias y configuración de Maven. |
+| `Dockerfile` | Construcción de la imagen Docker. |
+| `.dockerignore` | Exclusiones de la imagen. |
+| `.gitignore` | Archivos que Git debe ignorar. |
+| `secrets.example.properties` | Plantilla de configuración de secretos. |
+
+Antes de modificar una regla de negocio, una entidad o un contrato de API, se debe consultar `SPEC.md`.
+
 ---
-21. Entregables y calificación
-Entregables
-[ ] Pull Request abierto hacia el repositorio oficial (no hacia tu fork), con tu nombre completo como título.
-[ ] Código fuente completo en la raíz del fork, con historial de commits por fase.
-[ ] `SPEC.md`, `AGENTS.md` y `BITACORA-IA.md`.
-[ ] `secrets.example.properties` (sí) y `secrets.properties` (no, ignorado por Git).
-[ ] Prompts del producto en `src/main/resources/prompts`.
-[ ] Tests JUnit + Mockito con los casos mínimos.
-[ ] `Dockerfile` y `.dockerignore`.
-[ ] Colección Postman y entornos `local` y `produccion`.
-[ ] README con la URL completa de producción y Swagger.
-[ ] API desplegada en Render con Swagger accesible.
-[ ] Webhook de producción creado en Stripe y probado con un pago.
-La inclusión de un entregable en esta lista no significa que ya esté implementado o aprobado.
-Requisitos para que el proyecto se califique
-El proyecto está en la raíz del fork y la URL de Render responde.
-No se modificó la carpeta `.github`.
-Ninguna llave real aparece en el repositorio ni en su historial (si se filtra, se revoca y se crea una nueva).
-Cómo se califica
-Nota = 5 × pruebas aprobadas ÷ pruebas totales (un decimal), de 0.0 a 5.0, con crédito parcial.
-#	Criterio	Pruebas
-01	Registro, login y configuración	14
-02	Catálogo y equipo	9
-03	Agenda	34
-04	Aislamiento y roles	7
-05	IA: recordatorio y chatbot	16
-06	Pagos con Stripe	29
-07	Tests JUnit	8
-08	Repositorio y entrega	12
-09	Producción en Render	16
-Lo que no se puede verificar, no se califica.
+
+# 22. Fases de desarrollo
+
+El proyecto integrador está organizado en 14 fases, numeradas de 0 a 13.
+
+| Fase | Descripción |
+|---|---|
+| 0 | Preparación del repositorio, proyecto y documentación inicial. |
+| 1 | Base SaaS, salón, usuarios y configuración compartida. |
+| 2 | Seguridad, JWT, registro y autenticación. |
+| 3 | Catálogo, estilistas, servicios y clientes. |
+| 4 | Agenda, disponibilidad, citas y reglas de horario. |
+| 5 | Catálogo público y reservas en línea. |
+| 6 | Integración con Stripe, suscripciones y créditos. |
+| 7 | Motor de IA, proveedores y fallback. |
+| 8 | Recordatorios inteligentes con datos verificados. |
+| 9 | Chatbot, escalamiento y protección anti-promesas. |
+| 10 | Pruebas automatizadas con JUnit y Mockito. |
+| 11 | Documentación Swagger / OpenAPI. |
+| 12 | Despliegue con Docker, Supabase y Render. |
+| 13 | Evidencias ejecutables, Postman y entrega final. |
+
+Cada fase debe cerrarse con:
+
+- Implementación revisada.
+- Pruebas ejecutadas.
+- Resultados documentados.
+- Pendientes identificados.
+- Documentación actualizada.
+- Commit descriptivo.
+
+El historial de Git forma parte de la evidencia del desarrollo.
+
 ---
-22. Errores frecuentes
-Lo que ves	Qué hacer
-Maven no resuelve el POM padre	Quita el sufijo `.RELEASE` de la versión de Spring Boot.
-Falta el bean `RestClient$Builder`	Agrega la dependencia HTTP Client (`spring-boot-starter-restclient`).
-`com.fasterxml.jackson.databind` no existe	Usa `tools.jackson.databind` (Jackson 3).
-Todo responde 401 tras un error del servidor	Haz pública la ruta `/error`.
-403 con token válido	La autoridad debe ser `ROLE_` + rol y la regla usar `hasRole` sin prefijo.
-`could not initialize proxy - no Session`	Convierte la entidad a DTO dentro del método transaccional.
-Cita de esta noche rechazada "en el pasado" solo en Render	Usa el `Clock` con `America/Bogota`.
-Webhook 400 por firma inválida	En local, el `whsec` de la Stripe CLI; en Render, el del destino de eventos; lee el cuerpo como texto plano.
-`Data truncated for column` al guardar un enum	En desarrollo, borra la base para que se regenere.
-Render no conecta con Supabase	Usa la cadena del Session Pooler.
-503 en IA	Revisa la llave y el log (`ERROR` configuración, `WARN` temporal).
-502 en IA	Revisa que el prompt pida solo JSON con las claves exactas.
-Calificador: no encuentra `pom.xml`	Mueve el proyecto a la raíz del fork.
-Calificador: 502 en pagos	Construye el cliente de Stripe con la base de `STRIPE_URL_API`.
-Calificador: 503 en todo el criterio de IA	Lee `sillon.ia.openai.url` y nada fijo en el código.
-Calificador: no encuentra URL de Render	Escribe la URL completa en este README.
+
+# 23. Seguridad del proyecto
+
+La seguridad es uno de los principios fundamentales de Sillón.
+
+## Autenticación
+
+- JWT para autenticación stateless.
+- BCrypt para proteger contraseñas.
+- Tokens con expiración configurada.
+
+## Autorización
+
+- Control de acceso basado en roles.
+- Protección de endpoints privados.
+- Validación de permisos en los servicios.
+
+## Aislamiento de datos
+
+- Identificación del salón mediante el usuario autenticado.
+- Filtrado de consultas por salón.
+- Respuesta 404 para recursos pertenecientes a otro negocio.
+
+## Protección de integraciones
+
+- Verificación de firmas de Stripe.
+- Control de eventos duplicados.
+- Validación de respuestas de proveedores de IA.
+- Tiempos máximos de espera.
+- Protección de secretos.
+
+## Protección de información sensible
+
+No se deben publicar:
+
+- Contraseñas.
+- Claves API.
+- Secretos JWT.
+- Credenciales de MySQL.
+- Credenciales de Supabase.
+- Claves privadas de Stripe.
+- Secretos de webhooks.
+- Tokens de servicios externos.
+- Datos privados de clientes.
+
+Los archivos `secrets.properties` y `.env` con valores reales no deben subirse a GitHub.
+
+Antes de realizar un commit:
+
+```bash
+git status
+```
+
+Revisar los cambios:
+
+```bash
+git diff --check
+```
+
+Consultar el resumen:
+
+```bash
+git diff --stat
+```
+
+La carpeta `.github` contiene el calificador automático y no debe modificarse.
+
 ---
-23. Criterios de evolución técnica
-Para que Sillón crezca y atienda a muchos salones es fundamental:
-Garantizar el aislamiento multi-tenant (que ninguna consulta olvide filtrar por salón).
-Optimizar consultas e índices de la base de datos.
-Proteger la concurrencia de las reservas (cruces simultáneos).
-Controlar el consumo de proveedores externos y los créditos de IA.
-Supervisar errores y tiempos de respuesta.
-Mantener migraciones y copias de seguridad verificables.
-Proteger datos personales y credenciales.
-Separar las reglas de negocio de las integraciones externas.
-La escalabilidad no depende solo de más recursos de servidor: requiere arquitectura organizada, consultas eficientes, seguridad y reglas consistentes.
-Reflexión: si Sillón tuviera 500 salones
-> Completar con 3 líneas propias y argumentadas: ¿qué parte del sistema cuidarías primero y por qué? No hay una sola respuesta correcta; hay respuestas bien argumentadas.
+
+# 24. Verificación y evaluación académica
+
+El proyecto utiliza una colección Postman y un calificador automático mediante GitHub Actions.
+
+## 24.1. Colección Postman
+
+La colección principal se encuentra en:
+
+```text
+postman/sillon.postman_collection.json
+```
+
+Entornos:
+
+```text
+postman/local.postman_environment.json
+postman/produccion.postman_environment.json
+```
+
+La colección organiza las verificaciones en siete grupos:
+
+1. Registro, login y configuración.
+2. Catálogo y equipo.
+3. Agenda, reservas, cruces y estados.
+4. Aislamiento entre salones y roles.
+5. Inteligencia artificial: recordatorios y chatbot.
+6. Pagos con Stripe en modo de prueba.
+7. Verificaciones posteriores al pago.
+
+Las pruebas deben utilizar datos únicos por ejecución y fechas calculadas dinámicamente para facilitar su repetición.
+
+## 24.2. Calificador automático
+
+El calificador de GitHub Actions verifica diferentes aspectos del proyecto:
+
+- Compilación.
+- Pruebas automatizadas.
+- Inicio de la aplicación.
+- Funcionamiento de la API.
+- Integración con simuladores de IA y Stripe.
+- Contratos HTTP.
+- Colección oficial de Postman.
+- Estructura del repositorio.
+- Disponibilidad de la API desplegada.
+
+Los resultados se publican en el Pull Request.
+
+No se debe modificar la carpeta `.github`.
+
+## 24.3. Criterios de calificación
+
+| Criterio | Pruebas |
+|---|---:|
+| Registro, login y configuración | 14 |
+| Catálogo y equipo | 9 |
+| Agenda | 34 |
+| Aislamiento y roles | 7 |
+| IA: recordatorio y chatbot | 16 |
+| Pagos con Stripe | 29 |
+| Tests JUnit | 8 |
+| Repositorio y entrega | 12 |
+| Producción en Render | 16 |
+| **Total** | **145** |
+
+La calificación se calcula mediante:
+
+```text
+Nota = 5 × pruebas aprobadas / pruebas totales
+```
+
+El resultado se expresa en una escala de 0.0 a 5.0, con un decimal.
+
+**Principio de evaluación:** lo que no se puede verificar, no se puede calificar.
+
+## 24.4. Entregables
+
+- [ ] Repositorio GitHub con el proyecto en la raíz.
+- [ ] Historial de commits organizado por fases.
+- [ ] `README.md` completo.
+- [ ] `SPEC.md`.
+- [ ] `AGENTS.md`.
+- [ ] `BITACORA-IA.md`.
+- [ ] `secrets.example.properties`.
+- [ ] Prompts de IA en `src/main/resources/prompts/`.
+- [ ] Pruebas automatizadas JUnit y Mockito.
+- [ ] Dockerfile y `.dockerignore`.
+- [ ] Colección Postman.
+- [ ] Entornos local y producción.
+- [ ] API desplegada en Render.
+- [ ] Base de datos PostgreSQL en Supabase.
+- [ ] Swagger accesible en producción.
+- [ ] Webhook de producción configurado y probado.
+- [ ] Pull Request abierto hacia el repositorio oficial, con el nombre completo del autor como título.
+
+La presencia de un archivo o entregable en esta lista no significa automáticamente que esté implementado o aprobado. Cada elemento debe verificarse.
+
 ---
-24. Autor y propósito académico
-Proyecto: Sillón — Agenda inteligente para barberías y salones de belleza.
-Programa: Java AI Engineer.
-Institución: Dev Senior Code.
-Tipo: Proyecto integrador (Módulos 4 y 5).
-Autor: Jean-René Barthélémy
-El proyecto integra conocimientos de Java y programación orientada a objetos, Spring Boot, arquitectura SaaS multi-tenant, bases de datos y persistencia, seguridad y autenticación, API REST, integración de servicios externos, inteligencia artificial, pruebas automatizadas, contenerización y despliegue.
+
+# 25. Consideraciones técnicas y evolución
+
+Sillón se desarrolla con una arquitectura que permite ampliar sus funcionalidades sin comprometer las reglas de negocio fundamentales.
+
+Para su evolución se consideran especialmente los siguientes aspectos:
+
+### Escalabilidad
+
+- Optimización de consultas SQL.
+- Índices adecuados para consultas multi-tenant.
+- Gestión eficiente de conexiones.
+- Control del consumo de servicios externos.
+- Supervisión de tiempos de respuesta.
+
+### Concurrencia
+
+Las reservas simultáneas requieren mecanismos adicionales de protección para garantizar que dos solicitudes concurrentes no ocupen el mismo horario.
+
+### Seguridad
+
+El aislamiento entre salones debe mantenerse en todas las operaciones, independientemente de la evolución de los módulos.
+
+### Inteligencia artificial
+
+La integración debe mantener separados los datos verificados por Java y el contenido generado por los proveedores externos.
+
+### Infraestructura
+
+La evolución del proyecto debe contemplar:
+
+- Migraciones de base de datos.
+- Copias de seguridad.
+- Monitoreo.
+- Gestión de errores.
+- Protección de información personal.
+- Administración de secretos.
+
+### Reflexión técnica: ¿Qué protegería primero con 500 salones?
+
+El aislamiento multi-tenant y la concurrencia de las reservas serían mis primeras prioridades. Una consulta incorrecta podría exponer información de otro negocio, mientras que una reserva simultánea podría generar conflictos en la agenda. Después optimizaría las consultas de PostgreSQL y supervisaría el consumo de los proveedores de inteligencia artificial para mantener el rendimiento y controlar los costos de la plataforma.
+
 ---
+
+# 26. Autor y propósito académico
+
+**Proyecto:** Sillón — Agenda inteligente para barberías y salones de belleza.
+
+**Programa:** Java AI Engineer.
+
+**Institución:** Dev Senior Code.
+
+**Tipo de proyecto:** Proyecto integrador de los módulos 4 y 5.
+
+**Autor:** Jean-René Barthélémy.
+
+**Lenguaje principal:** Java 17.
+
+**Framework:** Spring Boot.
+
+**Arquitectura:** API REST SaaS multi-tenant.
+
+**Base de datos local:** MySQL.
+
+**Base de datos de producción:** PostgreSQL / Supabase.
+
+**Contenerización:** Docker.
+
+**Despliegue:** Render.
+
+## Propósito académico
+
+Sillón representa la integración práctica de conocimientos de programación orientada a objetos, desarrollo backend con Java, Spring Boot, persistencia de datos, arquitectura SaaS, seguridad, autenticación, APIs REST, integración de servicios externos, inteligencia artificial, pruebas automatizadas y despliegue cloud.
+
+El proyecto busca demostrar la capacidad de diseñar, desarrollar, documentar, probar y desplegar una aplicación backend que responde a necesidades reales de un sector comercial.
+
+---
+
+# 27. Licencia
+
+Proyecto desarrollado con fines académicos en el programa Java AI Engineer de Dev Senior Code.
+
+La licencia de distribución y reutilización del código deberá definirse explícitamente por el propietario del repositorio.
+
+---
+
+**Sillón 💈 — Tecnología para organizar mejor cada cita y transformar la atención de los salones de belleza.**
