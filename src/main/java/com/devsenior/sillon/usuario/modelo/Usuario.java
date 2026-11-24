@@ -1,8 +1,11 @@
 package com.devsenior.sillon.usuario.modelo;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import com.devsenior.sillon.salon.modelo.Salon;
+import com.devsenior.sillon.servicio.modelo.Servicio;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +16,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -43,6 +48,13 @@ public class Usuario {
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "salon_id", nullable = false)
 	private Salon salon;
+
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(
+			name = "estilista_servicios",
+			joinColumns = @JoinColumn(name = "estilista_id"),
+			inverseJoinColumns = @JoinColumn(name = "servicio_id"))
+	private List<Servicio> servicios = new ArrayList<>();
 
 	public Usuario() {
 	}
@@ -105,6 +117,14 @@ public class Usuario {
 
 	public void setSalon(Salon salon) {
 		this.salon = salon;
+	}
+
+	public List<Servicio> getServicios() {
+		return servicios;
+	}
+
+	public void setServicios(List<Servicio> servicios) {
+		this.servicios = servicios == null ? new ArrayList<>() : servicios;
 	}
 
 }

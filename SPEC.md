@@ -242,6 +242,22 @@ Plan PRO:
 
 - Permite registrar estilistas sin límite por plan.
 
+### 8.4. Orden de validaciones al registrar estilistas
+
+El registro de estilistas debe ejecutar las siguientes validaciones en este orden:
+
+1. **Límite del plan (HTTP 402):** verificar si el salón tiene capacidad para registrar otro estilista. En el plan GRATIS se permiten máximo dos. Esta validación tiene prioridad porque representa una restricción comercial de la plataforma y permite rechazar inmediatamente una operación que el plan no autoriza.
+
+2. **Unicidad del correo electrónico (HTTP 409):** normalizar el correo y verificar que no esté registrado en la plataforma. La unicidad debe reforzarse mediante una restricción UNIQUE en la base de datos para evitar duplicaciones ante solicitudes concurrentes.
+
+3. **Pertenencia de los servicios (HTTP 404):** comprobar que todos los identificadores de servicios recibidos existan y pertenezcan al salón del usuario autenticado. Las consultas deben utilizar conjuntamente el identificador del servicio y el del salón, sin confiar en los datos enviados por el cliente.
+
+Este orden prioriza las reglas comerciales, protege la integridad de los usuarios y garantiza el aislamiento multi-inquilino.
+
+El registro debe realizarse de forma transaccional: si alguna validación falla, no se debe persistir parcialmente el estilista ni sus asociaciones con servicios.
+
+La respuesta del registro debe incluir los nombres de los servicios asignados y nunca exponer la contraseña del usuario.
+
 ## 9. Reglas de negocio: agenda
 
 ### 9.1. Creación de citas
