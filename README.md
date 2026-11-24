@@ -5,7 +5,7 @@
 
 Sillón es una plataforma SaaS desarrollada con Java y Spring Boot que permite administrar barberías y salones de belleza desde una API REST centralizada.
 
-El sistema facilita la gestión de salones, usuarios, estilistas, servicios, clientes, citas, solicitudes de contacto y pagos. Incorpora inteligencia artificial para generar recordatorios y atender consultas mediante un chatbot, con capacidad de escalar solicitudes a una persona cuando sea necesario.
+El sistema  facilita la gestión de salones, usuarios, estilistas, servicios, clientes, citas, solicitudes de contacto y pagos. Incorpora inteligencia artificial para generar recordatorios y atender consultas mediante un chatbot, con capacidad de escalar solicitudes a una persona cuando sea necesario.
 
 Su arquitectura multi-tenant permite que múltiples salones compartan una misma plataforma y una misma base de datos, manteniendo aislada la información de cada negocio mediante controles de seguridad implementados en el backend.
 
