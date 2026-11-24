@@ -313,6 +313,14 @@ Los estados COMPLETADA, CANCELADA y NO_ASISTIO son finales.
 
 Cualquier transición diferente devuelve HTTP 409.
 
+| Estado inicial | Estado destino | Justificación de negocio |
+|---|---|---|
+| PENDIENTE | CONFIRMADA | El salón acepta una reserva que estaba pendiente de confirmación. |
+| PENDIENTE | CANCELADA | Una reserva se cancela antes de que el salón la confirme. |
+| CONFIRMADA | COMPLETADA | El estilista terminó de prestar el servicio al cliente. |
+| CONFIRMADA | CANCELADA | Una cita confirmada se cancela antes de realizarse. |
+| CONFIRMADA | NO_ASISTIO | El cliente no se presentó a la cita programada. |
+
 ### 9.7. Permisos del estilista
 
 - Un estilista solo puede modificar sus propias citas.

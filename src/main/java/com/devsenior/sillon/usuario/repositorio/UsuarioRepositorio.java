@@ -30,4 +30,17 @@ public interface UsuarioRepositorio extends JpaRepository<Usuario, Long> {
             @Param("salonId") Long salonId,
             @Param("rol") Rol rol);
 
+    @Query("""
+            SELECT DISTINCT u
+            FROM Usuario u
+            LEFT JOIN FETCH u.servicios
+            WHERE u.id = :id
+              AND u.salon.id = :salonId
+              AND u.rol = :rol
+            """)
+    Optional<Usuario> buscarEstilistaConServiciosPorId(
+            @Param("id") Long id,
+            @Param("salonId") Long salonId,
+            @Param("rol") Rol rol);
+
 }
