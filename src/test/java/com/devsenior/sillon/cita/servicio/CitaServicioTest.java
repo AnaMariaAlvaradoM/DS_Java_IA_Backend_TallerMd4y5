@@ -424,7 +424,8 @@ class CitaServicioTest {
 				() -> citaServicio.cambiarEstado(
 						1L, 20L, Rol.ESTILISTA, 100L, new SolicitudCambiarEstadoCita(EstadoCita.CANCELADA)));
 
-		// Cita PENDIENTE a COMPLETADA (destino autorizado pero transición inválida) -> 409
+		// Cita PENDIENTE a COMPLETADA (destino autorizado pero transición inválida) ->
+		// 409
 		Cita pendientePropia = crearCitaPersistida(101L, EstadoCita.PENDIENTE);
 		when(citaRepositorio.buscarPorIdYSalon(101L, 1L)).thenReturn(Optional.of(pendientePropia));
 		assertThrows(
@@ -437,6 +438,131 @@ class CitaServicioTest {
 				1L, 20L, Rol.ESTILISTA, 100L, new SolicitudCambiarEstadoCita(EstadoCita.NO_ASISTIO));
 		assertEquals(EstadoCita.NO_ASISTIO, respuesta.estado());
 		verify(citaRepositorio).saveAndFlush(confirmadaPropia);
+	}
+
+	@Test
+	void reservaPublicaCreaCitaPendienteEnLineaConPrecioYDuracion() {
+		salon.setSlug("barberia-pruebas");
+
+		LocalDateTime inicio = LocalDateTime.of(2026, 11, 26, 10, 0);
+		SolicitudCrearCita solicitud = solicitudEn(inicio, 10L, 20L);
+
+		when(salonRepositorio.findBySlug("barberia-pruebas"))
+				.thenReturn(Optional.of(salon));
+		when(servicioRepositorio.findByIdAndSalonId(10L, 1L))
+				.thenReturn(Optional.of(servicio));
+		when(usuarioRepositorio.buscarEstilistaConServiciosPorId(
+				20L, 1L, Rol.ESTILISTA))
+				.thenReturn(Optional.of(estilista));
+		when(citaRepositorio.buscarCitasActivasEstilistaEnRango(
+				eq(1L), eq(20L), any(),
+				eq(inicio), eq(inicio.plusMinutes(30))))
+				.thenReturn(List.of());
+
+		when(clienteRepositorio.findBySalonIdAndTelefono(
+				1L, "3001112233"))
+				.thenReturn(Optional.empty());
+
+		when(clienteRepositorio.saveAndFlush(any(Cliente.class)))
+				.thenAnswer(inv -> {
+					Cliente cliente = inv.getArgument(0);
+					cliente.setId(30L);
+					return cliente;
+				});
+
+		when(citaRepositorio.saveAndFlush(any(Cita.class)))
+				.thenAnswer(inv -> {
+					Cita cita = inv.getArgument(0);
+					cita.setId(200L);
+					return cita;
+				});
+
+		RespuestaCita respuesta = citaServicio.crearReservaPublica(
+				"barberia-pruebas", solicitud);
+
+		assertEquals(200L, respuesta.id());
+		assertEquals(inicio, respuesta.inicio());
+		assertEquals(inicio.plusMinutes(30), respuesta.fin());
+		assertEquals(EstadoCita.PENDIENTE, respuesta.estado());
+		assertEquals(OrigenCita.EN_LINEA, respuesta.origen());
+		assertEquals(25000, respuesta.precio());
+
+		verify(clienteRepositorio).saveAndFlush(any(Cliente.class));
+		verify(citaRepositorio).saveAndFlush(any(Cita.class));
+	}
+
+	@Test
+	void reservaPublicaReutilizaClienteExistente() {
+		salon.setSlug("barberia-pruebas");
+
+		LocalDateTime inicio = LocalDateTime.of(2026, 11, 26, 11, 0);
+
+		Cliente existente = new Cliente();
+		existente.setId(31L);
+		existente.setNombre("Laura Gomez");
+		existente.setTelefono("3001112233");
+		existente.setSalon(salon);
+
+		when(salonRepositorio.findBySlug("barberia-pruebas"))
+				.thenReturn(Optional.of(salon));
+		when(servicioRepositorio.findByIdAndSalonId(10L, 1L))
+				.thenReturn(Optional.of(servicio));
+		when(usuarioRepositorio.buscarEstilistaConServiciosPorId(
+				20L, 1L, Rol.ESTILISTA))
+				.thenReturn(Optional.of(estilista));
+		when(citaRepositorio.buscarCitasActivasEstilistaEnRango(
+				eq(1L), eq(20L), any(), any(), any()))
+				.thenReturn(List.of());
+		when(clienteRepositorio.findBySalonIdAndTelefono(
+				1L, "3001112233"))
+				.thenReturn(Optional.of(existente));
+		when(citaRepositorio.saveAndFlush(any(Cita.class)))
+				.thenAnswer(inv -> inv.getArgument(0));
+
+		RespuestaCita respuesta = citaServicio.crearReservaPublica(
+				"barberia-pruebas",
+				solicitudEn(inicio, 10L, 20L));
+
+		assertEquals("Laura Gomez", respuesta.clienteNombre());
+		assertEquals(EstadoCita.PENDIENTE, respuesta.estado());
+		assertEquals(OrigenCita.EN_LINEA, respuesta.origen());
+
+		verify(clienteRepositorio, never())
+				.saveAndFlush(any(Cliente.class));
+		verify(citaRepositorio).saveAndFlush(any(Cita.class));
+	}
+
+	@Test
+	void reservaPublicaRechazaCruceSinGuardar() {
+		salon.setSlug("barberia-pruebas");
+
+		LocalDateTime inicio = LocalDateTime.of(2026, 11, 26, 10, 0);
+
+		Cita existente = new Cita();
+		existente.setInicio(LocalDateTime.of(2026, 11, 26, 10, 15));
+		existente.setFin(LocalDateTime.of(2026, 11, 26, 10, 45));
+		existente.setEstado(EstadoCita.CONFIRMADA);
+
+		when(salonRepositorio.findBySlug("barberia-pruebas"))
+				.thenReturn(Optional.of(salon));
+		when(servicioRepositorio.findByIdAndSalonId(10L, 1L))
+				.thenReturn(Optional.of(servicio));
+		when(usuarioRepositorio.buscarEstilistaConServiciosPorId(
+				20L, 1L, Rol.ESTILISTA))
+				.thenReturn(Optional.of(estilista));
+		when(citaRepositorio.buscarCitasActivasEstilistaEnRango(
+				eq(1L), eq(20L), any(), any(), any()))
+				.thenReturn(List.of(existente));
+
+		assertThrows(
+				ExcepcionConflicto.class,
+				() -> citaServicio.crearReservaPublica(
+						"barberia-pruebas",
+						solicitudEn(inicio, 10L, 20L)));
+
+		verifyNoInteractions(clienteRepositorio);
+		verify(citaRepositorio, never())
+				.saveAndFlush(any(Cita.class));
 	}
 
 	private SolicitudCrearCita solicitudEn(LocalDateTime inicio, Long servicioId, Long estilistaId) {

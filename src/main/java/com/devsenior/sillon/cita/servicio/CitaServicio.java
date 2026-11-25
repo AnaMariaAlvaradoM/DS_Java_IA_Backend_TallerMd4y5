@@ -79,6 +79,18 @@ public class CitaServicio {
 	}
 
 	/**
+	 * Crea una reserva pública para un salón identificado por su slug
+	 * en estado PENDIENTE y origen EN_LINEA.
+	 */
+	@Transactional
+	public RespuestaCita crearReservaPublica(String slug, SolicitudCrearCita solicitud) {
+		Salon salon = salonRepositorio.findBySlug(slug)
+				.orElseThrow(() -> new ExcepcionRecursoNoEncontrado("Salón no encontrado."));
+
+		return agendarEnSalon(salon, solicitud, EstadoCita.PENDIENTE, OrigenCita.EN_LINEA);
+	}
+
+	/**
 	 * Lista las citas de un día ordenadas por hora. El dueño consulta todo el salón;
 	 * el estilista únicamente sus propias citas.
 	 */
