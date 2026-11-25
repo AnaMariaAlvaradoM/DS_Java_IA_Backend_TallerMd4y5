@@ -64,6 +64,11 @@ public class ManejadorGlobalErrores {
         return responder(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
+    @ExceptionHandler(IaNoDisponibleException.class)
+    public ResponseEntity<ErrorRespuesta> iaNoDisponible(IaNoDisponibleException ex) {
+        return responder(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+
     // ---------- Errores de la peticion que detecta Spring (siempre 400) ----------
 
     /** @Valid fallo: "campo: mensaje; campo: mensaje", ordenados por campo para que el texto sea estable. */
