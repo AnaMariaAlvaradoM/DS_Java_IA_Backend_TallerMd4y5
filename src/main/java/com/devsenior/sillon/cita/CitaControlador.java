@@ -57,4 +57,12 @@ public class CitaControlador {
             @Valid @RequestBody CitaCambioEstadoPeticion peticion) {
         return citaServicio.cambiarEstado(usuario, id, peticion.estado());
     }
+
+    @PostMapping("/{id}/recordatorio")
+    @ResponseStatus(HttpStatus.OK)
+    public RecordatorioRespuesta generarRecordatorio(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UsuarioPrincipal usuario) {
+        return citaServicio.generarRecordatorio(id, usuario.getSalonId());
+    }
 }

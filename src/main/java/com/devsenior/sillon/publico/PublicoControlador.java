@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.devsenior.sillon.chat.ChatPeticion;
+import com.devsenior.sillon.chat.ChatRespuesta;
+import com.devsenior.sillon.chat.ChatServicio;
 import com.devsenior.sillon.cita.CitaCreacionPeticion;
 import com.devsenior.sillon.cita.CitaRespuesta;
 
@@ -23,15 +26,18 @@ import jakarta.validation.Valid;
  * - GET /api/publico/salones/{slug}: catalogo de servicios y estilistas.
  * - GET /api/publico/salones/{slug}/disponibilidad: horarios libres para un servicio y estilista.
  * - POST /api/publico/salones/{slug}/reservas: reserva en linea (nace PENDIENTE y EN_LINEA).
+ * - POST /api/publico/salones/{slug}/chat: chatbot del salon con IA y escalamiento.
  */
 @RestController
 @RequestMapping("/api/publico/salones/{slug}")
 public class PublicoControlador {
 
     private final PublicoServicio publicoServicio;
+    private final ChatServicio chatServicio;
 
-    public PublicoControlador(PublicoServicio publicoServicio) {
+    public PublicoControlador(PublicoServicio publicoServicio, ChatServicio chatServicio) {
         this.publicoServicio = publicoServicio;
+        this.chatServicio = chatServicio;
     }
 
     @GetMapping
@@ -54,5 +60,13 @@ public class PublicoControlador {
             @PathVariable String slug,
             @Valid @RequestBody CitaCreacionPeticion peticion) {
         return publicoServicio.reservarEnLinea(slug, peticion);
+    }
+
+    @PostMapping("/chat")
+    @ResponseStatus(HttpStatus.OK)
+    public ChatRespuesta chatear(
+            @PathVariable String slug,
+            @Valid @RequestBody ChatPeticion peticion) {
+        return chatServicio.procesarChat(slug, peticion);
     }
 }

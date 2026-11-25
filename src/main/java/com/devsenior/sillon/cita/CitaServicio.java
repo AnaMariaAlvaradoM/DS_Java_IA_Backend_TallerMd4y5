@@ -1,9 +1,15 @@
 package com.devsenior.sillon.cita;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,8 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.devsenior.sillon.cliente.Cliente;
 import com.devsenior.sillon.cliente.ClienteServicio;
 import com.devsenior.sillon.compartido.AccionNoPermitidaException;
+import com.devsenior.sillon.compartido.PasarelaException;
 import com.devsenior.sillon.compartido.RecursoNoEncontradoException;
 import com.devsenior.sillon.compartido.ReglaNegocioException;
+import com.devsenior.sillon.ia.AsistenteIa;
+import com.devsenior.sillon.ia.BibliotecaPrompts;
+import com.devsenior.sillon.ia.CreditosIaServicio;
+import com.devsenior.sillon.ia.LectorJson;
+import com.devsenior.sillon.ia.RespuestaIa;
 import com.devsenior.sillon.salon.Salon;
 import com.devsenior.sillon.salon.SalonRepository;
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
@@ -21,6 +33,8 @@ import com.devsenior.sillon.servicio.ServicioRepository;
 import com.devsenior.sillon.usuario.Rol;
 import com.devsenior.sillon.usuario.Usuario;
 import com.devsenior.sillon.usuario.UsuarioRepository;
+
+import tools.jackson.databind.JsonNode;
 
 @Service
 public class CitaServicio {
@@ -33,6 +47,10 @@ public class CitaServicio {
     private final ReglasAgenda reglasAgenda;
     private final CitaMapper citaMapper;
     private final Clock reloj;
+    private final AsistenteIa asistenteIa;
+    private final BibliotecaPrompts bibliotecaPrompts;
+    private final LectorJson lectorJson;
+    private final CreditosIaServicio creditosIaServicio;
 
     public CitaServicio(CitaRepository citaRepository,
                         SalonRepository salonRepository,
@@ -41,7 +59,11 @@ public class CitaServicio {
                         ClienteServicio clienteServicio,
                         ReglasAgenda reglasAgenda,
                         CitaMapper citaMapper,
-                        Clock reloj) {
+                        Clock reloj,
+                        AsistenteIa asistenteIa,
+                        BibliotecaPrompts bibliotecaPrompts,
+                        LectorJson lectorJson,
+                        CreditosIaServicio creditosIaServicio) {
         this.citaRepository = citaRepository;
         this.salonRepository = salonRepository;
         this.servicioRepository = servicioRepository;
@@ -50,6 +72,10 @@ public class CitaServicio {
         this.reglasAgenda = reglasAgenda;
         this.citaMapper = citaMapper;
         this.reloj = reloj;
+        this.asistenteIa = asistenteIa;
+        this.bibliotecaPrompts = bibliotecaPrompts;
+        this.lectorJson = lectorJson;
+        this.creditosIaServicio = creditosIaServicio;
     }
 
     /** Cita creada directamente por el personal del salon: nace CONFIRMADA y con origen SALON. */
@@ -194,5 +220,100 @@ public class CitaServicio {
         Cita guardada = citaRepository.saveAndFlush(cita);
 
         return citaMapper.aRespuesta(guardada);
+    }
+
+    /**
+     * Genera un borrador de recordatorio con IA para WhatsApp con los datos verificados de la cita.
+     * Orden estricto según la especificación:
+     * 1. Validar que la cita exista en el salón (404) y esté en estado PENDIENTE o CONFIRMADA (409).
+     * 2. Verificar créditos (402 si 0 créditos, la IA no es llamada).
+     * 3. Cargar prompt recordatorio.txt y llamar a la IA (fuera de transacción de base de datos).
+     * 4. Consumir crédito de forma atómica.
+     * 5. Leer y validar JSON (clave mensaje, máx 700 caracteres, 502 si falla).
+     * 6. Devolver DTO RecordatorioRespuesta.
+     */
+    public RecordatorioRespuesta generarRecordatorio(Long citaId, Long salonId) {
+        Cita cita = citaRepository.findByIdAndSalonId(citaId, salonId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cita no encontrada o pertenece a otro salón"));
+
+        if (cita.getEstado() != EstadoCita.PENDIENTE && cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new ReglaNegocioException("Solo se pueden generar recordatorios para citas en estado PENDIENTE o CONFIRMADA.");
+        }
+
+        creditosIaServicio.verificarCreditos(cita.getSalon());
+
+        String direccion = cita.getSalon().getDireccion() != null ? cita.getSalon().getDireccion().trim() : "";
+        String ciudad = cita.getSalon().getCiudad() != null ? cita.getSalon().getCiudad().trim() : "";
+        String ubicacion = direccion;
+        if (!ciudad.isEmpty()) {
+            ubicacion = ubicacion.isEmpty() ? ciudad : ubicacion + ", " + ciudad;
+        }
+
+        String datosVerificados = String.format(
+                "Servicio: %s (%d minutos)\n" +
+                "Estilista: %s\n" +
+                "Fecha: %s\n" +
+                "Hora: %s\n" +
+                "Valor: %s\n" +
+                "Dirección: %s",
+                cita.getServicio().getNombre(),
+                cita.getServicio().getDuracionMinutos(),
+                cita.getEstilista().getNombre(),
+                formatearFechaEspanol(cita.getInicio().toLocalDate()),
+                formatearHoraEspanol(cita.getInicio().toLocalTime()),
+                formatearPrecio(cita.getPrecio()),
+                ubicacion
+        );
+
+        String instrucciones = bibliotecaPrompts.obtenerPrompt("recordatorio", Map.of(
+                "salon", cita.getSalon().getNombre() != null ? cita.getSalon().getNombre() : "",
+                "cliente", cita.getCliente().getNombre() != null ? cita.getCliente().getNombre() : "",
+                "datos", datosVerificados
+        ));
+
+        RespuestaIa respuestaIa = asistenteIa.completar(instrucciones, "Genera el recordatorio para el cliente.");
+
+        int creditosRestantes = creditosIaServicio.consumirCredito(salonId);
+
+        JsonNode nodo = lectorJson.leerJson(respuestaIa.texto(), "mensaje");
+        String mensaje = nodo.get("mensaje").asString();
+
+        if (mensaje == null || mensaje.isBlank()) {
+            throw new PasarelaException("El mensaje del recordatorio no puede estar vacío.");
+        }
+        if (mensaje.length() > 700) {
+            throw new PasarelaException("El mensaje del recordatorio supera el límite de 700 caracteres.");
+        }
+
+        return new RecordatorioRespuesta(
+                cita.getId(),
+                cita.getCliente().getTelefono(),
+                mensaje,
+                creditosRestantes,
+                respuestaIa.factura()
+        );
+    }
+
+    private String formatearPrecio(Integer precio) {
+        if (precio == null) {
+            return "$0";
+        }
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.of("es", "CO"));
+        symbols.setGroupingSeparator('.');
+        DecimalFormat df = new DecimalFormat("#,##0", symbols);
+        return "$" + df.format(precio);
+    }
+
+    private String formatearFechaEspanol(LocalDate fecha) {
+        return DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale.of("es", "CO"))
+                .format(fecha)
+                .toLowerCase(Locale.of("es", "CO"));
+    }
+
+    private String formatearHoraEspanol(LocalTime hora) {
+        return DateTimeFormatter.ofPattern("h:mm a", Locale.of("es", "CO"))
+                .format(hora)
+                .replace('\u202F', ' ')
+                .replace('\u00A0', ' ');
     }
 }

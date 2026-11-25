@@ -6,17 +6,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,8 +34,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.devsenior.sillon.cliente.Cliente;
 import com.devsenior.sillon.cliente.ClienteServicio;
 import com.devsenior.sillon.compartido.AccionNoPermitidaException;
+import com.devsenior.sillon.compartido.PagoRequeridoException;
+import com.devsenior.sillon.compartido.PasarelaException;
 import com.devsenior.sillon.compartido.RecursoNoEncontradoException;
 import com.devsenior.sillon.compartido.ReglaNegocioException;
+import com.devsenior.sillon.ia.AsistenteIa;
+import com.devsenior.sillon.ia.BibliotecaPrompts;
+import com.devsenior.sillon.ia.CreditosIaServicio;
+import com.devsenior.sillon.ia.FacturaIa;
+import com.devsenior.sillon.ia.LectorJson;
+import com.devsenior.sillon.ia.RespuestaIa;
 import com.devsenior.sillon.salon.ConfiguracionSalon;
 import com.devsenior.sillon.salon.Plan;
 import com.devsenior.sillon.salon.Salon;
@@ -61,6 +72,18 @@ class CitaServicioTest {
 
     @Mock
     private ClienteServicio clienteServicio;
+
+    @Mock
+    private AsistenteIa asistenteIa;
+
+    @Mock
+    private BibliotecaPrompts bibliotecaPrompts;
+
+    @Spy
+    private LectorJson lectorJson = new LectorJson();
+
+    @Mock
+    private CreditosIaServicio creditosIaServicio;
 
     @Spy
     private ReglasAgenda reglasAgenda;
@@ -95,9 +118,14 @@ class CitaServicioTest {
                 clienteServicio,
                 reglasAgenda,
                 citaMapper,
-                relojFijo);
+                relojFijo,
+                asistenteIa,
+                bibliotecaPrompts,
+                lectorJson,
+                creditosIaServicio);
 
         salon = new Salon();
+        salon.setNombre("Barbería La Navaja");
         salon.setPlan(Plan.GRATIS);
         salon.setConfiguracion(ConfiguracionSalon.porDefecto());
 
@@ -345,5 +373,150 @@ class CitaServicioTest {
         List<CitaRespuesta> resultadoEstilista = citaServicio.listarPorDia(estilista, fecha);
         assertEquals(1, resultadoEstilista.size());
         assertEquals(20L, resultadoEstilista.get(0).estilistaId());
+    }
+
+    @Test
+    @DisplayName("Generar recordatorio para cita válida genera mensaje y consume un crédito")
+    void generarRecordatorio_citaValida_generaMensajeYConsumeCredito() {
+        Long salonId = 1L;
+        Long citaId = 100L;
+
+        Cita cita = new Cita();
+        cita.setId(citaId);
+        cita.setSalon(salon);
+        cita.setEstilista(estilistaMateo);
+        cita.setServicio(servicioCorte);
+        cita.setCliente(clienteValentina);
+        cita.setPrecio(35000);
+        cita.setEstado(EstadoCita.CONFIRMADA);
+        cita.setOrigen(OrigenCita.SALON);
+        cita.setInicio(LocalDateTime.of(2026, 10, 20, 10, 30));
+        cita.setFin(LocalDateTime.of(2026, 10, 20, 11, 0));
+
+        when(citaRepository.findByIdAndSalonId(citaId, salonId)).thenReturn(Optional.of(cita));
+        when(bibliotecaPrompts.obtenerPrompt(eq("recordatorio"), any())).thenReturn("Prompt simulado");
+
+        FacturaIa factura = new FacturaIa("openai", "gpt-4o-mini", 120, 45, new BigDecimal("0.0005"), 250L);
+        when(asistenteIa.completar(eq("Prompt simulado"), anyString()))
+                .thenReturn(new RespuestaIa("{\"mensaje\": \"Hola Valentina, te esperamos para tu Corte clásico a las 10:30 a. m. en Barbería La Navaja.\"}", factura));
+        when(creditosIaServicio.consumirCredito(salonId)).thenReturn(9);
+
+        RecordatorioRespuesta res = citaServicio.generarRecordatorio(citaId, salonId);
+
+        assertNotNull(res);
+        assertEquals(citaId, res.citaId());
+        assertEquals("3001112233", res.telefonoCliente());
+        assertEquals(9, res.creditosRestantes());
+        assertNotNull(res.factura());
+        assertEquals("openai", res.factura().proveedor());
+        assertEquals("gpt-4o-mini", res.factura().modelo());
+        org.junit.jupiter.api.Assertions.assertTrue(res.mensaje().contains("Valentina"));
+        org.junit.jupiter.api.Assertions.assertTrue(res.mensaje().contains("10:30 a. m."));
+
+        verify(creditosIaServicio).consumirCredito(salonId);
+    }
+
+    @Test
+    @DisplayName("Generar recordatorio para cita COMPLETADA lanza 409")
+    void generarRecordatorio_citaCompletada_lanza409() {
+        Long salonId = 1L;
+        Long citaId = 101L;
+
+        Cita cita = new Cita();
+        cita.setId(citaId);
+        cita.setSalon(salon);
+        cita.setEstado(EstadoCita.COMPLETADA);
+
+        when(citaRepository.findByIdAndSalonId(citaId, salonId)).thenReturn(Optional.of(cita));
+
+        assertThrows(ReglaNegocioException.class, () -> citaServicio.generarRecordatorio(citaId, salonId));
+        verify(asistenteIa, never()).completar(any(), any());
+    }
+
+    @Test
+    @DisplayName("Generar recordatorio cuando el salón no tiene créditos lanza 402")
+    void generarRecordatorio_sinCreditos_lanza402() {
+        Long salonId = 1L;
+        Long citaId = 102L;
+
+        Cita cita = new Cita();
+        cita.setId(citaId);
+        cita.setSalon(salon);
+        cita.setEstado(EstadoCita.CONFIRMADA);
+
+        when(citaRepository.findByIdAndSalonId(citaId, salonId)).thenReturn(Optional.of(cita));
+        org.mockito.Mockito.doThrow(new PagoRequeridoException("Sin créditos"))
+                .when(creditosIaServicio).verificarCreditos(salon);
+
+        assertThrows(PagoRequeridoException.class, () -> citaServicio.generarRecordatorio(citaId, salonId));
+        verify(asistenteIa, never()).completar(any(), any());
+    }
+
+    @Test
+    @DisplayName("Generar recordatorio con JSON sin mensaje lanza 502 (PasarelaException)")
+    void generarRecordatorio_jsonSinMensaje_lanza502() {
+        Long salonId = 1L;
+        Long citaId = 103L;
+
+        Cita cita = new Cita();
+        cita.setId(citaId);
+        cita.setSalon(salon);
+        cita.setEstilista(estilistaMateo);
+        cita.setServicio(servicioCorte);
+        cita.setCliente(clienteValentina);
+        cita.setPrecio(35000);
+        cita.setEstado(EstadoCita.CONFIRMADA);
+        cita.setInicio(LocalDateTime.of(2026, 10, 20, 10, 30));
+        cita.setFin(LocalDateTime.of(2026, 10, 20, 11, 0));
+
+        when(citaRepository.findByIdAndSalonId(citaId, salonId)).thenReturn(Optional.of(cita));
+        when(bibliotecaPrompts.obtenerPrompt(eq("recordatorio"), any())).thenReturn("Prompt");
+
+        FacturaIa factura = new FacturaIa("openai", "gpt-4o-mini", 50, 20, new BigDecimal("0.0002"), 150L);
+        // JSON sin la clave "mensaje"
+        when(asistenteIa.completar(anyString(), anyString()))
+                .thenReturn(new RespuestaIa("{\"otro_campo\": \"hola\"}", factura));
+
+        assertThrows(PasarelaException.class, () -> citaServicio.generarRecordatorio(citaId, salonId));
+    }
+
+    @Test
+    @DisplayName("Generar recordatorio con mensaje mayor a 700 caracteres lanza 502 (PasarelaException)")
+    void generarRecordatorio_mensajeSupera700Caracteres_lanza502() {
+        Long salonId = 1L;
+        Long citaId = 104L;
+
+        Cita cita = new Cita();
+        cita.setId(citaId);
+        cita.setSalon(salon);
+        cita.setEstilista(estilistaMateo);
+        cita.setServicio(servicioCorte);
+        cita.setCliente(clienteValentina);
+        cita.setPrecio(35000);
+        cita.setEstado(EstadoCita.CONFIRMADA);
+        cita.setInicio(LocalDateTime.of(2026, 10, 20, 10, 30));
+        cita.setFin(LocalDateTime.of(2026, 10, 20, 11, 0));
+
+        when(citaRepository.findByIdAndSalonId(citaId, salonId)).thenReturn(Optional.of(cita));
+        when(bibliotecaPrompts.obtenerPrompt(eq("recordatorio"), any())).thenReturn("Prompt");
+
+        FacturaIa factura = new FacturaIa("openai", "gpt-4o-mini", 50, 20, new BigDecimal("0.0002"), 150L);
+        String mensajeLargo = "A".repeat(705);
+        when(asistenteIa.completar(anyString(), anyString()))
+                .thenReturn(new RespuestaIa("{\"mensaje\": \"" + mensajeLargo + "\"}", factura));
+
+        assertThrows(PasarelaException.class, () -> citaServicio.generarRecordatorio(citaId, salonId));
+    }
+
+    @Test
+    @DisplayName("Generar recordatorio para cita que no existe o es de otro salón lanza 404")
+    void generarRecordatorio_citaDeOtroSalon_lanza404() {
+        Long salonId = 1L;
+        Long citaId = 999L;
+
+        when(citaRepository.findByIdAndSalonId(citaId, salonId)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNoEncontradoException.class, () -> citaServicio.generarRecordatorio(citaId, salonId));
+        verify(asistenteIa, never()).completar(any(), any());
     }
 }
