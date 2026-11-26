@@ -35,143 +35,143 @@ import jakarta.persistence.EntityManager;
 @AutoConfigureMockMvc
 @Transactional
 @TestPropertySource(properties = {
-        "sillon.stripe.secreto-webhook=whsec_prueba_http"
+                "sillon.stripe.secreto-webhook=whsec_prueba_http"
 })
 class WebhookStripeHttpIntegracionTest {
 
-    private static final String SECRETO = "whsec_prueba_http";
+        private static final String SECRETO = "whsec_prueba_http";
 
-    @Autowired
-    private MockMvc mvc;
+        @Autowired
+        private MockMvc mvc;
 
-    @Autowired
-    private SalonRepositorio salonRepositorio;
+        @Autowired
+        private SalonRepositorio salonRepositorio;
 
-    @Autowired
-    private EventoStripeRepositorio eventoRepositorio;
+        @Autowired
+        private EventoStripeRepositorio eventoRepositorio;
 
-    @Autowired
-    private EntityManager entityManager;
+        @Autowired
+        private EntityManager entityManager;
 
-    @Test
-    void webhookFirmadoActivaProPorHttpSinDuplicarCreditos()
-            throws Exception {
+        @Test
+        void webhookFirmadoActivaProPorHttpSinDuplicarCreditos()
+                        throws Exception {
 
-        Salon salon = new Salon();
-        salon.setNombre("Salon Prueba HTTP Stripe");
-        salon.setSlug("stripe-http-" + UUID.randomUUID());
-        salon.setCiudad("Bogota");
-        salon.setDireccion("Direccion de prueba 123");
-        salon.setTelefono("3001234567");
-        salon.setPlan(Plan.GRATIS);
-        salon.setCreditosIa(10);
-        salon.setConfiguracion(
-                ConfiguracionSalon.predeterminada());
-        salon.setFechaCreacion(
-                LocalDateTime.of(2026, 11, 25, 15, 0));
+                Salon salon = new Salon();
+                salon.setNombre("Salon Prueba HTTP Stripe");
+                salon.setSlug("stripe-http-" + UUID.randomUUID());
+                salon.setCiudad("Bogota");
+                salon.setDireccion("Direccion de prueba 123");
+                salon.setTelefono("3001234567");
+                salon.setPlan(Plan.GRATIS);
+                salon.setCreditosIa(10);
+                salon.setConfiguracion(
+                                ConfiguracionSalon.predeterminada());
+                salon.setFechaCreacion(
+                                LocalDateTime.of(2026, 11, 25, 15, 0));
 
-        salon = salonRepositorio.saveAndFlush(salon);
+                salon = salonRepositorio.saveAndFlush(salon);
 
-        Long salonId = salon.getId();
+                Long salonId = salon.getId();
 
-        String eventoId = "evt_http_"
-                + UUID.randomUUID().toString().replace("-", "");
+                String eventoId = "evt_http_"
+                                + UUID.randomUUID().toString().replace("-", "");
 
-        String suscripcionId = "sub_http_"
-                + UUID.randomUUID().toString().replace("-", "");
+                String suscripcionId = "sub_http_"
+                                + UUID.randomUUID().toString().replace("-", "");
 
-        String cuerpo = """
-                {
-                  "id": "%s",
-                  "object": "event",
-                  "api_version": "2026-09-30.endive",
-                  "type": "checkout.session.completed",
-                  "data": {
-                    "object": {
-                      "id": "cs_test_http_123",
-                      "object": "checkout.session",
-                      "mode": "subscription",
-                      "payment_status": "paid",
-                      "client_reference_id": "%d",
-                      "subscription": "%s",
-                      "metadata": {
-                        "salonId": "%d",
-                        "tipo": "SUSCRIPCION_PRO"
-                      }
-                    }
-                  }
-                }
-                """.formatted(
-                eventoId,
-                salonId,
-                suscripcionId,
-                salonId);
+                String cuerpo = """
+                                {
+                                  "id": "%s",
+                                  "object": "event",
+                                  "api_version": "2026-09-30.endive",
+                                  "type": "checkout.session.completed",
+                                  "data": {
+                                    "object": {
+                                      "id": "cs_test_http_123",
+                                      "object": "checkout.session",
+                                      "mode": "subscription",
+                                      "payment_status": "paid",
+                                      "client_reference_id": "%d",
+                                      "subscription": "%s",
+                                      "metadata": {
+                                        "salonId": "%d",
+                                        "tipo": "SUSCRIPCION_PRO"
+                                      }
+                                    }
+                                  }
+                                }
+                                """.formatted(
+                                eventoId,
+                                salonId,
+                                suscripcionId,
+                                salonId);
 
-        String firma = firmar(cuerpo);
+                String firma = firmar(cuerpo);
 
-        mvc.perform(post("/api/pagos/webhook")
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("Stripe-Signature", firma)
-                .content(cuerpo))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.recibido").value(true))
-                .andExpect(jsonPath("$.procesado").value(true));
+                mvc.perform(post("/api/pagos/webhook")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header("Stripe-Signature", firma)
+                                .content(cuerpo))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.recibido").value(true))
+                                .andExpect(jsonPath("$.procesado").value(true));
 
-        entityManager.flush();
-        entityManager.clear();
+                entityManager.flush();
+                entityManager.clear();
 
-        Salon actualizado = salonRepositorio.findById(salonId)
-                .orElseThrow();
+                Salon actualizado = salonRepositorio.findById(salonId)
+                                .orElseThrow();
 
-        assertEquals(Plan.PRO, actualizado.getPlan());
-        assertEquals(310, actualizado.getCreditosIa());
-        assertEquals(
-                suscripcionId,
-                actualizado.getStripeSuscripcionId());
+                assertEquals(Plan.PRO, actualizado.getPlan());
+                assertEquals(310, actualizado.getCreditosIa());
+                assertEquals(
+                                suscripcionId,
+                                actualizado.getStripeSuscripcionId());
 
-        assertTrue(eventoRepositorio.existsById(eventoId));
+                assertTrue(eventoRepositorio.existsById(eventoId));
 
-        mvc.perform(post("/api/pagos/webhook")
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("Stripe-Signature", firma)
-                .content(cuerpo))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.recibido").value(true))
-                .andExpect(jsonPath("$.procesado").value(false));
+                mvc.perform(post("/api/pagos/webhook")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .header("Stripe-Signature", firma)
+                                .content(cuerpo))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.recibido").value(true))
+                                .andExpect(jsonPath("$.procesado").value(false));
 
-        entityManager.flush();
-        entityManager.clear();
+                entityManager.flush();
+                entityManager.clear();
 
-        Salon despuesDelDuplicado = salonRepositorio
-                .findById(salonId)
-                .orElseThrow();
+                Salon despuesDelDuplicado = salonRepositorio
+                                .findById(salonId)
+                                .orElseThrow();
 
-        assertEquals(Plan.PRO, despuesDelDuplicado.getPlan());
-        assertEquals(
-                310,
-                despuesDelDuplicado.getCreditosIa());
+                assertEquals(Plan.PRO, despuesDelDuplicado.getPlan());
+                assertEquals(
+                                310,
+                                despuesDelDuplicado.getCreditosIa());
 
-        assertEquals(
-                suscripcionId,
-                despuesDelDuplicado.getStripeSuscripcionId());
-    }
+                assertEquals(
+                                suscripcionId,
+                                despuesDelDuplicado.getStripeSuscripcionId());
+        }
 
-    private String firmar(String cuerpo) throws Exception {
+        private String firmar(String cuerpo) throws Exception {
 
-        long timestamp = Instant.now().getEpochSecond();
+                long timestamp = Instant.now().getEpochSecond();
 
-        String contenido = timestamp + "." + cuerpo;
+                String contenido = timestamp + "." + cuerpo;
 
-        Mac mac = Mac.getInstance("HmacSHA256");
+                Mac mac = Mac.getInstance("HmacSHA256");
 
-        mac.init(new SecretKeySpec(
-                SECRETO.getBytes(StandardCharsets.UTF_8),
-                "HmacSHA256"));
+                mac.init(new SecretKeySpec(
+                                SECRETO.getBytes(StandardCharsets.UTF_8),
+                                "HmacSHA256"));
 
-        byte[] firma = mac.doFinal(
-                contenido.getBytes(StandardCharsets.UTF_8));
+                byte[] firma = mac.doFinal(
+                                contenido.getBytes(StandardCharsets.UTF_8));
 
-        return "t=" + timestamp
-                + ",v1=" + HexFormat.of().formatHex(firma);
-    }
+                return "t=" + timestamp
+                                + ",v1=" + HexFormat.of().formatHex(firma);
+        }
 }
