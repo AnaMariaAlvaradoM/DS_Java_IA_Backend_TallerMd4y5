@@ -27,9 +27,9 @@ import com.devsenior.sillon.compartido.excepcion.ExcepcionRecursoNoEncontrado;
 @Service
 public class ChatIaServicio {
 
-    private static final String RESPUESTA_SEGURA = "Para confirmar promociones, descuentos o "
-            + "condiciones comerciales, el equipo del salon "
-            + "se pondra en contacto contigo.";
+    private static final String RESPUESTA_SEGURA = "He registrado su consulta. "
+            + "El equipo del salon se pondra en contacto "
+            + "con usted para brindarle informacion verificada.";
 
     private static final String RESPUESTA_ESCALAMIENTO = "He registrado tu solicitud. El equipo del salon "
             + "se pondra en contacto contigo para ayudarte.";

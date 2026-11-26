@@ -235,9 +235,17 @@ class ChatIaServicioTest {
         assertFalse(
                 respuesta.respuesta().contains("30%"));
 
-        assertTrue(
-                respuesta.respuesta()
-                        .contains("condiciones comerciales"));
+        assertEquals(
+                "He registrado su consulta. "
+                        + "El equipo del salon se pondra en contacto "
+                        + "con usted para brindarle informacion verificada.",
+                respuesta.respuesta());
+
+        assertFalse(
+                respuesta.respuesta().toLowerCase()
+                        .matches("(?s).*\\b(descuent\\w*|cupon\\w*|"
+                                + "gratis|gratuit\\w*|promocion\\w*|"
+                                + "reembols\\w*|devolucion\\w*).*"));
 
         verify(solicitudContactoServicio)
                 .crearSolicitud(
