@@ -98,9 +98,14 @@ public class ProcesadorWebhookStripe {
 
         TipoCompra tipoCompra;
 
+        String valorTipo = metadata.get("tipoCompra");
+
+        if (valorTipo == null || valorTipo.isBlank()) {
+            valorTipo = metadata.get("tipo");
+        }
+
         try {
-            tipoCompra = TipoCompra.valueOf(
-                    metadata.get("tipoCompra"));
+            tipoCompra = TipoCompra.valueOf(valorTipo);
         } catch (IllegalArgumentException
                 | NullPointerException excepcion) {
             throw new ExcepcionIntegracion(
