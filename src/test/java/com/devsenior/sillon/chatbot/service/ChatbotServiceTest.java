@@ -63,6 +63,7 @@ class ChatbotServiceTest {
                 lectorJsonIA, bibliotecaPrompts, solicitudContactoService, salonRepository);
         Salon salon = new Salon();
         salon.setId(SALON_ID);
+        salon.setNombresalon("Salon Centro");
         when(salonRepository.findBySlug(SLUG)).thenReturn(Optional.of(salon));
         when(catalogoService.obtenerConocimientoParaChatbot(SALON_ID))
                 .thenReturn(new ConocimientoChatbot("Corte: 30 minutos", "Lunes a sábado"));
@@ -76,7 +77,7 @@ class ChatbotServiceTest {
         assertThrows(SinCreditosException.class, () -> procesarMensaje());
 
         verify(asistenteIA, never()).completar(any(String.class), any(String.class));
-        verify(salonRepository, never()).consumirUnCredito(SALON_ID);
+        verify(salonRepository, never()).descontarCredito(SALON_ID);
     }
 
     @Test
@@ -91,7 +92,7 @@ class ChatbotServiceTest {
         assertFalse(resultado.escalado());
         assertNull(resultado.solicitudId());
         assertEquals("Tenemos corte y peinado.", resultado.respuesta());
-        verify(salonRepository, times(1)).consumirUnCredito(SALON_ID);
+        verify(salonRepository, times(1)).descontarCredito(SALON_ID);
         verify(solicitudContactoService, never()).crearSolicitud(
                 any(), any(), any(), any(), any());
     }
@@ -148,7 +149,7 @@ class ChatbotServiceTest {
 
     private void prepararCreditoDisponible() {
         when(salonRepository.obtenerCreditos(SALON_ID)).thenReturn(1);
-        when(salonRepository.consumirUnCredito(SALON_ID)).thenReturn(1);
+        when(salonRepository.descontarCredito(SALON_ID)).thenReturn(1);
     }
 
     private com.devsenior.sillon.chatbot.contacto.model.SolicitudContacto solicitud(Long id) {

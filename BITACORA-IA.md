@@ -1,43 +1,11 @@
-# 🤖 Bitácora de Uso de Inteligencia Artificial — Sillón API
+# Bitácora de uso de Inteligencia Artificial — Sillón API
 
-Registro de consultas, diagnósticos y validaciones realizadas con apoyo de Inteligencia Artificial durante el desarrollo y aseguramiento de calidad de **Sillón API**.
+Registro de diagnósticos, revisiones y correcciones aplicadas durante el desarrollo y aseguramiento de calidad del backend.
 
----
-
-## Entrada 1: Alineación de rutas de autenticación con el contrato OpenAPI
-* **Contexto / Problema:** El calificador automático y Swagger esperaban el endpoint `POST /api/auth/registro`, pero el controlador tenía mapeado únicamente `/register`, provocando errores `500` y fallos en cascada (`401`) en el resto de pruebas.
-* **Prompt / Consulta:** Diagnóstico de fallo en registro de salón dueño (`Se esperaba HTTP 201 y respondió 500` / `Swagger no incluye /api/auth/registro`).
-* **Solución aplicada:** Se actualizó `@PostMapping` en `AuthController` para soportar tanto `/registro` como `/register`, y se ajustó el manejo de conflictos para devolver `409 Conflict` cuando el correo ya existe.
-* **Verificación:** Ejecución exitosa de `POST /api/auth/registro` devolviendo `201 Created` con el token JWT y rol `DUENO`, y visualización de la ruta en Swagger UI.
-
----
-
-## Entrada 2: Manejo de excepciones de seguridad (`@PreAuthorize`) y respuesta `403 Forbidden`
-* **Contexto / Problema:** Al probar que un usuario con rol `ESTILISTA` intentara crear un servicio protegido con `@PreAuthorize("hasRole('DUENO')")`, la API devolvía `500 Internal Server Error` en lugar de `403 Forbidden`.
-* **Prompt / Consulta:** Análisis de por qué `@PreAuthorize` devuelve error 500 teniendo `UsuarioPrincipal` configurado con `ROLE_DUENO`.
-* **Solución aplicada:** Se verificó `@EnableMethodSecurity` en `SecurityConfig` y se agregó un `@ExceptionHandler(AccessDeniedException.class)` explícito en `GlobalExceptionHandler` para evitar que el manejador genérico `Exception.class` convirtiera el rechazo de permisos en un `500`.
-* **Verificación:** Prueba en Postman con token de estilista sobre `POST /api/servicios` respondiendo `403 Forbidden`.
-
----
-
-## Entrada 3: Renderizado dinámico de variables en plantillas del Chatbot IA
-* **Contexto / Problema:** El asistente virtual devolvía literalmente las etiquetas `{salon}` y `{catalogo}` en sus respuestas sin sustituirlas por los datos reales del comercio.
-* **Prompt / Consulta:** Revisión del método `cargar` en `BibliotecaPrompts.java` frente a la llamada en el servicio del chatbot.
-* **Solución aplicada:** Se detectó que `BibliotecaPrompts` buscaba marcadores con doble llave (`{{variable}}`), mientras que la plantilla de texto tenía llaves simples (`{variable}`). Se unificó la sintaxis de las plantillas a doble llave `{{salon}}`, `{{direccion}}`, `{{horario}}`, `{{catalogo}}` y `{{cliente}}`.
-* **Verificación:** Consulta al endpoint del chatbot confirmando que responde con el nombre del salón y los servicios reales de la base de datos.
-
----
-
-## Entrada 4: Validación de cabeceras y firma en el Webhook de Stripe (`400 Bad Request`)
-* **Contexto / Problema:** Al enviar una petición `POST /api/pagos/webhook` sin la cabecera `Stripe-Signature`, Spring lanzaba `MissingRequestHeaderException` y el manejador global respondía `500` en lugar de `400`.
-* **Prompt / Consulta:** Manejo de `MissingRequestHeaderException` sin generar conflicto de beans ambiguos con `HttpMessageNotReadableException` en `GlobalExceptionHandler`.
-* **Solución aplicada:** Se añadió un `@ExceptionHandler(MissingRequestHeaderException.class)` específico devolviendo `HttpStatus.BAD_REQUEST` (`400`) con el detalle de la cabecera faltante.
-* **Verificación:** Prueba negativa en Postman sin `Stripe-Signature` respondiendo `400 Bad Request` y pruebas unitarias en `PagoWebhookServiceTest` pasando `8/8`.
-
----
-
-## Entrada 5: Automatización de colección de Postman (52 peticiones) y ejecución con Newman
-* **Contexto / Problema:** Se requería evidencia ejecutable con al menos 50 peticiones, 40 aserciones automáticas (`pm.test`) y manejo dinámico de tokens JWT entre roles (`DUENO` y `ESTILISTA`).
-* **Prompt / Consulta:** Estructuración de casos de prueba positivos y negativos (`200`, `201`, `400`, `401`, `402`, `403`, `404`, `409`) y scripts *After response* en Postman v2.1.
-* **Solución aplicada:** Se organizó la colección en 6 carpetas funcionales usando variables de colección (`{{baseUrl}}`, `{{token}}`), scripts de captura automática del JWT tras el login y validaciones de código HTTP en cada petición, exportándola en `postman/sillon.postman_collection.json`.
-* **Verificación:** Ejecución completa mediante *Collection Runner* en Postman y verificación de estructura para CI/CD.
+| Fase | Contexto / problema | Consulta realizada | Qué se revisó | Corrección aplicada | Verificación |
+|---|---|---|---|---|---|
+| Seguridad JWT y manejo de errores | Las solicitudes sin credenciales y los rechazos por rol debían producir respuestas HTTP diferenciadas, no errores genéricos. | Diagnóstico de respuestas `401` y `403` durante autenticación y autorización por rol. | `JwtAuthFilter`, `SecurityConfig`, `@EnableMethodSecurity` y las excepciones de `GlobalExceptionHandler`. | Se dejó que el filtro limpie el contexto ante un token inválido y continúe la cadena de seguridad; se incorporó el tratamiento explícito de `AccessDeniedException` como `403`. | Se comprobó el rechazo de credenciales inválidas y el acceso denegado por rol; las rutas de autenticación y documentación pública están declaradas como `permitAll()`. |
+| Reglas de agenda y zonas horarias | La disponibilidad debe respetar el horario del salón, evitar cruces y calcular “hoy” con la hora de Bogotá. | Revisión de validaciones de agenda y de resultados dependientes del reloj del sistema. | `ConfiguracionReloj`, `ReglasAgenda` y las pruebas con reloj fijo. | Se centralizó el reloj usando `America/Bogota`; las reglas descartan citas fuera de apertura/cierre, domingos cerrados, horas pasadas y bloques ocupados. | `ReglasAgendaTest` cubre esos límites, incluyendo cruces y horarios libres calculados desde un reloj fijo. |
+| Webhook de Stripe y `deserializeUnsafe()` | El webhook debe verificar firmas, no procesar eventos duplicados y tolerar diferencias de versión al deserializar datos. | Diagnóstico del procesamiento de eventos, la firma y la deserialización de objetos Stripe. | `PagoWebhookService`, la comprobación de idempotencia por ID y `PagoWebhookServiceTest`. | Se mantuvo la verificación de firma y el registro idempotente; cuando Stripe no ofrece el objeto deserializado, se usa `deserializeUnsafe()` y se convierte su fallo en una excepción explícita. | Las pruebas cubren firma inválida, evento duplicado, compras de PRO y créditos, y cancelación de suscripción; el fallback se revisó en el servicio. |
+| Chatbot y regla anti-promesas | Una respuesta que mencione promociones, descuentos, cupones o reembolsos no debe llegar al cliente como una promesa comercial. | Diagnóstico del error de procesamiento en los casos normal, escalado por IA y regla de seguridad. | La construcción del prompt con los datos del salón, los mocks de `BibliotecaPrompts`/`AsistenteIA` y la regla en `ChatbotService`. | Java sustituye la respuesta sensible por el mensaje fijo y escala con `REGLA_DE_SEGURIDAD`; el salón del fixture ahora incluye nombre para evitar que `Map.of` falle al construir el contexto. | Las pruebas unitarias comprueban respuesta normal, escalamiento solicitado por IA, anti-promesas y ausencia de llamada a IA cuando no hay créditos. |
+| Pruebas unitarias JUnit 5 y Mockito | Los tests del chatbot fallaban al construir el contexto de IA y debían reflejar las operaciones actuales del repositorio. | Revisión de stubs, argumentos de los mocks y el primer error dentro del bloque `try`. | `ChatbotServiceTest`, `ChatbotService` y el uso de `descontarCredito` en `SalonRepository`. | Se alinearon los stubs y verificaciones de créditos con `descontarCredito` y se completó el salón de prueba con un nombre no nulo; no se alteraron las aserciones de negocio. | La ejecución de `.\mvnw.cmd test` finaliza con los 57 tests aprobados, sin fallos ni errores. |
