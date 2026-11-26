@@ -24,9 +24,11 @@ import jakarta.validation.Valid;
 public class CitaController {
 
     private final CitaService citaService;
+    private final RecordatorioService recordatorioService;
 
-    public CitaController(CitaService citaService) {
+    public CitaController(CitaService citaService, RecordatorioService recordatorioService) {
         this.citaService = citaService;
+        this.recordatorioService = recordatorioService;
     }
 
     @PostMapping
@@ -46,5 +48,12 @@ public class CitaController {
     public CitaRespuesta cambiarEstado(@AuthenticationPrincipal UsuarioPrincipal usuario, @PathVariable Long id,
             @Valid @RequestBody CambioEstadoPeticion peticion) {
         return citaService.cambiarEstado(usuario, id, peticion.estado());
+    }
+
+    /** Borrador de recordatorio por WhatsApp redactado por la IA. Sillón no lo envía. */
+    @PostMapping("/{id}/recordatorio")
+    public RecordatorioRespuesta recordatorio(@AuthenticationPrincipal UsuarioPrincipal usuario,
+            @PathVariable Long id) {
+        return recordatorioService.generar(usuario.getSalonId(), id);
     }
 }

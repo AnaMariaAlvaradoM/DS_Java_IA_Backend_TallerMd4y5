@@ -3,8 +3,10 @@ package com.devsenior.sillon.cita;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,9 @@ import com.devsenior.sillon.usuario.UsuarioRepository;
 
 @Service
 public class CitaService {
+
+    private static final Locale ES_CO = Locale.forLanguageTag("es-CO");
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", ES_CO);
 
     private final CitaRepository citaRepository;
     private final SalonRepository salonRepository;
@@ -151,6 +156,29 @@ public class CitaService {
         cita.setFechaActualizacion(ahora());
         // saveAndFlush: la fecha de actualización sale correcta en la respuesta (Clase 17)
         return CitaRespuesta.de(citaRepository.saveAndFlush(cita));
+    }
+
+    /**
+     * Datos verificados para el recordatorio (solo lectura). Solo citas PENDIENTE o CONFIRMADA (otra: 409).
+     * Una línea por dato: así la IA no tiene que calcular nada.
+     */
+    @Transactional(readOnly = true)
+    public DatosRecordatorio datosRecordatorio(Long salonId, Long citaId) {
+        Cita cita = citaRepository.findByIdAndSalonId(citaId, salonId)
+                .orElseThrow(() -> new NoEncontradoException("La cita no existe"));
+        if (!cita.getEstado().ocupaAgenda()) {
+            throw new ReglaNegocioException("Solo se generan recordatorios de citas PENDIENTE o CONFIRMADA");
+        }
+        Salon salon = cita.getSalon();
+        String datos = String.join("\n",
+                "Servicio: " + cita.getServicio().getNombre() + " (" + cita.getServicio().getDuracionMinutos() + " minutos)",
+                "Estilista: " + cita.getEstilista().getNombre(),
+                "Fecha: " + FECHA.format(cita.getInicio()),
+                "Hora: " + ReglasAgenda.hora(cita.getInicio().toLocalTime()),
+                "Valor: $" + String.format(ES_CO, "%,d", cita.getPrecio()).replace(',', '.'),
+                "Dirección: " + salon.getDireccion() + ", " + salon.getCiudad());
+        return new DatosRecordatorio(cita.getId(), salon.getNombre(), cita.getCliente().getNombre(),
+                cita.getCliente().getTelefono(), datos);
     }
 
     /** Microsegundos: es la precisión que guarda la base de datos. */
