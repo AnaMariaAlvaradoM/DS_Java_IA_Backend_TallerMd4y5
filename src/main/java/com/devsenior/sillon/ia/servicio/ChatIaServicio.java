@@ -4,12 +4,15 @@ package com.devsenior.sillon.ia.servicio;
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import com.devsenior.sillon.compartido.excepcion.ExcepcionRecursoNoEncontrado;
+import com.devsenior.sillon.ia.BibliotecaPrompts;
 import com.devsenior.sillon.ia.dto.RespuestaChatIa;
 import com.devsenior.sillon.ia.dto.ResultadoProveedorIa;
 import com.devsenior.sillon.ia.dto.SolicitudChatIa;
@@ -22,7 +25,6 @@ import com.devsenior.sillon.publico.dto.RespuestaServicioPublico;
 import com.devsenior.sillon.publico.servicio.PublicoServicio;
 import com.devsenior.sillon.salon.modelo.Salon;
 import com.devsenior.sillon.salon.repositorio.SalonRepositorio;
-import com.devsenior.sillon.compartido.excepcion.ExcepcionRecursoNoEncontrado;
 
 @Service
 public class ChatIaServicio {
@@ -52,6 +54,7 @@ public class ChatIaServicio {
     private final AsistenteIa proveedorIa;
     private final ValidadorJsonIa validadorJsonIa;
     private final SolicitudContactoServicio solicitudContactoServicio;
+    private final BibliotecaPrompts bibliotecaPrompts;
 
     public ChatIaServicio(
             SalonRepositorio salonRepositorio,
@@ -59,7 +62,8 @@ public class ChatIaServicio {
             CreditoIaServicio creditoIaServicio,
             AsistenteIa proveedorIa,
             ValidadorJsonIa validadorJsonIa,
-            SolicitudContactoServicio solicitudContactoServicio) {
+            SolicitudContactoServicio solicitudContactoServicio,
+            BibliotecaPrompts bibliotecaPrompts) {
 
         this.salonRepositorio = salonRepositorio;
         this.publicoServicio = publicoServicio;
@@ -67,6 +71,7 @@ public class ChatIaServicio {
         this.proveedorIa = proveedorIa;
         this.validadorJsonIa = validadorJsonIa;
         this.solicitudContactoServicio = solicitudContactoServicio;
+        this.bibliotecaPrompts = bibliotecaPrompts;
     }
 
     public RespuestaChatIa responder(
@@ -84,15 +89,17 @@ public class ChatIaServicio {
 
         creditoIaServicio.verificarSaldo(salonId);
 
-        String instrucciones = construirInstrucciones(catalogo);
+        String instrucciones = construirInstrucciones(
+                catalogo,
+                solicitud.clienteNombre());
 
         String historial = construirHistorial(
                 solicitud.historial());
 
         ResultadoProveedorIa resultado = proveedorIa.generar(instrucciones, historial);
 
-        // Orden obligatorio: primero consumir el crédito
-        // porque la IA ya respondió; después validar el JSON.
+        // La IA ya respondió y consumió recursos.
+        // El crédito se descuenta antes de validar el JSON.
         int creditosRestantes = creditoIaServicio.consumirCredito(salonId);
 
         JsonNode contenido = validadorJsonIa.interpretar(
@@ -146,65 +153,32 @@ public class ChatIaServicio {
     }
 
     private String construirInstrucciones(
+            RespuestaCatalogoPublico catalogo,
+            String nombreCliente) {
+
+        String catalogoVerificado = construirCatalogoVerificado(catalogo);
+
+        return bibliotecaPrompts.procesar(
+                "chatbot.txt",
+                Map.of(
+                        "salon", catalogo.nombre(),
+                        "direccion", catalogo.direccion(),
+                        "horario", catalogo.horario(),
+                        "catalogo", catalogoVerificado,
+                        "cliente", nombreCliente));
+    }
+
+    private String construirCatalogoVerificado(
             RespuestaCatalogoPublico catalogo) {
 
         StringBuilder contexto = new StringBuilder();
-
-        contexto.append("""
-                Eres el asistente virtual de un salon
-                de belleza o barberia.
-
-                Responde exclusivamente utilizando
-                la informacion real del catalogo.
-
-                No inventes servicios, precios,
-                horarios, descuentos ni promociones.
-
-                No puedes crear, modificar ni cancelar citas.
-
-                Si el cliente solicita una reserva,
-                cancelacion o modificacion, indica
-                que necesita atencion humana.
-
-                No prometas descuentos, cupones,
-                productos o servicios gratuitos,
-                promociones ni reembolsos.
-
-                Responde en espanol de Colombia.
-
-                Devuelve exclusivamente JSON valido
-                con esta estructura:
-
-                {"respuesta":"mensaje","escalar":false}
-
-                El campo "respuesta" debe ser texto.
-                El campo "escalar" debe ser booleano.
-
-                Marca "escalar" como true cuando
-                sea necesaria intervencion humana.
-
-                DATOS OFICIALES DEL SALON:
-
-                """);
-
-        contexto.append("Nombre: ")
-                .append(catalogo.nombre())
-                .append("\n");
 
         contexto.append("Ciudad: ")
                 .append(catalogo.ciudad())
                 .append("\n");
 
-        contexto.append("Direccion: ")
-                .append(catalogo.direccion())
-                .append("\n");
-
         contexto.append("Telefono: ")
                 .append(catalogo.telefono())
-                .append("\n");
-
-        contexto.append("Horario: ")
-                .append(catalogo.horario())
                 .append("\n");
 
         contexto.append("\nSERVICIOS DISPONIBLES:\n");

@@ -35,6 +35,7 @@ import com.devsenior.sillon.publico.servicio.PublicoServicio;
 import com.devsenior.sillon.salon.modelo.Salon;
 import com.devsenior.sillon.salon.repositorio.SalonRepositorio;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.devsenior.sillon.ia.BibliotecaPrompts;
 
 @ExtendWith(MockitoExtension.class)
 class ChatIaServicioTest {
@@ -75,7 +76,9 @@ class ChatIaServicioTest {
                 creditoIaServicio,
                 proveedorIa,
                 validadorJsonIa,
-                solicitudContactoServicio);
+                solicitudContactoServicio,
+                new BibliotecaPrompts());
+
     }
 
     @Test
