@@ -14,14 +14,12 @@ API RESTful desarrollada con **Java 17 y Spring Boot** para la gestión integral
 
 La aplicación se encuentra desplegada en **Render** conectada a una base de datos **PostgreSQL en Supabase**:
 
-* **URL Base de la API:** `https://ds-java-ia-backend-tallermd4y5-0y6w.onrender.com`
-* **Documentación Interactiva (Swagger UI):** [Abrir Swagger UI](https://ds-java-ia-backend-tallermd4y5-0y6w.onrender.com/swagger-ui.html)
-* **Endpoint Webhook de Stripe:** `https://ds-java-ia-backend-tallermd4y5-0y6w.onrender.com/api/pagos/webhook`
+- **URL de producción:** `https://ds-java-ia-backend-tallermd4y5-0y6w.onrender.com`
+- **URL de Swagger:** `https://ds-java-ia-backend-tallermd4y5-0y6w.onrender.com/swagger-ui.html`
 
 > **Nota sobre el entorno gratuito de Render:** Si la instancia ha estado inactiva durante más de 15 minutos, la primera petición puede tardar alrededor de **50 segundos** mientras el contenedor se reactiva. Las peticiones posteriores responden en milisegundos.
 
 ---
-
 ## 🛠️ Stack Tecnológico
 
 * **Lenguaje y Framework:** Java 17, Spring Boot 3 (Web, Security, Data JPA, Validation)

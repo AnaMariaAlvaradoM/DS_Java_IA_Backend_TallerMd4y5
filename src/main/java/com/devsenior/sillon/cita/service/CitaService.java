@@ -195,7 +195,7 @@ public class CitaService {
     public DatosRecordatorio obtenerDatosRecordatorio(Long citaId) {
 
         Cita cita = citaRepository.findById(citaId)
-                .orElseThrow(() -> new ReglaNegocioException("Cita no encontrada"));
+                .orElseThrow(() -> new NoEncontradoException("Cita no encontrada"));
 
         // 1. Validar el estado (solo PENDIENTE o CONFIRMADA)
         if (cita.getEstadoCita() != EstadoCita.PENDIENTE && cita.getEstadoCita() != EstadoCita.CONFIRMADA) {

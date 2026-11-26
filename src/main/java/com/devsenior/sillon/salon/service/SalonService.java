@@ -44,7 +44,7 @@ public class SalonService {
         configuracion.setHoraApertura(request.horaApertura());
         configuracion.setHoraCierre(request.horaCierre());
         configuracion.setIntervaloMinutos(request.intervaloMinutos());
-        configuracion.setAbreDomingos(request.abreDomingo());
+        configuracion.setAbreDomingos(request.abreDomingos());
         salon.setConfiguracion(configuracion);
         salonRepository.save(salon);
         return SalonMapper.toResponse(salon);

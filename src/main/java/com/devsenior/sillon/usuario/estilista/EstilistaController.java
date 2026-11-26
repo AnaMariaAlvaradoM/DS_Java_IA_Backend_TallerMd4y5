@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/estilista")
+@RequestMapping("/api/estilistas")
 @Tag(name = "4 Estilistas")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasRole('DUENO')")
@@ -24,14 +24,20 @@ public class EstilistaController {
     public EstilistaController(EstilistaService estilistaService) {
         this.estilistaService = estilistaService;
     }
-    @PostMapping("/crear")
+    @PostMapping
     public ResponseEntity<EstilistaResponse> crearEstilista(@Valid @RequestBody EstilistaRequest estilistaResquest, @AuthenticationPrincipal UsuarioPrincipal usuarioPrincipal){
+        System.out.println("========== AUTENTICACIÓN ==========");
+        System.out.println("Usuario ID: " + usuarioPrincipal.getId());
+        System.out.println("Correo: " + usuarioPrincipal.getEmail());
+        System.out.println("Rol: " + usuarioPrincipal.getRol());
+        System.out.println("Salón ID: " + usuarioPrincipal.getSalonId());
         EstilistaResponse estilistaResponse = estilistaService.crearEstilista(estilistaResquest, usuarioPrincipal.getSalonId());
-        return ResponseEntity.ok(estilistaResponse);
+        return ResponseEntity.status(201).body(estilistaResponse);
     }
     @GetMapping
     public ResponseEntity<List<EstilistaResponse>> getAllEstilistas(@AuthenticationPrincipal UsuarioPrincipal usuarioPrincipal){
         List<EstilistaResponse> estilistas = estilistaService.obtenerEstilistasPorSalon(usuarioPrincipal.getSalonId());
         return ResponseEntity.ok(estilistas);
     }
+
 }

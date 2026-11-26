@@ -26,6 +26,7 @@ public class ServicioService {
     public ServicioResponse crearServicio(ServicioRequest request,Long salonId) {
         Salon salon = salonRepository.findById(salonId)
                 .orElseThrow(() -> new NoEncontradoException("Salón no encontrado"));
+
         Servicio servicio = new Servicio();
         servicio.setNombre(request.nombre());
         servicio.setDescripcion(request.descripcion());

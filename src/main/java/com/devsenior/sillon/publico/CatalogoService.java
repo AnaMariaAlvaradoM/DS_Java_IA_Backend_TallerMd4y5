@@ -102,7 +102,9 @@ public class CatalogoService {
     }
     @Transactional(readOnly = true)
     public DisponibilidadResponse obtenerDisponibilidad(String slug, Long servicioId, Long estilistaId, LocalDate fecha) {
-
+        if (fecha == null || fecha.isBefore(LocalDate.now(clock))) {
+            throw new ReglaNegocioException("No se puede consultar disponibilidad para una fecha pasada");
+        }
         Salon salon = salonRepository.findBySlug(slug)
                 .orElseThrow(() -> new NoEncontradoException("Salón no encontrado"));
 

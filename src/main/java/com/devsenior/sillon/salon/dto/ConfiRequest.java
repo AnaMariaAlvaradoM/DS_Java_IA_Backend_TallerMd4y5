@@ -17,6 +17,6 @@ public record ConfiRequest(
         Integer intervaloMinutos,
 
         @NotNull(message = "Debe especificar si abre los domingos")
-        Boolean abreDomingo
+        Boolean abreDomingos
 ) {
 }

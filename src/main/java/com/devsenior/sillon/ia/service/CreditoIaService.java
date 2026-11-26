@@ -1,5 +1,6 @@
 package com.devsenior.sillon.ia.service;
 
+import com.devsenior.sillon.compartido.PagoRequeridoException;
 import com.devsenior.sillon.compartido.SinCreditosException;
 import com.devsenior.sillon.salon.repository.SalonRepository;
 
@@ -22,11 +23,12 @@ public class CreditoIaService {
 
     }
     @Transactional
-    public int consumirCredito(Long idSalon) {
-        int filasActualizadas = salonRepository.consumirUnCredito(idSalon);
+    public int consumirCredito(Long salonId) {
+        int filasActualizadas = salonRepository.descontarCredito(salonId);
         if (filasActualizadas == 0) {
-            throw new SinCreditosException("No hay créditos disponibles para el salón con ID: " + idSalon);
+            throw new PagoRequeridoException("El salón no tiene créditos de IA disponibles");
         }
-        return filasActualizadas;
+        Integer restantes = salonRepository.obtenerCreditosActuales(salonId);
+        return restantes != null ? restantes : 0;
     }
 }

@@ -82,7 +82,7 @@ public class ChatbotService {
         RespuestaIA respuestaIa;
         try {
             String systemPrompt = bibliotecaPrompts.cargar("chatbot", Map.of(
-                    "salon", slug,
+                    "salon", salon.getNombresalon(),
                     "direccion", direccionSalon != null ? direccionSalon : "No especificada",
                     "horario", conocimiento.textoHorario(),
                     "catalogo", conocimiento.textoServicios(),

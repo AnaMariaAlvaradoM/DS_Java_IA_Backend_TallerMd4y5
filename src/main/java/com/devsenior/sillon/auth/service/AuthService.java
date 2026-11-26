@@ -53,7 +53,7 @@ public class AuthService {
             throw new ReglaNegocioException("El correo ya está registrado en la plataforma");
         }
 
-        String nombreSalon = request.nombreSalon() == null ? "" : request.nombreSalon().trim();
+        String nombreSalon = request.SalonNombre() == null ? "" : request.SalonNombre().trim();
         String slug = generadorSlugService.generarSlugUnico(nombreSalon);
 
         Salon salon = new Salon();
@@ -87,6 +87,7 @@ public class AuthService {
                 token,
                 usuario.getEmail(),
                 usuario.getRol().name(),
+                usuario.getId(),
                 salonGuardado.getId(),
                 salonGuardado.getSlug(),
                 jwtService.obtenerExpiracionEnMinutos()
@@ -101,6 +102,6 @@ public class AuthService {
         Usuario usuario = usuarioRepository.findByEmail(request.email())
                 .orElseThrow(() -> new NoEncontradoException("No existe un usuario con ese email"));
         String token = jwtService.generarToken(UsuarioPrincipal.build(usuario));
-        return  AuthResponse.of(token, usuario.getEmail(), usuario.getRol().name(), usuario.getSalon().getId(), usuario.getSalon().getSlug(), jwtService.obtenerExpiracionEnMinutos());
+        return  AuthResponse.of(token, usuario.getEmail(), usuario.getRol().name(), usuario.getId(), usuario.getSalon().getId(), usuario.getSalon().getSlug(), jwtService.obtenerExpiracionEnMinutos());
     }
 }

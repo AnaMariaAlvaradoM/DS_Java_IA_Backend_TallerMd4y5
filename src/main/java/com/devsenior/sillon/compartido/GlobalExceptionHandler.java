@@ -6,17 +6,19 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import org.springframework.security.access.AccessDeniedException;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
 
     @ExceptionHandler(NoEncontradoException.class)
     public ResponseEntity<ErrorRespuesta> manejarNoEncontrado(NoEncontradoException ex) {
@@ -196,4 +198,25 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.PAYMENT_REQUIRED);
     }
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorRespuesta> manejarAccesoDenegado(AccessDeniedException ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.FORBIDDEN.getReasonPhrase(),
+                "No tienes permisos para realizar esta acción"
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorRespuesta> manejarCabeceraFaltante(MissingRequestHeaderException ex) {
+        ErrorRespuesta error = new ErrorRespuesta(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Falta la cabecera obligatoria: " + ex.getHeaderName()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     }

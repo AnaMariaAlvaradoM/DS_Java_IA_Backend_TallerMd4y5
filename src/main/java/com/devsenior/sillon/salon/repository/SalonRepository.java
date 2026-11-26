@@ -17,7 +17,10 @@ public interface SalonRepository extends JpaRepository<Salon, Long> {
     @Query("SELECT s.creditosIa FROM Salon s WHERE s.id = :salonId")
     Integer obtenerCreditos(@Param("salonId") Long salonId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Salon s SET s.creditosIa = s.creditosIa - 1 WHERE s.id = :salonId AND s.creditosIa > 0")
-    int consumirUnCredito(@Param("salonId") Long salonId);
+    int descontarCredito(@Param("salonId") Long salonId);
+
+    @Query("SELECT s.creditosIa FROM Salon s WHERE s.id = :salonId")
+    Integer obtenerCreditosActuales(@Param("salonId") Long salonId);
 }
