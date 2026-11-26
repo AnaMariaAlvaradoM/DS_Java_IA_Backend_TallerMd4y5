@@ -6,8 +6,8 @@ Proyecto integrador de los Módulos 4 y 5 · Java AI Engineer · Dev Senior Code
 
 ## Producción
 
-- **API:** https://TU-APP.onrender.com
-- **Swagger:** https://TU-APP.onrender.com/swagger-ui.html
+- **API:** https://sillon-maicol.onrender.com
+- **Swagger:** https://sillon-maicol.onrender.com/swagger-ui.html
 
 > En el plan gratuito de Render el servicio "duerme" cuando no se usa: la primera petición puede tardar unos segundos mientras despierta.
 
