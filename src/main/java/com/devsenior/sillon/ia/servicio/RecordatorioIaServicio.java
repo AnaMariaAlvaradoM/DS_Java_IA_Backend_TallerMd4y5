@@ -1,8 +1,10 @@
 
 package com.devsenior.sillon.ia.servicio;
 
+import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,7 @@ import com.devsenior.sillon.cita.repositorio.CitaRepositorio;
 import com.devsenior.sillon.compartido.excepcion.ExcepcionConflicto;
 import com.devsenior.sillon.compartido.excepcion.ExcepcionIntegracion;
 import com.devsenior.sillon.compartido.excepcion.ExcepcionRecursoNoEncontrado;
+import com.devsenior.sillon.ia.BibliotecaPrompts;
 import com.devsenior.sillon.ia.dto.RespuestaRecordatorioIa;
 import com.devsenior.sillon.ia.dto.ResultadoProveedorIa;
 import com.devsenior.sillon.ia.proveedor.AsistenteIa;
@@ -21,11 +24,13 @@ import com.devsenior.sillon.ia.proveedor.AsistenteIa;
 @Service
 public class RecordatorioIaServicio {
 
-        private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern(
-                        "dd/MM/yyyy",
-                        Locale.forLanguageTag("es-CO"));
+        private static final Locale IDIOMA_COLOMBIA = Locale.forLanguageTag("es-CO");
 
-        private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("HH:mm");
+        private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern(
+                        "EEEE d 'de' MMMM",
+                        IDIOMA_COLOMBIA);
+
+        private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("h:mm");
 
         private static final int MAXIMO_CARACTERES = 700;
 
@@ -33,17 +38,20 @@ public class RecordatorioIaServicio {
         private final CreditoIaServicio creditoIaServicio;
         private final AsistenteIa asistenteIa;
         private final ValidadorJsonIa validadorJsonIa;
+        private final BibliotecaPrompts bibliotecaPrompts;
 
         public RecordatorioIaServicio(
                         CitaRepositorio citaRepositorio,
                         CreditoIaServicio creditoIaServicio,
                         AsistenteIa asistenteIa,
-                        ValidadorJsonIa validadorJsonIa) {
+                        ValidadorJsonIa validadorJsonIa,
+                        BibliotecaPrompts bibliotecaPrompts) {
 
                 this.citaRepositorio = citaRepositorio;
                 this.creditoIaServicio = creditoIaServicio;
                 this.asistenteIa = asistenteIa;
                 this.validadorJsonIa = validadorJsonIa;
+                this.bibliotecaPrompts = bibliotecaPrompts;
         }
 
         public RespuestaRecordatorioIa generar(
@@ -60,8 +68,14 @@ public class RecordatorioIaServicio {
 
                 creditoIaServicio.verificarSaldo(salonId);
 
-                String instrucciones = construirInstrucciones();
                 String datos = construirDatosCita(cita);
+
+                String instrucciones = bibliotecaPrompts.procesar(
+                                "recordatorio.txt",
+                                Map.of(
+                                                "salon", cita.getSalon().getNombre(),
+                                                "cliente", cita.getCliente().getNombre(),
+                                                "datos", datos));
 
                 ResultadoProveedorIa resultado = asistenteIa.generar(instrucciones, datos);
 
@@ -97,40 +111,6 @@ public class RecordatorioIaServicio {
                 }
         }
 
-        private String construirInstrucciones() {
-
-                return """
-                                Eres un asistente de una barberia o salon de belleza.
-
-                                Tu tarea es redactar un recordatorio breve,
-                                amable, profesional y claro para una cita.
-
-                                Utiliza exclusivamente los datos proporcionados.
-
-                                No inventes promociones, descuentos, precios,
-                                servicios, fechas, horarios ni condiciones.
-
-                                No cambies la fecha, la hora ni el valor
-                                correspondiente a la cita.
-
-                                No confirmes, canceles ni reprogrames la cita.
-
-                                El mensaje sera revisado por una persona
-                                antes de enviarse al cliente.
-
-                                Escribe en espanol de Colombia.
-
-                                El mensaje debe tener como maximo 700 caracteres.
-
-                                Responde solamente con un objeto JSON valido
-                                que contenga un unico campo de texto llamado
-                                "mensaje".
-
-                                Ejemplo de estructura:
-                                {"mensaje":"Texto del recordatorio"}
-                                """;
-        }
-
         private String construirDatosCita(Cita cita) {
 
                 String fecha = cita.getInicio()
@@ -139,29 +119,33 @@ public class RecordatorioIaServicio {
                 String hora = cita.getInicio()
                                 .format(FORMATO_HORA);
 
-                return """
-                                Redacta un recordatorio para esta cita.
+                String periodo = cita.getInicio().getHour() < 12
+                                ? "a. m."
+                                : "p. m.";
 
-                                Cliente: %s
-                                Salon: %s
-                                Servicio: %s
+                String horaCompleta = hora + " " + periodo;
+
+                String valor = NumberFormat
+                                .getIntegerInstance(IDIOMA_COLOMBIA)
+                                .format(cita.getPrecio())
+                                .replace('\u00A0', ' ')
+                                .replace('\u202F', ' ');
+
+                return """
+                                Servicio: %s (%d minutos)
                                 Estilista: %s
                                 Fecha: %s
                                 Hora: %s
-                                Valor: %d COP
+                                Valor: $%s
                                 Dirección: %s
-
-                                Conserva los datos exactos de la cita.
-                                No agregues informacion que no este indicada.
                                 """
                                 .formatted(
-                                                cita.getCliente().getNombre(),
-                                                cita.getSalon().getNombre(),
                                                 cita.getServicio().getNombre(),
+                                                cita.getServicio().getDuracionMinutos(),
                                                 cita.getEstilista().getNombre(),
                                                 fecha,
-                                                hora,
-                                                cita.getPrecio(),
+                                                horaCompleta,
+                                                valor,
                                                 cita.getSalon().getDireccion());
         }
 

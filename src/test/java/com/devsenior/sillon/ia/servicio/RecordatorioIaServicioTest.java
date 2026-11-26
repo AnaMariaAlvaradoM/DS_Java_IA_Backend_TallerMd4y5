@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -28,6 +27,7 @@ import com.devsenior.sillon.compartido.excepcion.ExcepcionIntegracion;
 import com.devsenior.sillon.compartido.excepcion.ExcepcionPagoRequerido;
 import com.devsenior.sillon.compartido.excepcion.ExcepcionRecursoNoEncontrado;
 import com.devsenior.sillon.compartido.excepcion.ExcepcionServicioNoDisponible;
+import com.devsenior.sillon.ia.BibliotecaPrompts;
 import com.devsenior.sillon.ia.dto.FacturaIa;
 import com.devsenior.sillon.ia.dto.RespuestaRecordatorioIa;
 import com.devsenior.sillon.ia.dto.ResultadoProveedorIa;
@@ -35,6 +35,7 @@ import com.devsenior.sillon.ia.proveedor.AsistenteIa;
 import com.devsenior.sillon.salon.modelo.Salon;
 import com.devsenior.sillon.servicio.modelo.Servicio;
 import com.devsenior.sillon.usuario.modelo.Usuario;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class RecordatorioIaServicioTest {
@@ -54,20 +55,28 @@ class RecordatorioIaServicioTest {
         @Mock
         private ValidadorJsonIa validadorJsonIa;
 
-        @InjectMocks
         private RecordatorioIaServicio recordatorioIaServicio;
 
         private Cita cita;
 
         @BeforeEach
         void preparar() {
+
                 cita = mock(Cita.class);
+
+                recordatorioIaServicio = new RecordatorioIaServicio(
+                                citaRepositorio,
+                                creditoIaServicio,
+                                asistenteIa,
+                                validadorJsonIa,
+                                new BibliotecaPrompts());
         }
 
         @Test
         void rechazaCitaQueNoPerteneceAlSalon() {
 
-                when(citaRepositorio.buscarPorIdYSalon(CITA_ID, SALON_ID))
+                when(citaRepositorio.buscarPorIdYSalon(
+                                CITA_ID, SALON_ID))
                                 .thenReturn(Optional.empty());
 
                 assertThrows(
@@ -77,13 +86,15 @@ class RecordatorioIaServicioTest {
 
                 verifyNoInteractions(
                                 creditoIaServicio,
-                                asistenteIa);
+                                asistenteIa,
+                                validadorJsonIa);
         }
 
         @Test
         void rechazaCitaCanceladaSinConsumirCreditos() {
 
-                when(citaRepositorio.buscarPorIdYSalon(CITA_ID, SALON_ID))
+                when(citaRepositorio.buscarPorIdYSalon(
+                                CITA_ID, SALON_ID))
                                 .thenReturn(Optional.of(cita));
 
                 when(cita.getEstado())
@@ -96,20 +107,22 @@ class RecordatorioIaServicioTest {
 
                 verifyNoInteractions(
                                 creditoIaServicio,
-                                asistenteIa);
+                                asistenteIa,
+                                validadorJsonIa);
         }
 
         @Test
         void noInvocaProveedorCuandoNoHayCreditos() {
 
-                when(citaRepositorio.buscarPorIdYSalon(CITA_ID, SALON_ID))
+                when(citaRepositorio.buscarPorIdYSalon(
+                                CITA_ID, SALON_ID))
                                 .thenReturn(Optional.of(cita));
 
                 when(cita.getEstado())
                                 .thenReturn(EstadoCita.CONFIRMADA);
 
-                doThrow(
-                                new ExcepcionPagoRequerido("Sin creditos de IA"))
+                doThrow(new ExcepcionPagoRequerido(
+                                "Sin creditos de IA"))
                                 .when(creditoIaServicio)
                                 .verificarSaldo(SALON_ID);
 
@@ -118,7 +131,7 @@ class RecordatorioIaServicioTest {
                                 () -> recordatorioIaServicio.generar(
                                                 SALON_ID, CITA_ID));
 
-                verifyNoInteractions(asistenteIa);
+                verifyNoInteractions(asistenteIa, validadorJsonIa);
 
                 verify(creditoIaServicio, never())
                                 .consumirCredito(anyLong());
@@ -140,11 +153,10 @@ class RecordatorioIaServicioTest {
 
                 String respuestaJson = "{\"mensaje\":\"Hola Ana, recuerda tu cita mañana.\"}";
 
-                when(asistenteIa.generar(anyString(), anyString()))
-                                .thenReturn(
-                                                new ResultadoProveedorIa(
-                                                                respuestaJson,
-                                                                factura));
+                when(asistenteIa.generar(
+                                anyString(), anyString()))
+                                .thenReturn(new ResultadoProveedorIa(
+                                                respuestaJson, factura));
 
                 when(validadorJsonIa.interpretar(respuestaJson))
                                 .thenReturn(
@@ -159,8 +171,7 @@ class RecordatorioIaServicioTest {
                                 .thenReturn(4);
 
                 RespuestaRecordatorioIa respuesta = recordatorioIaServicio.generar(
-                                SALON_ID,
-                                CITA_ID);
+                                SALON_ID, CITA_ID);
 
                 assertEquals(CITA_ID, respuesta.citaId());
 
@@ -176,9 +187,7 @@ class RecordatorioIaServicioTest {
                                 4,
                                 respuesta.creditosRestantes());
 
-                assertEquals(
-                                factura,
-                                respuesta.factura());
+                assertEquals(factura, respuesta.factura());
 
                 InOrder orden = inOrder(
                                 creditoIaServicio,
@@ -202,6 +211,29 @@ class RecordatorioIaServicioTest {
 
                 verify(asistenteIa, times(1))
                                 .generar(anyString(), anyString());
+
+                ArgumentCaptor<String> instruccionesCapturadas = ArgumentCaptor.forClass(String.class);
+
+                ArgumentCaptor<String> datosCapturados = ArgumentCaptor.forClass(String.class);
+
+                verify(asistenteIa).generar(
+                                instruccionesCapturadas.capture(),
+                                datosCapturados.capture());
+
+                String instrucciones = instruccionesCapturadas.getValue();
+                String datos = datosCapturados.getValue();
+
+                assertAll(
+                                () -> assertTrue(instrucciones.contains("Ana")),
+                                () -> assertTrue(instrucciones.contains("Salon Central")),
+                                () -> assertTrue(instrucciones.contains("3:30 p. m.")),
+                                () -> assertTrue(instrucciones.contains("Corte de cabello")),
+                                () -> assertTrue(instrucciones.contains("45 minutos")),
+                                () -> assertTrue(datos.contains("Estilista: Carlos")),
+                                () -> assertTrue(datos.contains("Hora: 3:30 p. m.")),
+                                () -> assertTrue(datos.contains("Valor: $35.000")),
+                                () -> assertTrue(datos.contains("Calle 10 # 20-30")));
+
         }
 
         @Test
@@ -219,22 +251,20 @@ class RecordatorioIaServicioTest {
 
                 String contenidoInvalido = "respuesta-no-json";
 
-                when(asistenteIa.generar(anyString(), anyString()))
-                                .thenReturn(
-                                                new ResultadoProveedorIa(
-                                                                contenidoInvalido,
-                                                                factura));
+                when(asistenteIa.generar(
+                                anyString(), anyString()))
+                                .thenReturn(new ResultadoProveedorIa(
+                                                contenidoInvalido, factura));
 
-                when(validadorJsonIa.interpretar(contenidoInvalido))
-                                .thenThrow(
-                                                new ExcepcionIntegracion(
-                                                                "JSON invalido"));
+                when(validadorJsonIa.interpretar(
+                                contenidoInvalido))
+                                .thenThrow(new ExcepcionIntegracion(
+                                                "JSON invalido"));
 
                 assertThrows(
                                 ExcepcionIntegracion.class,
                                 () -> recordatorioIaServicio.generar(
-                                                SALON_ID,
-                                                CITA_ID));
+                                                SALON_ID, CITA_ID));
 
                 InOrder orden = inOrder(
                                 asistenteIa,
@@ -259,7 +289,8 @@ class RecordatorioIaServicioTest {
 
                 prepararCitaCompleta(false);
 
-                when(asistenteIa.generar(anyString(), anyString()))
+                when(asistenteIa.generar(
+                                anyString(), anyString()))
                                 .thenThrow(
                                                 new ExcepcionServicioNoDisponible(
                                                                 "Ningun proveedor de IA esta disponible"));
@@ -267,8 +298,7 @@ class RecordatorioIaServicioTest {
                 assertThrows(
                                 ExcepcionServicioNoDisponible.class,
                                 () -> recordatorioIaServicio.generar(
-                                                SALON_ID,
-                                                CITA_ID));
+                                                SALON_ID, CITA_ID));
 
                 verify(creditoIaServicio)
                                 .verificarSaldo(SALON_ID);
@@ -290,7 +320,8 @@ class RecordatorioIaServicioTest {
                 Usuario estilista = mock(Usuario.class);
                 Servicio servicio = mock(Servicio.class);
 
-                when(citaRepositorio.buscarPorIdYSalon(CITA_ID, SALON_ID))
+                when(citaRepositorio.buscarPorIdYSalon(
+                                CITA_ID, SALON_ID))
                                 .thenReturn(Optional.of(cita));
 
                 when(cita.getEstado())
@@ -330,6 +361,9 @@ class RecordatorioIaServicioTest {
 
                 when(servicio.getNombre())
                                 .thenReturn("Corte de cabello");
+
+                when(servicio.getDuracionMinutos())
+                                .thenReturn(45);
 
                 if (incluirDatosDeRespuesta) {
 
