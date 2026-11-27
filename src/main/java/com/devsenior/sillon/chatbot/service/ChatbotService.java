@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class ChatbotService {
 
     private static final String MENSAJE_SEGURIDAD_FIJO =
-            "Para atender su solicitud sobre promociones, descuentos, reembolsos o condiciones especiales, un asesor de nuestro equipo se pondrá en contacto con usted a la brevedad.";
+            "Con gusto te comunico con un asesor del salón para atender tu consulta directamente.";
 
     private final CatalogoService catalogoService;
     private final CreditoIaService creditoIaService;
@@ -132,6 +132,7 @@ public class ChatbotService {
             solicitudId = solicitud.getId(); // Capturamos el ID
 
         } else if (escalado) {
+            respuestaTexto = MENSAJE_SEGURIDAD_FIJO;
             String mensajesCliente = extraerMensajesCliente(historial);
             var solicitud = solicitudContactoService.crearSolicitud(
                     slug, clienteNombre, clienteContacto, mensajesCliente, MotivoSolicitud.PEDIDO_POR_IA
@@ -139,11 +140,17 @@ public class ChatbotService {
             solicitudId = solicitud.getId(); // Capturamos el ID
         }
 
+        RespuestaIA respuestaIaParaCliente = escalado
+                ? new RespuestaIA(respuestaTexto, respuestaIa.proveedor(), respuestaIa.modelo(),
+                        respuestaIa.tokensEntrada(), respuestaIa.tokensSalida(),
+                        respuestaIa.costoEstimadoUsd(), respuestaIa.milisegundos())
+                : respuestaIa;
+
         return new ChatbotResponse(
                 respuestaTexto,
                 escalado,       // Variable boolean
                 solicitudId,    // ID o null
-                respuestaIa
+                respuestaIaParaCliente
         );
     }
 
@@ -175,8 +182,8 @@ public class ChatbotService {
                 lower.contains("cupón") ||
                 lower.contains("cupon") ||
                 lower.contains("gratis") ||
-                lower.contains("promoción") ||
-                lower.contains("promocion") ||
+                lower.contains("promo") ||
+                lower.contains("oferta") ||
                 lower.contains("reembols");
     }
 

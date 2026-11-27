@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,7 +44,9 @@ class ChatbotServiceTest {
     private static final Long SALON_ID = 63L;
     private static final List<MensajeChat> HISTORIAL = List.of(new MensajeChat("CLIENTE", "¿Qué servicios ofrecen?"));
     private static final String RESPUESTA_SEGURA =
-            "Para atender su solicitud sobre promociones, descuentos, reembolsos o condiciones especiales, un asesor de nuestro equipo se pondrá en contacto con usted a la brevedad.";
+            "Con gusto te comunico con un asesor del salón para atender tu consulta directamente.";
+    private static final List<String> PALABRAS_PROHIBIDAS = List.of(
+            "cupón", "cupon", "descuento", "gratis", "promo", "promoción", "oferta", "reembolso");
 
     @Mock private CatalogoService catalogoService;
     @Mock private AsistenteIA asistenteIA;
@@ -111,6 +114,7 @@ class ChatbotServiceTest {
 
         assertTrue(resultado.escalado());
         assertEquals(701L, resultado.solicitudId());
+        verificarRespuestaSegura(resultado);
         verify(solicitudContactoService).crearSolicitud(
                 SLUG, "María", "maria@example.com", "¿Qué servicios ofrecen?", MotivoSolicitud.PEDIDO_POR_IA);
     }
@@ -120,25 +124,40 @@ class ChatbotServiceTest {
         prepararRespuestaIA();
         prepararCreditoDisponible();
         when(lectorJsonIA.leer(respuestaIA, RespuestaChatbotIA.class))
-                .thenReturn(new RespuestaChatbotIA("Use el cupón SILLA50 para recibir un descuento gratis.", false));
+                .thenReturn(new RespuestaChatbotIA("Para atender su solicitud sobre promo…", false));
         when(solicitudContactoService.crearSolicitud(
-                SLUG, "María", "maria@example.com", "¿Qué servicios ofrecen?",
+                SLUG, "María", "maria@example.com", "¿Tienen un cupón disponible?",
                 MotivoSolicitud.REGLA_DE_SEGURIDAD))
                 .thenReturn(solicitud(702L));
 
-        ChatbotResponse resultado = procesarMensaje();
+        ChatbotResponse resultado = procesarMensaje(List.of(
+                new MensajeChat("CLIENTE", "¿Tienen un cupón disponible?")));
 
-        assertEquals(RESPUESTA_SEGURA, resultado.respuesta());
+        verificarRespuestaSegura(resultado);
         assertTrue(resultado.escalado());
         assertEquals(702L, resultado.solicitudId());
         verify(solicitudContactoService).crearSolicitud(
                 eq(SLUG), eq("María"), eq("maria@example.com"),
-                eq("¿Qué servicios ofrecen?"), eq(MotivoSolicitud.REGLA_DE_SEGURIDAD));
+                eq("¿Tienen un cupón disponible?"), eq(MotivoSolicitud.REGLA_DE_SEGURIDAD));
     }
 
     private ChatbotResponse procesarMensaje() {
+        return procesarMensaje(HISTORIAL);
+    }
+
+    private ChatbotResponse procesarMensaje(List<MensajeChat> historial) {
         return chatbotService.procesarMensaje(SLUG, "María", "maria@example.com",
-                "Calle 1", HISTORIAL);
+                "Calle 1", historial);
+    }
+
+    private void verificarRespuestaSegura(ChatbotResponse resultado) {
+        assertEquals(RESPUESTA_SEGURA, resultado.respuesta());
+        assertEquals(RESPUESTA_SEGURA, resultado.factura().texto());
+        PALABRAS_PROHIBIDAS.forEach(palabra ->
+                {
+                    assertFalse(resultado.respuesta().toLowerCase(Locale.ROOT).contains(palabra), palabra);
+                    assertFalse(resultado.factura().texto().toLowerCase(Locale.ROOT).contains(palabra), palabra);
+                });
     }
 
     private void prepararRespuestaIA() {

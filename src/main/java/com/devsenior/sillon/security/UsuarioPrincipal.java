@@ -41,7 +41,7 @@ public class UsuarioPrincipal implements UserDetails {
                 usuario.getEmail(),
                 usuario.getContrasena(),
                 usuario.getRol(),
-                true, // o el estado activo del usuario si existe atributo en la entidad
+                usuario.isActivo(),
                 List.of(authority)
         );
     }
