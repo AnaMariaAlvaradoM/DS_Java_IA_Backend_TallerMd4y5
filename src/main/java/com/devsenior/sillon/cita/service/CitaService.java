@@ -274,6 +274,8 @@ public class CitaService {
         return new DatosRecordatorio(
                 cita.getSalon().getNombresalon(),
                 cita.getCliente().getNombre(),
+                cita.getEstilista().getNombre(),
+                horaFormateada,
                 cita.getCliente().getTelefono(),
                 textoDatos
         );

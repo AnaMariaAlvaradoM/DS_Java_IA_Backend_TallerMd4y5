@@ -2,12 +2,35 @@
 
 Registro de diagnósticos, revisiones y correcciones aplicadas durante el desarrollo y aseguramiento de calidad del backend.
 
-| Fase | Tarea | Prompt o enfoque usado | Qué entregó la IA | Qué revisé | Qué corregí |
+| # | Fase | Tarea | Prompt o enfoque usado | Qué revisé | Qué corregí |
 |---|---|---|---|---|---|
-| Seguridad JWT y manejo de errores | Separar los rechazos de autenticación `401` de las denegaciones por rol `403`. | Diagnosticar autenticación JWT y autorización por rol en endpoints protegidos. | Un flujo de filtro que limpia el contexto ante tokens inválidos y permite que Spring Security responda. | `JwtAuthFilter`, `SecurityConfig`, `@EnableMethodSecurity` y `GlobalExceptionHandler`. | Se dejó continuar la cadena ante tokens inválidos y se configuró el tratamiento de acceso denegado como `403`; las rutas públicas quedaron en `permitAll()`. |
-| Agenda y zonas horarias | Calcular disponibilidad dentro del horario, sin cruces y con el reloj de Bogotá. | Revisar validaciones de agenda y casos dependientes de la hora del sistema. | Reglas de apertura/cierre, domingo, citas ocupadas y tiempo pasado centralizadas en Java. | `ConfiguracionReloj`, `ReglasAgenda` y pruebas con reloj fijo. | Se centralizó la zona `America/Bogota` y se corrigieron validaciones de bloques y cruces. |
-| Webhook de Stripe | Verificar firmas, procesar eventos una sola vez y manejar deserialización ausente. | Diagnosticar firma, idempotencia y variantes de deserialización de Stripe. | Uso de `deserializeUnsafe()` como alternativa cuando no existe objeto deserializado. | `PagoWebhookService`, la idempotencia por ID y `PagoWebhookServiceTest`. | Se conservó la verificación de firma y el registro idempotente; el fallo de deserialización ahora genera una excepción explícita. |
-| Chatbot y regla anti-promesas | Evitar que mensajes con promesas comerciales lleguen al cliente. | Revisar respuesta normal, escalamiento de IA y regla de seguridad en Java. | Sustitución de respuestas sensibles y escalamiento con motivo `REGLA_DE_SEGURIDAD`. | Prompt y mocks de `BibliotecaPrompts`/`AsistenteIA`, además de la regla de `ChatbotService`. | Se usa un mensaje fijo; se completa el salón del fixture para construir el contexto con `Map.of`. |
-| Pruebas unitarias JUnit 5 y Mockito | Corregir el contexto de pruebas del chatbot y verificar el consumo de créditos. | Revisar stubs, argumentos de mocks y el error inicial del bloque `try`. | Alineación de las pruebas con `descontarCredito` y los datos requeridos por el prompt. | `ChatbotServiceTest`, `ChatbotService` y operaciones de `SalonRepository`. | Se ajustaron stubs y datos de prueba sin modificar las aserciones de negocio. |
-| Autenticación y escalamiento seguro | Evitar errores en endpoints autenticados y respuestas generadas que repitan términos sensibles. | Revisar el contrato JWT/principal y las salidas de escalamiento del chatbot. | `UsuarioDetailsService` devuelve el principal de dominio; el chatbot usa una respuesta neutral fija. | `JwtAuthFilter`, `UsuarioPrincipal`, `@AuthenticationPrincipal` y detección de “promo/oferta”. | Se evitó registrar el filtro dos veces, se cargan IDs y rol en el principal, y ambas vías de escalamiento protegen el texto de respuesta. |
-| DTOs de estilista y persistencia de servicios | El payload Postman de Mateo usa un nombre de campo antiguo y una descripción omitida no debe impedir guardar un servicio. | Comparar el JSON de `postman/Sillon.postman_collection.json` con los DTOs, mappers y asociaciones JPA. | Los aliases de entrada, el campo de respuesta `servicios` y la relación `@ManyToOne` permiten conservar la compatibilidad solicitada. | `EstilistaRequest`, `EstilistaResponse`, el mapper, `Servicio`, `Salon` y `ServicioRepository`; no hay unicidad JPA en la asociación de salón del servicio. | Se renombró el atributo Java a `servicioIds` manteniendo aliases, se declaró nullable la descripción y se añadieron tests de compatibilidad JSON y descripción omitida. |
+| 1 | Seguridad JWT | Garantizar el principal correcto y aislamiento por salón en endpoints autenticados. | Seguir el flujo JWT hasta los controladores y verificar el tipo de `UserDetails`. | `JwtAuthFilter`, `UsuarioDetailsService`, `UsuarioPrincipal` y consumidores del contexto. | Se entrega el principal de dominio con IDs, rol y estado activo, y se evita registrar dos veces el filtro JWT. |
+| 2 | Catálogo y límites de plan | Mantener servicios y estilistas asociados a su salón y respetar límites del plan. | Revisar consultas de aislamiento y casos del plan GRATIS/PRO. | Repositorios, servicios, asociaciones JPA y pruebas unitarias. | Se conserva el filtrado por `salonId`, validación de pertenencia de servicios y límite del plan GRATIS. |
+| 3 | Agenda y zonas horarias | Calcular disponibilidad y evitar reservas fuera de horario o con cruces. | Verificar reglas de agenda usando el reloj del proyecto y la zona de Bogotá. | `ConfiguracionReloj`, `ReglasAgenda` y tests con reloj fijo. | Se centraliza el horario `America/Bogota` y se validan apertura, cierre, días y citas ocupadas. |
+| 4 | Stripe webhooks e idempotencia | Procesar eventos firmados una sola vez y actualizar beneficios correctamente. | Revisar firmas, eventos repetidos y deserialización de Stripe. | `PagoWebhookService`, persistencia de IDs de evento y pruebas de webhook. | Se conserva la validación de firma y el control idempotente; los fallos de deserialización producen errores explícitos. |
+| 5 | IA recordatorios y chatbot anti-promesas | Evitar datos inventados en recordatorios y promesas comerciales del chatbot. | Proporcionar a Java los datos reales y mantener las reglas de seguridad fuera de la IA. | `RecordatorioService`, `ChatbotService`, prompts, lector JSON y tests. | Java asegura nombre del estilista y hora en recordatorios; el chatbot bloquea respuestas sensibles y devuelve texto neutral al escalar. |
+| 6 | Pruebas JUnit/Postman | Validar contratos JSON, autenticación, DTOs y respuestas del backend. | Reproducir payloads de Postman y comprobar status y campos JSON exactos. | Tests JUnit/Mockito, prueba MVC con JWT y colección `postman/Sillon.postman_collection.json`. | Se agregaron verificaciones para los formatos horarios `HH:mm:ss`, aliases de DTO y respuestas esperadas de los endpoints. |
+
+## Entrada 1
+
+**Fase:** Seguridad JWT. Se rastreó la autenticación desde el filtro hasta los controladores. Se verificó que el principal contuviera usuario, salón y rol, y se corrigió el tipo devuelto por `UsuarioDetailsService` para evitar errores de casteo y fallos de seguridad.
+
+## Entrada 2
+
+**Fase:** Catálogo y límites de plan. Se revisó el aislamiento multitenant de servicios y estilistas, además del límite del plan GRATIS. La lógica valida que los servicios pertenezcan al salón autenticado y evita crear estilistas por encima del límite.
+
+## Entrada 3
+
+**Fase:** Agenda y zonas horarias. Se evaluaron horarios comerciales, domingos, citas superpuestas y solicitudes en el pasado. El reloj centralizado en `America/Bogota` mantiene los cálculos deterministas y las pruebas usan un reloj controlado.
+
+## Entrada 4
+
+**Fase:** Stripe webhooks e idempotencia. Se revisó que los eventos verifiquen la firma y que un ID repetido no vuelva a procesarse. Los errores de deserialización y validación se mantienen explícitos y cubiertos por pruebas.
+
+## Entrada 5
+
+**Fase:** IA recordatorios y chatbot anti-promesas. Se verificó que Java prepare los datos reales de la cita y que el mensaje de recordatorio incluya cliente, estilista, servicio, fecha y hora. Para el chatbot, una respuesta sensible se bloquea, se escala y se reemplaza por un mensaje fijo neutral.
+
+## Entrada 6
+
+**Fase:** Pruebas JUnit/Postman. Se contrastaron los contratos JSON con las peticiones y verificaciones de la colección Postman. Las pruebas cubren respuestas HTTP, serialización de disponibilidad, compatibilidad de DTOs, reglas de servicio y autenticación real con JWT.

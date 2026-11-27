@@ -15,11 +15,14 @@ class BibliotecaPromptsTest {
         String prompt = bibliotecaPrompts.cargar("recordatorio", Map.of(
                 "salon", "Sillón Centro",
                 "cliente", "Laura",
+                "estilista", "Sara",
                 "datos", "Servicio: Corte\nHora: 10:00"
         ));
 
         assertTrue(prompt.contains("SALÓN: Sillón Centro"));
         assertTrue(prompt.contains("CLIENTE: Laura"));
+        assertTrue(prompt.contains("ESTILISTA: Sara"));
+        assertTrue(prompt.contains("nombre del estilista"));
         assertTrue(prompt.contains("Servicio: Corte\nHora: 10:00"));
         assertFalse(prompt.contains("{{"));
     }

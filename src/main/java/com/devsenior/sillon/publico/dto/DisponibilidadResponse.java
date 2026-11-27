@@ -17,11 +17,11 @@ public record DisponibilidadResponse(
 
         Integer duracionMinutos,
 
-        @JsonFormat(pattern = "HH:mm")
+        @JsonFormat(pattern = "HH:mm:ss")
         List<LocalTime> horariosLibres) {
 
     @JsonProperty("horariosDisponibles")
-    @JsonFormat(pattern = "HH:mm")
+    @JsonFormat(pattern = "HH:mm:ss")
     public List<LocalTime> horariosDisponibles() {
         return horariosLibres;
     }

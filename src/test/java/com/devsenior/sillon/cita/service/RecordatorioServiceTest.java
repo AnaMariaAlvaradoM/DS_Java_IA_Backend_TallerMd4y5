@@ -42,7 +42,8 @@ class RecordatorioServiceTest {
     void prepararServicio() {
         recordatorioService = new RecordatorioService(
                 citaService, creditoIaService, asistenteIa, lectorJson, bibliotecaPrompts);
-        datos = new DatosRecordatorio("Sillón Centro", "Laura", "+573001234567",
+        datos = new DatosRecordatorio("Sillón Centro", "Laura", "Sara", "10:00",
+                "+573001234567",
                 "Servicio: Corte\nHora: 10:00");
         respuestaIa = new RespuestaIA(
                 "{\"mensaje\":\"Hola Laura, confirme su asistencia.\"}",
@@ -60,10 +61,24 @@ class RecordatorioServiceTest {
 
         assertEquals(CITA_ID, resultado.citaId());
         assertEquals("+573001234567", resultado.telefono());
-        assertEquals("Hola Laura, confirme su asistencia.", resultado.mensaje());
+        assertEquals("Hola Laura, confirme su asistencia. Te atenderá Sara a las 10:00.",
+                resultado.mensaje());
         assertEquals(7, resultado.creditosRestantes());
         assertEquals(respuestaIa, resultado.factura());
         verify(creditoIaService).consumirCredito(SALON_ID);
+    }
+
+    @Test
+    void completaNombreDeEstilistaYHoraSiLaIaLosOmite() {
+        prepararLlamadaIA();
+        when(creditoIaService.consumirCredito(SALON_ID)).thenReturn(7);
+        when(lectorJson.leer(respuestaIa, MensajeIa.class))
+                .thenReturn(new MensajeIa("Hola Laura, confirme su asistencia."));
+
+        var resultado = recordatorioService.generarRecordatorio(SALON_ID, CITA_ID);
+
+        org.junit.jupiter.api.Assertions.assertTrue(resultado.mensaje().contains("Sara"));
+        org.junit.jupiter.api.Assertions.assertTrue(resultado.mensaje().contains("10:00"));
     }
 
     @Test

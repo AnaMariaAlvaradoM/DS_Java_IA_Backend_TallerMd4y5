@@ -14,6 +14,7 @@ import com.devsenior.sillon.ia.util.LectorJsonIA;
 import org.springframework.stereotype.Service;
 
 
+import java.util.Locale;
 import java.util.Map;
 
     @Service
@@ -50,10 +51,13 @@ import java.util.Map;
                 String userPrompt = bibliotecaPrompts.cargar("recordatorio", Map.of(
                         "salon", datos.salonNombre(),
                         "cliente", datos.clienteNombre(),
+                        "estilista", datos.estilistaNombre(),
                         "datos", datos.textoDatos()
                 ));
 
-                String systemPrompt = "Eres un asistente experto para salones de belleza. Responde estrictamente en formato JSON válido.";
+                String systemPrompt = """
+                        Eres un asistente experto para salones de belleza. Redacta el recordatorio e incluye obligatoriamente el nombre del cliente, el nombre del estilista, el servicio, la fecha y la hora exactamente como aparecen en los datos. Responde estrictamente en formato JSON válido.
+                        """;
 
                 respuestaIa = asistenteIa.completar(systemPrompt, userPrompt);
 
@@ -74,6 +78,17 @@ import java.util.Map;
 
             String mensaje = jsonParseado.mensaje();
             if (mensaje == null || mensaje.isBlank() || mensaje.length() > 700) {
+                throw new ServicioExternoException("El mensaje generado por la IA es inválido o supera los 700 caracteres.");
+            }
+
+            String mensajeNormalizado = mensaje.toLowerCase(Locale.ROOT);
+            String nombreEstilista = datos.estilistaNombre();
+            String hora = datos.hora();
+            if (!mensajeNormalizado.contains(nombreEstilista.toLowerCase(Locale.ROOT))
+                    || !mensajeNormalizado.contains(hora.toLowerCase(Locale.ROOT))) {
+                mensaje = mensaje + " Te atenderá " + nombreEstilista + " a las " + hora + ".";
+            }
+            if (mensaje.length() > 700) {
                 throw new ServicioExternoException("El mensaje generado por la IA es inválido o supera los 700 caracteres.");
             }
 

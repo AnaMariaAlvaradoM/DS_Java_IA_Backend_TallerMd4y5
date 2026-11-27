@@ -48,8 +48,8 @@ class ContratoJsonTest {
 
         JsonNode json = objectMapper.valueToTree(response);
 
-        assertEquals("10:00", json.get("horariosLibres").get(0).asText());
-        assertEquals("10:00", json.get("horariosDisponibles").get(0).asText());
+        assertEquals("10:00:00", json.get("horariosLibres").get(0).asText());
+        assertEquals("10:00:00", json.get("horariosDisponibles").get(0).asText());
     }
 
     @Test
