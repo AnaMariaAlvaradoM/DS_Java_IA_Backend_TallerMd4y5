@@ -1,7 +1,7 @@
 name: production
 values:
   - key: baseUrl
-    value: ""
+    value: "https://sillon-6rqb.onrender.com"
     enabled: true
   - key: token
     value: ""
