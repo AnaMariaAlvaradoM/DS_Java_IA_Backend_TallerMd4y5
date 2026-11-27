@@ -15,7 +15,7 @@ public class Servicio {
     @Column(nullable = false)
     @Length(max=100, message = "nombre no puede tener mas de 100 caracteres")
     private String nombre;
-    @Column(nullable = false)
+    @Column(nullable = true)
     @Length(max=200, message = "descripcion no puede tener mas de 200 caracteres")
     private String descripcion;
     @Column(name = "duracion_minutos", nullable = false)

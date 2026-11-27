@@ -515,7 +515,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Estilista 1 creado (201)\", function () {\r\n    pm.expect(pm.response.code).to.be.oneOf([201]);\r\n});\r\n\r\nconst res = pm.response.json();\r\nconsole.log(\"RESPUESTA ESTILISTA 1:\", JSON.stringify(res));\r\n\r\nconst reqBody = JSON.parse(pm.variables.replaceIn(pm.request.body.raw));\r\nconst emailGuardado = res.email || reqBody.email;\r\nif (emailGuardado) {\r\n    pm.collectionVariables.set(\"emailEstilista\", emailGuardado);\r\n}\r\n\r\nconst idEstilista = res.estilistaId || res.id;\r\nif (idEstilista) {\r\n    pm.collectionVariables.set(\"mateoId\", idEstilista);\r\n}"
+                  "pm.test(\"Estilista 1 creado (201)\", function () {\r\n    pm.expect(pm.response.code).to.be.oneOf([201]);\r\n});\r\n\r\nconst res = pm.response.json();\r\nconsole.log(\"RESPUESTA ESTILISTA 1:\", JSON.stringify(res));\r\npm.test(\"La respuesta expone los servicios del estilista\", function () {\r\n    pm.expect(res.servicios).to.be.an(\"array\");\r\n});\r\n\r\nconst reqBody = JSON.parse(pm.variables.replaceIn(pm.request.body.raw));\r\nconst emailGuardado = res.email || reqBody.email;\r\nif (emailGuardado) {\r\n    pm.collectionVariables.set(\"emailEstilista\", emailGuardado);\r\n}\r\n\r\nconst idEstilista = res.estilistaId || res.id;\r\nif (idEstilista) {\r\n    pm.collectionVariables.set(\"mateoId\", idEstilista);\r\n}"
                 ]
               }
             }

@@ -1,5 +1,6 @@
 package com.devsenior.sillon.usuario.estilista.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,6 +18,7 @@ public record EstilistaRequest(
         @Size(min = 8,max = 72, message = "La contraseña debe tener al menos 8 caracteres")
         String password,
         @NotNull(message = "Debe seleccionar al menos un servicio")
-        List<Long>serviciosId
+        @JsonAlias({"serviciosId", "serviciosIds"})
+        List<Long> servicioIds
 ) {
 }

@@ -70,7 +70,7 @@ public class EstilistaService {
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new ReglaNegocioException("El correo electrónico ya se encuentra registrado");
         }
-        Set<Long> idsSet = new HashSet<>(request.serviciosId());
+        Set<Long> idsSet = new HashSet<>(request.servicioIds());
         List<Servicio> serviciosValidos = servicioRepository.findAllByIdInAndSalonId(idsSet, salonId);
         if (serviciosValidos.size() != idsSet.size()) {
             throw new NoEncontradoException("Uno o más servicios no existen o no pertenecen al salón");
