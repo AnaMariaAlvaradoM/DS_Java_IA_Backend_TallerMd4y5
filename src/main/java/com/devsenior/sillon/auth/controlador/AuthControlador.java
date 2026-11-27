@@ -14,8 +14,11 @@ import com.devsenior.sillon.auth.servicio.AuthServicio;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "1 Autenticación", description = "Registro de salones e inicio de sesión")
 public class AuthControlador {
 
     private final AuthServicio authServicio;

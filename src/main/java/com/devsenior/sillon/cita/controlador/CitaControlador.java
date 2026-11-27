@@ -24,9 +24,16 @@ import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
+
 @RestController
 @RequestMapping("/api/citas")
+@Tag(name = "6 Agenda", description = "Gestión de citas, estados y agenda del salón")
+@SecurityRequirement(name = "Bearer JWT")
 public class CitaControlador {
+
 
 	private final CitaServicio citaServicio;
 

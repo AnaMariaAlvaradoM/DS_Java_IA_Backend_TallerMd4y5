@@ -21,9 +21,11 @@ import com.devsenior.sillon.cita.dto.SolicitudCrearCita;
 import com.devsenior.sillon.publico.dto.RespuestaCatalogoPublico;
 import com.devsenior.sillon.publico.dto.RespuestaDisponibilidad;
 import com.devsenior.sillon.publico.servicio.PublicoServicio;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/publico/salones")
+@Tag(name = "0 Público", description = "Catálogo, disponibilidad y reservas públicas")
 public class PublicoControlador {
 
     private final PublicoServicio publicoServicio;

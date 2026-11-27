@@ -20,8 +20,13 @@ import com.devsenior.sillon.servicio.servicio.ServicioServicio;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api/servicios")
+@Tag(name = "3 Servicios", description = "Gestión del catálogo de servicios")
+@SecurityRequirement(name = "Bearer JWT")
 public class ServicioControlador {
 
 	private final ServicioServicio servicioServicio;

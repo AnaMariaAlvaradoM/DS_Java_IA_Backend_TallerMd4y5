@@ -15,8 +15,13 @@ import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api/salon")
+@Tag(name = "2 Mi salón", description = "Consulta y configuración del salón autenticado")
+@SecurityRequirement(name = "Bearer JWT")
 public class SalonControlador {
 
     private final SalonServicio salonServicio;

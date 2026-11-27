@@ -15,10 +15,15 @@ import com.devsenior.sillon.ia.dto.RespuestaChatIa;
 import com.devsenior.sillon.ia.dto.SolicitudChatIa;
 import com.devsenior.sillon.ia.servicio.ChatIaServicio;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+
 @Validated
 @RestController
 @RequestMapping("/api/publico/salones")
+@Tag(name = "0 Público", description = "Chatbot público de atención al cliente")
 public class ChatIaControlador {
+
 
     private final ChatIaServicio chatIaServicio;
 

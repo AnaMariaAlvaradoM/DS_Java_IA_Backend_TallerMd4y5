@@ -12,8 +12,13 @@ import com.devsenior.sillon.ia.dto.RespuestaRecordatorioIa;
 import com.devsenior.sillon.ia.servicio.RecordatorioIaServicio;
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api/citas")
+@Tag(name = "6 Agenda", description = "Generación de recordatorios de citas mediante IA")
+@SecurityRequirement(name = "Bearer JWT")
 public class RecordatorioIaControlador {
 
     private final RecordatorioIaServicio recordatorioIaServicio;

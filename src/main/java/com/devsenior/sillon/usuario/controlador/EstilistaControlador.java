@@ -18,8 +18,13 @@ import com.devsenior.sillon.usuario.servicio.EstilistaServicio;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api/estilistas")
+@Tag(name = "4 Estilistas", description = "Gestión de estilistas y servicios asignados")
+@SecurityRequirement(name = "Bearer JWT")
 public class EstilistaControlador {
 
 	private final EstilistaServicio estilistaServicio;

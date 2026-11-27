@@ -15,8 +15,13 @@ import com.devsenior.sillon.ia.dto.RespuestaSolicitudContacto;
 import com.devsenior.sillon.ia.servicio.SolicitudContactoServicio;
 import com.devsenior.sillon.seguridad.UsuarioPrincipal;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api/solicitudes")
+@Tag(name = "8 Solicitudes", description = "Gestión y seguimiento de solicitudes de contacto")
+@SecurityRequirement(name = "Bearer JWT")
 public class SolicitudContactoControlador {
 
     private final SolicitudContactoServicio solicitudContactoServicio;
