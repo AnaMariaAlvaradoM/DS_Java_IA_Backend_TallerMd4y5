@@ -1271,7 +1271,7 @@ La base de datos de producción se aloja en Supabase.
 
 No configurar `STRIPE_URL_API` ni `SILLON_IA_OPENAI_URL` en Render, de acuerdo con la configuración establecida para producción y el calificador automático.
 
-`JWT_SECRETO` tiene que medir al menos 32 bytes. Si falta, o si `SPRING_DATASOURCE_URL` no apunta al Session Pooler de Supabase (puerto 5432, `sslmode=require`), la aplicación no arranca y Render responde 503 en todas las rutas, incluido Swagger. El dominio público no está escrito en este archivo porque no forma parte del repositorio.
+`JWT_SECRETO` tiene que medir al menos 32 bytes. Si falta, o si `SPRING_DATASOURCE_URL` no apunta al Session Pooler de Supabase (puerto 5432, `sslmode=require`), la aplicación no arranca y Render responde 503 en todas las rutas, incluido Swagger. La URL pública está en la sección 20.5.
 
 ## 20.3. Puerto de ejecución
 
@@ -1308,15 +1308,13 @@ En producción no se utiliza Stripe CLI.
 
 ## 20.5. URLs de producción
 
-Las siguientes direcciones deben actualizarse después de verificar el despliegue.
+Comprobadas el 27 de noviembre de 2026 contra el servicio desplegado.
 
 | Recurso | Dirección |
 |---|---|
-| API de producción | https://sillon-6rqb.onrender.com|
-| Swagger UI | 	https://sillon-6rqb.onrender.com/swagger-ui/index.html|
+| API de producción | https://sillon-6rqb.onrender.com |
+| Swagger UI | https://sillon-6rqb.onrender.com/swagger-ui/index.html |
 | OpenAPI JSON | https://sillon-6rqb.onrender.com/v3/api-docs |
-
-Cuando Render proporcione la dirección definitiva, se debe sustituir el marcador por la URL completa.
 
 **Importante:** el calificador automático utiliza la URL de Render indicada en este README para realizar pruebas contra la API desplegada.
 
