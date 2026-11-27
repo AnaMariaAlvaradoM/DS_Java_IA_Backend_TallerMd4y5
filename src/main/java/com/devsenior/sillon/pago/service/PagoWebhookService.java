@@ -59,34 +59,44 @@ public class PagoWebhookService {
 
         // 3. Extraer el objeto con deserialización segura (OJO)
         EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
-        StripeObject stripeObject;
+        if (dataObjectDeserializer == null) {
+            throw new ServicioExternoException("El evento de Stripe no contiene datos para procesar");
+        }
 
-        if (dataObjectDeserializer.getObject().isPresent()) {
-            stripeObject = dataObjectDeserializer.getObject().get();
-        } else {
-            // Deserialización sin verificación de versión si la API y la librería no coinciden
-            log.warn("Versión de API de Stripe no coincide. Usando deserializeUnsafe para el evento {}", event.getId());
-            try {
-                stripeObject = dataObjectDeserializer.deserializeUnsafe();
-            } catch (EventDataObjectDeserializationException e) {
-                log.error("No se pudo deserializar el evento de Stripe ni siquiera de forma forzada", e);
-                // Si tienes la excepción ServicioExternoException, úsala aquí. O responde false.
-                throw new ServicioExternoException("Error crítico leyendo datos de Stripe: " + e.getMessage());
-            }
+        StripeObject stripeObject;
+        try {
+            stripeObject = dataObjectDeserializer.getObject().orElseGet(() -> {
+                log.warn("Versión de API de Stripe no coincide. Usando deserializeUnsafe para el evento {}", event.getId());
+                try {
+                    return dataObjectDeserializer.deserializeUnsafe();
+                } catch (EventDataObjectDeserializationException e) {
+                    throw new IllegalStateException("No se pudo deserializar el objeto del evento", e);
+                }
+            });
+        } catch (IllegalStateException e) {
+            Throwable causa = e.getCause();
+            log.error("No se pudo deserializar el evento de Stripe ni siquiera de forma forzada", causa);
+            throw new ServicioExternoException("Error crítico leyendo datos de Stripe: "
+                    + (causa == null ? e.getMessage() : causa.getMessage()));
         }
 
         // 4. Lógica según el tipo de evento
-        switch (event.getType()) {
+        String tipoEvento = event.getType();
+        if (stripeObject == null || tipoEvento == null) {
+            throw new ServicioExternoException("El evento de Stripe no contiene un tipo u objeto válido");
+        }
+
+        switch (tipoEvento) {
             case "checkout.session.completed":
-                Session session = (Session) stripeObject;
-                if ("paid".equals(session.getPaymentStatus())) {
+                if (stripeObject instanceof Session session && "paid".equals(session.getPaymentStatus())) {
                     procesarCompra(session);
                 }
                 break;
 
             case "customer.subscription.deleted":
-                Subscription subscription = (Subscription) stripeObject;
-                cancelarSuscripcion(subscription.getId());
+                if (stripeObject instanceof Subscription subscription && subscription.getId() != null) {
+                    cancelarSuscripcion(subscription.getId());
+                }
                 break;
 
             default:
@@ -102,12 +112,768 @@ public class PagoWebhookService {
 
     private void procesarCompra(Session session) {
         Map<String, String> metadata = session.getMetadata();
-        if (metadata == null || !metadata.containsKey("salonId")) return;
+        String salonIdTexto = metadata == null ? null : metadata.get("salonId");
+        if (salonIdTexto == null || salonIdTexto.isBlank()) {
+            salonIdTexto = session.getClientReferenceId();
+        }
+        String tipo = metadata == null ? null : metadata.get("tipo");
+        if (salonIdTexto == null || salonIdTexto.isBlank() || tipo == null || tipo.isBlank()) {
+            log.warn("Se omitió el evento de pago porque faltan el salón o el tipo de compra");
+            return;
+        }
 
-        Long salonId = Long.parseLong(metadata.get("salonId"));
-        String tipo = metadata.get("tipo");
+        Long salonId;
+        try {
+            salonId = Long.valueOf(salonIdTexto);
+        } catch (NumberFormatException e) {
+            log.warn("Se omitió el evento de pago porque el identificador de salón no es válido");
+            return;
+        }
 
-        Salon salon = salonRepository.findById(salonId).orElseThrow();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        Salon salon = salonRepository.findById(salonId).orElse(null);
+        if (salon == null) {
+            log.warn("Se omitió el evento de pago porque no existe el salón {}", salonId);
+            return;
+        }
 
         if (salon.getCreditosIa() == null) {
             salon.setCreditosIa(0);

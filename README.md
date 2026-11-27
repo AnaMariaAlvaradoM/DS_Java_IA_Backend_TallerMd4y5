@@ -57,9 +57,9 @@ Para ejecutar el proyecto en local o desplegarlo en la nube, configura las sigui
 | `SPRING_DATASOURCE_USERNAME` | Usuario de la base de datos | `postgres.tuproyecto` |
 | `SPRING_DATASOURCE_PASSWORD` | Contraseña de la base de datos | `tu_password_seguro` |
 | `JWT_SECRET` | Clave secreta en Base64/Hex para firmar los tokens JWT | `ClaveSecretaSuperSeguraDeAlMenos256BitsParaJWT2026` |
-| `STRIPE_API_KEY` | Llave secreta de la API de Stripe (`sk_test_...`) | `sk_test_51EjemploClaveDePruebaStripe12345` |
-| `STRIPE_SECRETO_WEBHOOK` | Secreto de firma del destino Webhook en Stripe (`whsec_...`) | `whsec_EjemploSecretoWebhookStripe67890` |
-| `GEMINI_API_KEY` | Clave de API para el servicio de Inteligencia Artificial | `AIzaSyEjemploClaveGeminiApi12345` |
+| `STRIPE_API_KEY` | Llave secreta de la API de Stripe | `<configurar_fuera_del_repositorio>` |
+| `STRIPE_SECRETO_WEBHOOK` | Secreto de firma del destino Webhook en Stripe | `<configurar_fuera_del_repositorio>` |
+| `GEMINI_API_KEY` | Clave de API para el servicio de Inteligencia Artificial | `<configurar_fuera_del_repositorio>` |
 | `URL_PUBLICA` | URL base pública del servidor (sin barra `/` al final) | `https://ds-java-ia-backend-tallermd4y5-0y6w.onrender.com` |
 
 ---

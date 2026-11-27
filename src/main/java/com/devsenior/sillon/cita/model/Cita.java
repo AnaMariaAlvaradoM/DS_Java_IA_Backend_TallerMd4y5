@@ -6,9 +6,9 @@ import com.devsenior.sillon.servicio.Servicio;
 import com.devsenior.sillon.usuario.model.Usuario;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 //id, inicio, fin, precio, estado, origen, nota,
 //fechaCreacion, fechaActualizacion
 
@@ -37,7 +37,6 @@ public class Cita {
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 
-    @UpdateTimestamp
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
@@ -127,6 +126,21 @@ public class Cita {
 
     public LocalDateTime getFechaActualizacion() {
         return fechaActualizacion;
+    }
+
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
+    public void marcarActualizada(LocalDateTime ahora) {
+        LocalDateTime marca = ahora.truncatedTo(ChronoUnit.SECONDS);
+        if (fechaCreacion != null) {
+            LocalDateTime creacion = fechaCreacion.truncatedTo(ChronoUnit.SECONDS);
+            if (!marca.isAfter(creacion)) {
+                marca = creacion.plusSeconds(1);
+            }
+        }
+        fechaActualizacion = marca;
     }
 
     public Salon getSalon() {

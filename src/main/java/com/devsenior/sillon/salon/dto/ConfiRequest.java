@@ -18,5 +18,28 @@ public record ConfiRequest(
 
         @NotNull(message = "Debe especificar si abre los domingos")
         Boolean abreDomingos
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ) {
 }

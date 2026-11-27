@@ -53,7 +53,31 @@ public class AuthService {
             throw new ReglaNegocioException("El correo ya está registrado en la plataforma");
         }
 
-        String nombreSalon = request.SalonNombre() == null ? "" : request.SalonNombre().trim();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        String nombreSalon = request.salonNombre() == null ? "" : request.salonNombre().trim();
         String slug = generadorSlugService.generarSlugUnico(nombreSalon);
 
         Salon salon = new Salon();

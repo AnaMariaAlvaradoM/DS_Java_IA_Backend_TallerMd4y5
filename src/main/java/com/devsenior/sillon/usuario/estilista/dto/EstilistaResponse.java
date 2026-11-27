@@ -2,7 +2,27 @@ package com.devsenior.sillon.usuario.estilista.dto;
 
 import java.util.List;
 
-public record EstilistaResponse(
+public record
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+EstilistaResponse(
         Long id,
         String nombre,
         String email,

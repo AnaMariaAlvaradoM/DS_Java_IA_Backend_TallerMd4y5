@@ -44,7 +44,22 @@ public class EstilistaService {
         System.out.println("Salón recibido: " + salonId);
         Salon salon = salonRepository.findById(salonId)
                 .orElseThrow(() -> new NoEncontradoException("Salón no encontrado"));
-        System.out.println("Salón encontrado: " + salon.getNombresalon());
+        System.out.println("Salón encontrado: " + salon.getNombresalon()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        );
         System.out.println("Plan del salón: " + salon.getPlan());
         long estilistasActuales = usuarioRepository.countBySalonIdAndRol(salonId, Rol.ESTILISTA);
         System.out.println("Estilistas actuales: " + estilistasActuales + ", Plan del salón: " + salon.getPlan());

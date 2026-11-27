@@ -50,4 +50,29 @@ public class SalonService {
         return SalonMapper.toResponse(salon);
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

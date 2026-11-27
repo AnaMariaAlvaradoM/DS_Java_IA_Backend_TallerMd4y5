@@ -31,7 +31,7 @@ public class SalonController {
         SalonResponse respuesta = salonService.obtenerSalonPorId(salonIdDelUsuario);
         return ResponseEntity.ok(respuesta);
     }
-    @PutMapping("/configuracion")
+    @PutMapping({"/configuracion", "/horario"})
     public ResponseEntity<SalonResponse> actualizarConfiguracion(
             @AuthenticationPrincipal UsuarioPrincipal usuario,
             @Valid @RequestBody ConfiRequest dto
@@ -43,5 +43,4 @@ public class SalonController {
         return ResponseEntity.ok(respuesta);
     }
 }
-
 

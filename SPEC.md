@@ -25,9 +25,9 @@ La IA tiene estrictamente prohibido generar código para los siguientes módulos
 4. **DTOs:** Toda entrada y salida de la API se hace con `record`. Nunca se exponen las entidades de la base de datos.
 
 ## Endpoints de la Fase 1
-| Método | Ruta | Respuestas |
-|---|---|---|
-| POST | /api/v1/auth/register | 201 · 400 · 409 |
+| Método | Ruta               | Respuestas |
+|---|--------------------|---|
+| POST | /api/auth/registro | 201 · 400 · 409 |
 
 # SPEC · Sillón · Fase 2: Seguridad: JWT, roles y respuestas 401/403
 

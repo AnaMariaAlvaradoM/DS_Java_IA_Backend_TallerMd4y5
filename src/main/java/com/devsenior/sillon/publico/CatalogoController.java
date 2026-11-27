@@ -18,7 +18,33 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/publico/salones/{slug}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@RequestMapping({"/api/publico/salones/{slug}", "/api/publico/{slug}"})
 @Tag(name = "0 Público")
 public class CatalogoController {
 
@@ -33,7 +59,7 @@ public class CatalogoController {
         this.chatbotService = chatbotService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/catalogo"})
     public ResponseEntity<CatalogoResponse> obtenerCatalogo(@PathVariable String slug) {
         return ResponseEntity.ok(catalogoService.obtenerCatalogo(slug));
     }
@@ -48,7 +74,7 @@ public class CatalogoController {
         return ResponseEntity.ok(catalogoService.obtenerDisponibilidad(slug, servicioId, estilistaId, fecha));
     }
 
-    @PostMapping("/reservas")
+    @PostMapping({"/reservas", "/reservar"})
     public ResponseEntity<CitaResponse> reservarEnLinea(
             @PathVariable String slug,
             @Valid @RequestBody CitaResquest dto) {

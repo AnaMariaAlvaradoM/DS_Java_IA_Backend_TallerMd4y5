@@ -187,6 +187,40 @@ public class CitaService {
         // 4. Cambiar el estado y guardar
         cita.setEstadoCita(nuevoEstado);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        cita.marcarActualizada(LocalDateTime.now(clock));
+
         Cita actualizada = citaRepository.saveAndFlush(cita);
 
         return CitaMapper.toResponse(actualizada);

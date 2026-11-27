@@ -17,9 +17,8 @@ public class StripeConfig {
     public StripeClient stripeClient() {
         String apiKey = stripeProperties.getSecretKey();
 
-        // Si no viene clave o viene vacía, asigna una de prueba para permitir el arranque
         if (apiKey == null || apiKey.isBlank()) {
-            apiKey = "sk_test_51MockKeyForDev1234567890";
+            throw new IllegalStateException("Debe configurar la clave secreta de Stripe");
         }
 
         String apiBase = stripeProperties.getUrlApi();

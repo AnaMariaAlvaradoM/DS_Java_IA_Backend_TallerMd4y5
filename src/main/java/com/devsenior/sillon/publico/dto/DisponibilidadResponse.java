@@ -1,6 +1,7 @@
 package com.devsenior.sillon.publico.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -18,4 +19,10 @@ public record DisponibilidadResponse(
 
         @JsonFormat(pattern = "HH:mm")
         List<LocalTime> horariosLibres) {
+
+    @JsonProperty("horariosDisponibles")
+    @JsonFormat(pattern = "HH:mm")
+    public List<LocalTime> horariosDisponibles() {
+        return horariosLibres;
+    }
 }

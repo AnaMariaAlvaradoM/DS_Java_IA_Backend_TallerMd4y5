@@ -36,6 +36,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -171,6 +172,50 @@ class CitaServiceTest {
         assertThrows(ReglaNegocioException.class, () -> citaService.cambiarEstado(
                 1L, SALON_ID, EstadoCita.CONFIRMADA, ESTILISTA_ID, Rol.DUENO));
         verify(citaRepository, never()).saveAndFlush(any(Cita.class));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @Test
+    void fechaActualizacionEsPosteriorAunqueElEstadoCambieEnElMismoSegundo() {
+        Cita cita = citaParaCambioDeEstado();
+        cita.setEstadoCita(EstadoCita.PENDIENTE);
+        cita.setFechaCreacion(AHORA);
+        when(citaRepository.findByIdAndSalonId(1L, SALON_ID)).thenReturn(Optional.of(cita));
+        when(citaRepository.saveAndFlush(any(Cita.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var respuesta = citaService.cambiarEstado(
+                1L, SALON_ID, EstadoCita.CONFIRMADA, 99L, Rol.DUENO);
+
+        assertTrue(respuesta.fechaActualizacion().isAfter(respuesta.fechaCreacion()));
     }
 
     private Cita citaParaCambioDeEstado() {

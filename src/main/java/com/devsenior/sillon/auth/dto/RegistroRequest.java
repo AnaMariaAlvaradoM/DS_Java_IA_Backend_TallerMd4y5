@@ -10,7 +10,7 @@ public record RegistroRequest(
 
         @NotBlank(message = "El nombre del salón es obligatorio")
         @Size(max = 100, message = "El nombre del salón no puede exceder los 100 caracteres")
-        String SalonNombre,
+        String salonNombre,
 
         @NotBlank(message = "El email es obligatorio")
         @Email(message = "El email no tiene un formato válido")
