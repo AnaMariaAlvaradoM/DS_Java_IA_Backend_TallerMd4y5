@@ -8,6 +8,18 @@ target/
 
 # Secretos: nunca se suben
 /secrets.properties
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Configuración del IDE
+.idea/
+.vscode/
+
+# Archivos comprimidos de proyectos
+*.zip
 
 # Material privado de la profe (guía, solución y scripts): NO se sube al repo
 _docente/
