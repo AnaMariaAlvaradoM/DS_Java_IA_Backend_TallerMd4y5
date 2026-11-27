@@ -11,6 +11,7 @@ import com.devSenior.sillon.chat.dto.RolConversacion;
 import com.devSenior.sillon.chat.dto.SolicitudChat;
 import com.devSenior.sillon.chat.dto.TurnoChat;
 import com.devSenior.sillon.chat.entidad.MotivoSolicitud;
+import com.devSenior.sillon.compartido.excepcion.FirmaInvalidaException;
 import com.devSenior.sillon.ia.dto.MensajeIa;
 import com.devSenior.sillon.ia.dto.ResultadoIa;
 import com.devSenior.sillon.ia.json.LectorJson;
@@ -47,6 +48,9 @@ public class ChatServicio {
 	}
 
 	public ChatRespuesta responder(String slug, SolicitudChat solicitud) {
+		if (solicitud.historial() == null || solicitud.historial().isEmpty()) {
+			throw new FirmaInvalidaException("historial: debe tener al menos un turno");
+		}
 		ContextoChat contexto = contextoChatServicio.cargar(slug);
 		creditoIaServicio.verificar(contexto.salonId());
 		String instrucciones = bibliotecaPrompts.cargar("chatbot.txt", Map.of(

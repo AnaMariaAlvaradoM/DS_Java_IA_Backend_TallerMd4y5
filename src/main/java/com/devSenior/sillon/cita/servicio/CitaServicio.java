@@ -55,7 +55,7 @@ public class CitaServicio {
 
 	@Transactional
 	public CitaRespuesta crearPorSalon(Long salonId, SolicitudCita solicitud) {
-		return aRespuesta(agendar(salonId, solicitud, EstadoCita.PENDIENTE, OrigenCita.SALON));
+		return aRespuesta(agendar(salonId, solicitud, EstadoCita.CONFIRMADA, OrigenCita.SALON));
 	}
 
 	@Transactional

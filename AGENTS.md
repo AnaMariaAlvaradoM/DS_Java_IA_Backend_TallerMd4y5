@@ -133,7 +133,7 @@ Capas por dominio: `entidad`, `repositorio`, `servicio`, `controlador`, `dto`.
 - `ReglasAgenda` es un componente **sin dependencias de base de datos**.
 - **Un único método privado de agendar** (cita del salón y reserva en línea), con este orden: servicio existe y activo → estilista existe, activo y ofrece el servicio → calcular `fin` → no pasado → anticipación máxima 90 días → horario del salón, domingo e intervalo → sin cruce → buscar/crear cliente, copiar precio y guardar.
 - Cita del personal: `PENDIENTE`/`SALON`. Reserva en línea: `PENDIENTE`/`EN_LINEA`.
-- Horario, domingo cerrado, inicio no alineado al intervalo, pasado y más de 90 días → 400. Solapamiento y transición inválida → 409.
+- Pasado, domingo cerrado y fuera de horario → 409 (R9). Inicio no alineado y más de 90 días → 400. Solapamiento y transición inválida → 409.
 - Cambiar estado: buscar por id y salón (404) → si es estilista, cita suya (404) y destino `COMPLETADA`/`NO_ASISTIO` (403) → transición válida (409).
 - Si devuelves la cita tras cambiar el estado, guarda con `saveAndFlush`.
 - La disponibilidad la calcula **Java**, nunca la IA.
@@ -430,7 +430,7 @@ No construyas citas ni disponibilidad.
 - Dos métodos de agendar distintos.
 
 **Verificación**
-- Cita del personal → 201 `PENDIENTE`/`SALON`; solapamiento 409; domingo cerrado, inicio no alineado, pasado y más de 90 días → 400.
+- Cita del personal → 201 `CONFIRMADA`/`SALON` (R11). Reserva en línea → `PENDIENTE`/`EN_LINEA`. Domingo, pasado y fuera de horario → 409. Desalineado y más de 90 días → 400.
 - Reserva pública → 201 `PENDIENTE`/`EN_LINEA`, con `fin` y precio copiados del servicio.
 - Confirmar `PENDIENTE` → `fechaActualizacion` posterior; `CONFIRMADA`→`PENDIENTE` 409.
 - Mateo: solo sus citas, ajena 404, cancelar 403, completar 200.

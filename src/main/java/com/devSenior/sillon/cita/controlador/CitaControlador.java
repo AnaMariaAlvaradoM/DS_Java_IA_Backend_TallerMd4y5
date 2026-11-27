@@ -45,7 +45,7 @@ public class CitaControlador {
 	}
 
 	@PostMapping
-	@Operation(summary = "Agenda una cita del salón. Nace PENDIENTE con origen SALON. Rol DUENO.")
+	@Operation(summary = "Agenda una cita del salón. Nace CONFIRMADA con origen SALON. Rol DUENO.")
 	@ApiResponse(responseCode = "201", description = "Cita creada")
 	@ApiResponse(responseCode = "400", description = "Horario, domingo, intervalo, pasado o anticipación")
 	@ApiResponse(responseCode = "404", description = "Servicio o estilista no pertenecen al salón")

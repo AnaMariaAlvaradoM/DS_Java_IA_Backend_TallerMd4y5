@@ -56,7 +56,7 @@ class AgendaPublicaIntegracionTest {
 		MvcResult creada = mockMvc.perform(post("/api/citas").header("Authorization", "Bearer " + tokenDueno)
 				.contentType(MediaType.APPLICATION_JSON).content(cita))
 				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.estado").value("PENDIENTE"))
+				.andExpect(jsonPath("$.estado").value("CONFIRMADA"))
 				.andExpect(jsonPath("$.origen").value("SALON"))
 				.andExpect(jsonPath("$.fin").value("2026-12-01T10:45:00"))
 				.andExpect(jsonPath("$.precio").value(35000))
@@ -72,7 +72,7 @@ class AgendaPublicaIntegracionTest {
 		mockMvc.perform(post("/api/citas").header("Authorization", "Bearer " + tokenDueno)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(cita(servicioId, estilistaId, "2026-12-06T10:00:00", "3002223344")))
-				.andExpect(status().isBadRequest());
+				.andExpect(status().isConflict());
 		mockMvc.perform(post("/api/citas").header("Authorization", "Bearer " + tokenDueno)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(cita(servicioId, estilistaId, "2026-12-01T10:15:00", "3002223344")))
@@ -80,7 +80,7 @@ class AgendaPublicaIntegracionTest {
 		mockMvc.perform(post("/api/citas").header("Authorization", "Bearer " + tokenDueno)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(cita(servicioId, estilistaId, "2020-01-06T10:00:00", "3002223344")))
-				.andExpect(status().isBadRequest());
+				.andExpect(status().isConflict());
 		mockMvc.perform(post("/api/citas").header("Authorization", "Bearer " + tokenDueno)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(cita(servicioId, estilistaId, "2027-06-01T10:00:00", "3002223344")))

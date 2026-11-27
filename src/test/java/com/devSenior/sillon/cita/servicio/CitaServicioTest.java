@@ -85,10 +85,10 @@ class CitaServicioTest {
 	}
 
 	@Test
-	void creaCitaPendienteDeSalonConFinYPrecioCopiados() {
+	void creaCitaConfirmadaDeSalonConFinYPrecioCopiados() {
 		prepararAgendar(List.of());
 		CitaRespuesta respuesta = citaServicio.crearPorSalon(1L, solicitud(INICIO));
-		assertEquals(EstadoCita.PENDIENTE, respuesta.estado());
+		assertEquals(EstadoCita.CONFIRMADA, respuesta.estado());
 		assertEquals(OrigenCita.SALON, respuesta.origen());
 		assertEquals(INICIO.plusMinutes(45), respuesta.fin());
 		assertEquals(35000, respuesta.precio());
@@ -117,17 +117,17 @@ class CitaServicioTest {
 		ocupada.setEstado(EstadoCita.CANCELADA);
 		prepararAgendar(List.of(ocupada));
 		CitaRespuesta liberada = citaServicio.crearPorSalon(1L, solicitud(INICIO));
-		assertEquals(EstadoCita.PENDIENTE, liberada.estado());
+		assertEquals(EstadoCita.CONFIRMADA, liberada.estado());
 	}
 
 	@Test
 	void rechazaDomingoDesalineadoPasadoYMasDe90Dias() {
 		prepararAgendar(List.of());
-		assertThrows(FirmaInvalidaException.class,
+		assertThrows(ConflictoException.class,
 				() -> citaServicio.crearPorSalon(1L, solicitud(LocalDateTime.of(2026, 11, 22, 10, 0))));
 		assertThrows(FirmaInvalidaException.class,
 				() -> citaServicio.crearPorSalon(1L, solicitud(LocalDateTime.of(2026, 11, 18, 10, 15))));
-		assertThrows(FirmaInvalidaException.class,
+		assertThrows(ConflictoException.class,
 				() -> citaServicio.crearPorSalon(1L, solicitud(LocalDateTime.of(2026, 11, 17, 9, 0))));
 		assertThrows(FirmaInvalidaException.class,
 				() -> citaServicio.crearPorSalon(1L, solicitud(LocalDateTime.of(2027, 6, 1, 10, 0))));

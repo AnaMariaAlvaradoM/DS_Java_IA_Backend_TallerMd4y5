@@ -1,4 +1,32 @@
 name: local
 values:
   - key: baseUrl
-    value: 'http://localhost:8080'
+    value: http://localhost:8080
+    enabled: true
+  - key: token
+    value: ""
+    enabled: true
+  - key: tokenAdmin
+    value: ""
+    enabled: true
+  - key: tokenDueno
+    value: ""
+    enabled: true
+  - key: tokenEstilista
+    value: ""
+    enabled: true
+  - key: salonId
+    value: ""
+    enabled: true
+  - key: servicioId
+    value: ""
+    enabled: true
+  - key: clienteId
+    value: ""
+    enabled: true
+  - key: citaId
+    value: ""
+    enabled: true
+  - key: usuarioId
+    value: ""
+    enabled: true

@@ -15,6 +15,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.devSenior.sillon.compartido.excepcion.ConflictoException;
 import com.devSenior.sillon.compartido.excepcion.FirmaInvalidaException;
 import com.devSenior.sillon.salon.entidad.ConfiguracionSalon;
 
@@ -40,15 +41,15 @@ class ReglasAgendaTest {
 
 	@Test
 	void rechazaFueraDeAperturaCierreDomingoPasadoAnticipacionYAlineacion() {
-		assertThrows(FirmaInvalidaException.class, () -> reglas.validar(configuracion,
+		assertThrows(ConflictoException.class, () -> reglas.validar(configuracion,
 				LocalDateTime.of(2026, 11, 18, 7, 30), LocalDateTime.of(2026, 11, 18, 8, 15)));
-		assertThrows(FirmaInvalidaException.class, () -> reglas.validar(configuracion,
+		assertThrows(ConflictoException.class, () -> reglas.validar(configuracion,
 				LocalDateTime.of(2026, 11, 18, 18, 30), LocalDateTime.of(2026, 11, 18, 19, 15)));
-		assertThrows(FirmaInvalidaException.class, () -> reglas.validar(configuracion,
+		assertThrows(ConflictoException.class, () -> reglas.validar(configuracion,
 				LocalDateTime.of(2026, 11, 22, 10, 0), LocalDateTime.of(2026, 11, 22, 10, 45)));
 		assertThrows(FirmaInvalidaException.class, () -> reglas.validar(configuracion,
 				LocalDateTime.of(2026, 11, 18, 10, 15), LocalDateTime.of(2026, 11, 18, 11, 0)));
-		assertThrows(FirmaInvalidaException.class, () -> reglas.validar(configuracion,
+		assertThrows(ConflictoException.class, () -> reglas.validar(configuracion,
 				LocalDateTime.of(2026, 11, 17, 9, 0), LocalDateTime.of(2026, 11, 17, 9, 45)));
 		assertThrows(FirmaInvalidaException.class, () -> reglas.validar(configuracion,
 				LocalDateTime.of(2027, 6, 1, 10, 0), LocalDateTime.of(2027, 6, 1, 10, 45)));

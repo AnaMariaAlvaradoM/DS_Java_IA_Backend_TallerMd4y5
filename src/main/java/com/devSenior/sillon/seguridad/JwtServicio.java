@@ -25,7 +25,11 @@ public class JwtServicio {
 			@Value("${sillon.jwt.secreto}") String secreto,
 			@Value("${sillon.jwt.expiracion-minutos}") int expiraEnMinutos,
 			Clock reloj) {
-		this.clave = Keys.hmacShaKeyFor(secreto.getBytes(StandardCharsets.UTF_8));
+		byte[] bytes = secreto == null ? new byte[0] : secreto.getBytes(StandardCharsets.UTF_8);
+		if (bytes.length < 32) {
+			throw new IllegalStateException("JWT_SECRETO debe tener al menos 32 bytes");
+		}
+		this.clave = Keys.hmacShaKeyFor(bytes);
 		this.expiraEnMinutos = expiraEnMinutos;
 		this.reloj = reloj;
 	}

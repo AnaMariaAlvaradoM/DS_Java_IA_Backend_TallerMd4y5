@@ -1271,6 +1271,8 @@ La base de datos de producción se aloja en Supabase.
 
 No configurar `STRIPE_URL_API` ni `SILLON_IA_OPENAI_URL` en Render, de acuerdo con la configuración establecida para producción y el calificador automático.
 
+`JWT_SECRETO` tiene que medir al menos 32 bytes. Si falta, o si `SPRING_DATASOURCE_URL` no apunta al Session Pooler de Supabase (puerto 5432, `sslmode=require`), la aplicación no arranca y Render responde 503 en todas las rutas, incluido Swagger. El dominio público no está escrito en este archivo porque no forma parte del repositorio.
+
 ## 20.3. Puerto de ejecución
 
 La aplicación utiliza:

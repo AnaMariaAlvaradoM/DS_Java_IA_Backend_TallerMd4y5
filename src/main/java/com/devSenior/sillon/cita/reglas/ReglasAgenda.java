@@ -12,6 +12,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.devSenior.sillon.compartido.excepcion.ConflictoException;
 import com.devSenior.sillon.compartido.excepcion.FirmaInvalidaException;
 import com.devSenior.sillon.salon.entidad.ConfiguracionSalon;
 
@@ -29,19 +30,19 @@ public class ReglasAgenda {
 	public void validar(ConfiguracionSalon configuracion, LocalDateTime inicio, LocalDateTime fin) {
 		LocalDateTime ahora = LocalDateTime.now(reloj).truncatedTo(ChronoUnit.SECONDS);
 		if (!inicio.isAfter(ahora)) {
-			throw new FirmaInvalidaException("No se puede agendar en el pasado");
+			throw new ConflictoException("No se puede agendar en el pasado");
 		}
 		if (inicio.isAfter(ahora.plusDays(ANTICIPACION_MAXIMA_DIAS))) {
 			throw new FirmaInvalidaException("La anticipación máxima es de 90 días");
 		}
 		if (inicio.getDayOfWeek() == DayOfWeek.SUNDAY && !configuracion.isAbreDomingos()) {
-			throw new FirmaInvalidaException("abreDomingos: el salón no abre los domingos");
+			throw new ConflictoException("abreDomingos: el salón no abre los domingos");
 		}
 		if (inicio.toLocalTime().isBefore(configuracion.getHoraApertura())) {
-			throw new FirmaInvalidaException("horaApertura: la cita empieza antes de abrir");
+			throw new ConflictoException("horaApertura: la cita empieza antes de abrir");
 		}
 		if (fin.toLocalTime().isAfter(configuracion.getHoraCierre()) || fin.toLocalDate().isAfter(inicio.toLocalDate())) {
-			throw new FirmaInvalidaException("horaCierre: la cita termina después de cerrar");
+			throw new ConflictoException("horaCierre: la cita termina después de cerrar");
 		}
 		long minutosDesdeApertura = Duration.between(configuracion.getHoraApertura(), inicio.toLocalTime()).toMinutes();
 		if (minutosDesdeApertura % configuracion.getIntervaloMinutos() != 0) {
