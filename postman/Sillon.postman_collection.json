@@ -1,0 +1,1788 @@
+{
+  "info": {
+    "name": "Sillón",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const ahora = new Date();",
+          "pm.collectionVariables.set('sufijo', String(ahora.getTime()).slice(-8));",
+          "function iso(d, hora) {",
+          "  const m = String(d.getMonth()+1).padStart(2,'0');",
+          "  const dia = String(d.getDate()).padStart(2,'0');",
+          "  return d.getFullYear()+'-'+m+'-'+dia+'T'+hora;",
+          "}",
+          "const cita = new Date(ahora.getTime()+2*24*60*60*1000);",
+          "while (cita.getDay()===0) cita.setDate(cita.getDate()+1);",
+          "pm.collectionVariables.set('inicioCita', iso(cita,'10:00:00'));",
+          "pm.collectionVariables.set('inicioTarde', iso(cita,'15:00:00'));",
+          "pm.collectionVariables.set('inicioDesalineado', iso(cita,'10:15:00'));",
+          "const domingo = new Date(cita.getTime());",
+          "domingo.setDate(domingo.getDate()+(7-domingo.getDay())%7);",
+          "if (domingo.getDay()!==0) domingo.setDate(domingo.getDate()+ (7-domingo.getDay()));",
+          "while (domingo.getDay()!==0) domingo.setDate(domingo.getDate()+1);",
+          "pm.collectionVariables.set('domingo', iso(domingo,'10:00:00'));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticación",
+      "item": [
+        {
+          "name": "Registro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"salonNombre\":\"Salon {{sufijo}}\",\"ciudad\":\"Bogota\",\"direccion\":\"Calle 1\",\"telefono\":\"3001112233\",\"nombre\":\"Ana\",\"email\":\"ana-{{sufijo}}@sillon.test\",\"password\":\"clave1234\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([201,409]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  const cuerpo = pm.response.json();",
+                  "  pm.collectionVariables.set('token', cuerpo.token);",
+                  "  pm.collectionVariables.set('salonId', cuerpo.salonId);",
+                  "  pm.collectionVariables.set('salonSlug', cuerpo.salonSlug);",
+                  "  pm.collectionVariables.set('usuarioId', cuerpo.usuarioId);",
+                  "  pm.test('plan de registro', function () { pm.expect(cuerpo.rol).to.eql('DUENO'); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro correo inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"salonNombre\":\"X\",\"ciudad\":\"Bogota\",\"direccion\":\"Calle 1\",\"telefono\":\"3001112233\",\"nombre\":\"Ana\",\"email\":\"no-es-correo\",\"password\":\"clave1234\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro contraseña corta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"salonNombre\":\"X\",\"ciudad\":\"Bogota\",\"direccion\":\"Calle 1\",\"telefono\":\"3001112233\",\"nombre\":\"Ana\",\"email\":\"corta-{{sufijo}}@sillon.test\",\"password\":\"123\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"ana-{{sufijo}}@sillon.test\",\"password\":\"clave1234\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login contraseña incorrecta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"ana-{{sufijo}}@sillon.test\",\"password\":\"incorrecta\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([401]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login sin contraseña",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"ana-{{sufijo}}@sillon.test\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Salón",
+      "item": [
+        {
+          "name": "Mi salón",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salon"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mi salón sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/salon"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([401]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Configurar horario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salon/configuracion",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"horaApertura\":\"08:00\",\"horaCierre\":\"19:00\",\"abreDomingos\":false,\"intervaloMinutos\":30}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Horario imposible",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salon/configuracion",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"horaApertura\":\"20:00\",\"horaCierre\":\"09:00\",\"abreDomingos\":false,\"intervaloMinutos\":30}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([409]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Intervalo inválido",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salon/configuracion",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"horaApertura\":\"08:00\",\"horaCierre\":\"19:00\",\"abreDomingos\":false,\"intervaloMinutos\":5}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar datos del salón",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salon",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Salon {{sufijo}}\",\"ciudad\":\"Bogota\",\"direccion\":\"Calle 2\",\"telefono\":\"3001112233\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Usuarios",
+      "item": [
+        {
+          "name": "Yo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/usuarios/yo"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/usuarios"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Desactivar usuario ajeno",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/usuarios/999999/activo",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"activo\":false}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([404]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asignar servicios ajenos",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/usuarios/999999/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"servicioIds\":[1]}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([404]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Servicios",
+      "item": [
+        {
+          "name": "Crear servicio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Corte clasico\",\"duracionMinutos\":45,\"precio\":35000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([201]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});",
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('servicioId', pm.response.json().id);",
+                  "  pm.test('precio entero', function () { pm.expect(pm.response.json().precio).to.eql(35000); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Servicio de 5 minutos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Corto\",\"duracionMinutos\":5,\"precio\":35000}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Precio negativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Mal\",\"duracionMinutos\":45,\"precio\":-1}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar servicios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar servicios activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios?activo=true"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar servicio",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios/{{servicioId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Corte clasico\",\"duracionMinutos\":45,\"precio\":36000,\"activo\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200,404]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Estilistas",
+      "item": [
+        {
+          "name": "Crear estilista",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estilistas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Sara\",\"email\":\"sara-{{sufijo}}@sillon.test\",\"password\":\"clave1234\",\"servicioIds\":[{{servicioId}}]}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([201,402,404]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar estilistas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estilistas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estilista sin servicios",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estilistas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Luis\",\"email\":\"luis-{{sufijo}}@sillon.test\",\"password\":\"clave1234\",\"servicioIds\":[]}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Clientes",
+      "item": [
+        {
+          "name": "Crear cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/clientes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Ana\",\"telefono\":\"300{{sufijo}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([201]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente teléfono repetido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/clientes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Ana\",\"telefono\":\"300{{sufijo}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([409,400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar clientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/clientes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar clientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/clientes?q=Ana"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Citas",
+      "item": [
+        {
+          "name": "Crear cita de salón",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Ana\",\"clienteTelefono\":\"301{{sufijo}}\",\"servicioId\":{{servicioId}},\"estilistaId\":1,\"inicio\":\"{{inicioCita}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([201,400,404,409]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('citaId', pm.response.json().id);",
+                  "  pm.test('confirmada de salon', function () { pm.expect(pm.response.json().estado).to.eql('CONFIRMADA'); });",
+                  "  pm.test('origen salon', function () { pm.expect(pm.response.json().origen).to.eql('SALON'); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cita en domingo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Ana\",\"clienteTelefono\":\"302{{sufijo}}\",\"servicioId\":{{servicioId}},\"estilistaId\":1,\"inicio\":\"{{domingo}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([409,400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cita en el pasado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Ana\",\"clienteTelefono\":\"303{{sufijo}}\",\"servicioId\":{{servicioId}},\"estilistaId\":1,\"inicio\":\"2020-01-06T10:00:00\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([409]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cita desalineada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Ana\",\"clienteTelefono\":\"304{{sufijo}}\",\"servicioId\":{{servicioId}},\"estilistaId\":1,\"inicio\":\"{{inicioDesalineado}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400,409]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar citas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar citas confirmadas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas?estado=CONFIRMADA"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cita inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/999999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([404]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Citas sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/citas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([401]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Público",
+      "item": [
+        {
+          "name": "Catálogo público",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publico/salones/{{salonSlug}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200,404]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Salón público inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publico/salones/no-existe-{{sufijo}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([404]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disponibilidad sin parámetros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/publico/salones/{{salonSlug}}/disponibilidad"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400,404]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reserva en línea",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publico/salones/{{salonSlug}}/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Luis\",\"clienteTelefono\":\"305{{sufijo}}\",\"servicioId\":{{servicioId}},\"estilistaId\":1,\"inicio\":\"{{inicioTarde}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([201,400,404,409]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chat historial vacío",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/publico/salones/{{salonSlug}}/chat",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"clienteNombre\":\"Ana\",\"clienteContacto\":\"300\",\"historial\":[]}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. Solicitudes",
+      "item": [
+        {
+          "name": "Listar solicitudes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/solicitudes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atender solicitud inexistente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/solicitudes/999999/atendida"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([404]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Pagos",
+      "item": [
+        {
+          "name": "Suscripción",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/pagos/suscripcion"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200,409,502]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paquete de créditos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/pagos/creditos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200,502]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultado éxito",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/pagos/resultado?estado=exito"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultado cancelado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/pagos/resultado?estado=cancelado"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([200]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultado inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/pagos/resultado?estado=otro"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Webhook sin firma",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/pagos/webhook",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([400]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11. Administración",
+      "item": [
+        {
+          "name": "Salones sin ser admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/salones"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([403]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Salones sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/salones"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([401]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12. Recordatorio",
+      "item": [
+        {
+          "name": "Recordatorio de cita ajena",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/citas/999999/recordatorio"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('codigo HTTP', function () {",
+                  "  pm.expect([404,402,409]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('cuerpo presente', function () {",
+                  "  pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

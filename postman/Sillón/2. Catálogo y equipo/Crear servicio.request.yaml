@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/api/servicios"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "nombre": "Corte clasico",
+      "duracionMinutos": 45,
+      "precio": 35000
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('201', () => pm.response.to.have.status(201));
+      pm.collectionVariables.set('servicioId', pm.response.json().id);
+    language: text/javascript
+order: 1000

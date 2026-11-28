@@ -1,0 +1,15 @@
+workspace:
+  id: ae3de0fb-dbdd-4f55-bf5e-ef5b9f0ede01
+localResources:
+  collections:
+    - ../sillon.postman_collection.json
+    - ../Sillón
+  environments:
+    - ../local.environment.yaml
+    - ../produccion.environment.yaml
+  specs:
+    - ../postman/specs/Sillón API/index.json
+    - ../C:/Users/acteu/OneDrive/Documents/Sillon_ProyectoIntegrador_Módulos_4y5_Java_AI_Engineer/DS_Java_IA_Backend_TallerMd4y5/postman/postman/specs/Sillón API/index.json
+resourceNameMappings:
+  specs:
+    - ../postman/specs/Sillón API/index.json: index.json
