@@ -1288,7 +1288,7 @@ Esto permite que Render proporcione el puerto mediante la variable `PORT`.
 En el Dashboard de Stripe se configura el endpoint:
 
 ```text
-https://TU-SERVICIO.onrender.com/api/pagos/webhook
+https://sillon-6rqb.onrender.com/api/pagos/webhook
 ```
 
 Eventos:
